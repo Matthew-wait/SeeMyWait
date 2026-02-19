@@ -14,16 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clinic_suggestions: {
+        Row: {
+          address: string
+          doctor_name: string
+          google_place_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+        }
+        Insert: {
+          address: string
+          doctor_name: string
+          google_place_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+        }
+        Update: {
+          address?: string
+          doctor_name?: string
+          google_place_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+        }
+        Relationships: []
+      }
+      clinics: {
+        Row: {
+          address: string
+          created_at: string
+          google_place_id: string | null
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          phone: string | null
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          google_place_id?: string | null
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          google_place_id?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wait_time_reports: {
+        Row: {
+          clinic_id: string
+          device_fingerprint: string
+          id: string
+          is_flagged: boolean
+          reported_at: string
+          wait_time: Database["public"]["Enums"]["wait_time_category"]
+        }
+        Insert: {
+          clinic_id: string
+          device_fingerprint: string
+          id?: string
+          is_flagged?: boolean
+          reported_at?: string
+          wait_time: Database["public"]["Enums"]["wait_time_category"]
+        }
+        Update: {
+          clinic_id?: string
+          device_fingerprint?: string
+          id?: string
+          is_flagged?: boolean
+          reported_at?: string
+          wait_time?: Database["public"]["Enums"]["wait_time_category"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wait_time_reports_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      wait_time_category: "on_time" | "30_min" | "1_hour" | "1.5_hours_plus"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +290,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      wait_time_category: ["on_time", "30_min", "1_hour", "1.5_hours_plus"],
+    },
   },
 } as const
