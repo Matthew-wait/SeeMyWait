@@ -38,16 +38,16 @@ const Index = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
       {/* Hero Header */}
-      <header className="relative overflow-hidden bg-primary px-4 pb-6 pt-8">
+      <header className="relative overflow-hidden bg-primary px-3 pb-6 pt-8 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80 opacity-90" />
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-foreground/10 animate-pulse" />
         <div className="absolute -left-4 bottom-0 h-20 w-20 rounded-full bg-primary-foreground/5" />
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto max-w-2xl">
           <div className="mb-1 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/20">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/20">
               <Stethoscope className="h-4 w-4 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-primary-foreground">
+            <h1 className="text-lg font-bold text-primary-foreground sm:text-xl">
               See Your Wait Time
             </h1>
           </div>
@@ -55,7 +55,7 @@ const Index = () => {
             Real-time doctor wait times in Miami
           </p>
           <div className="mt-4 flex items-center gap-2 rounded-lg bg-primary-foreground/10 px-3 py-2 backdrop-blur-sm">
-            <Clock className="h-4 w-4 text-primary-foreground/70" />
+            <Clock className="h-4 w-4 shrink-0 text-primary-foreground/70" />
             <span className="text-xs text-primary-foreground/70">
               {clinics?.length || 0} clinics tracked • Updated live
             </span>
@@ -64,8 +64,8 @@ const Index = () => {
       </header>
 
       {/* Search + Near Me */}
-      <div className="flex gap-2 px-4 py-3 -mt-1">
-        <div className="relative flex-1">
+      <div className="mx-auto w-full max-w-2xl flex gap-2 px-3 py-3 -mt-1 sm:px-6">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search doctor or clinic..."
@@ -80,7 +80,7 @@ const Index = () => {
           onClick={handleNearMe}
           disabled={locating}
           title="Near Me"
-          className="shadow-sm"
+          className="shrink-0 shadow-sm"
         >
           {locating ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -91,7 +91,7 @@ const Index = () => {
       </div>
 
       {/* Results */}
-      <main className="flex-1 space-y-3 px-4">
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-3 px-3 sm:px-6">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="relative">
