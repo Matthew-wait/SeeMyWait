@@ -2,14 +2,14 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { BottomNav } from "@/components/BottomNav";
 import {
   WaitTimeCategory,
-  WAIT_TIME_LABELS,
   getAverageWaitTime,
 } from "@/lib/wait-time-utils";
 import { getCurrentPosition, isWithinRadius } from "@/lib/geolocation";
@@ -17,11 +17,11 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
-const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; color: string }[] = [
-  { value: "on_time", label: "On Time", color: "bg-green-500 hover:bg-green-600 text-primary-foreground" },
-  { value: "30_min", label: "30 Min", color: "bg-yellow-500 hover:bg-yellow-600 text-primary-foreground" },
-  { value: "1_hour", label: "1 Hour", color: "bg-orange-500 hover:bg-orange-600 text-primary-foreground" },
-  { value: "1.5_hours_plus", label: "1.5+ Hrs", color: "bg-destructive hover:bg-destructive/90 text-destructive-foreground" },
+const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] = [
+  { value: "on_time", label: "On Time", emoji: "✅" },
+  { value: "30_min", label: "30 Min", emoji: "🟡" },
+  { value: "1_hour", label: "1 Hour", emoji: "🟠" },
+  { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
 ];
 
 export default function ClinicDetail() {
@@ -29,6 +29,7 @@ export default function ClinicDetail() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
 
   const { data: clinic, isLoading: clinicLoading } = useQuery({
     queryKey: ["clinic", id],
@@ -71,6 +72,7 @@ export default function ClinicDetail() {
 
   const handleReport = async (category: WaitTimeCategory) => {
     if (!clinic) return;
+    setSelectedOption(category);
     setCheckingLocation(true);
 
     try {
@@ -80,19 +82,19 @@ export default function ClinicDetail() {
         pos.coords.longitude,
         clinic.latitude,
         clinic.longitude,
-        150 // 150 meters for some GPS tolerance
+        150
       );
 
       if (!withinRange) {
-        toast.error(
-          "You need to be at the clinic to report wait times. Please visit the clinic first."
-        );
+        toast.error("You need to be at the clinic to report wait times.");
         setCheckingLocation(false);
+        setSelectedOption(null);
         return;
       }
     } catch {
       toast.error("Please enable location services to report wait times.");
       setCheckingLocation(false);
+      setSelectedOption(null);
       return;
     }
 
@@ -101,8 +103,6 @@ export default function ClinicDetail() {
 
     try {
       const fingerprint = getDeviceFingerprint();
-
-      // Check spam: one report per device per clinic per hour
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { data: existing } = await supabase
         .from("wait_time_reports")
@@ -113,8 +113,9 @@ export default function ClinicDetail() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        toast.error("You already reported for this clinic recently. Try again later.");
+        toast.error("You already reported for this clinic recently.");
         setSubmitting(false);
+        setSelectedOption(null);
         return;
       }
 
@@ -125,28 +126,31 @@ export default function ClinicDetail() {
       });
 
       if (error) throw error;
-
-      toast.success("Thank you! Your wait time report has been submitted.");
+      toast.success("Thank you! Your report has been submitted.");
       refetchReports();
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to submit report. Please try again.");
     } finally {
       setSubmitting(false);
+      setSelectedOption(null);
     }
   };
 
   if (clinicLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-full border-4 border-muted animate-spin border-t-primary" />
+          <p className="text-sm text-muted-foreground">Loading clinic...</p>
+        </div>
       </div>
     );
   }
 
   if (!clinic) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-        <p className="text-foreground">Clinic not found.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-3">
+        <p className="text-foreground font-medium">Clinic not found</p>
         <Button variant="link" onClick={() => navigate("/")}>
           Go back
         </Button>
@@ -156,29 +160,39 @@ export default function ClinicDetail() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-40 flex items-center gap-2 border-b bg-card px-4 py-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="truncate text-lg font-bold text-foreground">{clinic.name}</h1>
+      {/* Gradient Header */}
+      <header className="relative overflow-hidden bg-primary px-4 pb-5 pt-4">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/70" />
+        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/10" />
+        <div className="relative z-10">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="mb-2 text-primary-foreground hover:bg-primary-foreground/10">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-bold text-primary-foreground">{clinic.name}</h1>
+          {clinic.specialty && (
+            <Badge className="mt-1 bg-primary-foreground/20 text-primary-foreground border-0 text-xs">
+              {clinic.specialty}
+            </Badge>
+          )}
+        </div>
       </header>
 
-      <main className="flex-1 space-y-4 px-4 py-4">
+      <main className="flex-1 space-y-4 px-4 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
         {/* Clinic Info */}
-        <Card>
-          <CardContent className="space-y-2 p-4">
-            <div className="flex items-start gap-2">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <p className="text-sm text-card-foreground">{clinic.address}</p>
+        <Card className="border-border/50">
+          <CardContent className="space-y-3 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <MapPin className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-sm text-card-foreground pt-1">{clinic.address}</p>
             </div>
             {clinic.phone && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary" />
-                <a
-                  href={`tel:${clinic.phone}`}
-                  className="text-sm text-primary underline"
-                >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                  <Phone className="h-4 w-4 text-primary" />
+                </div>
+                <a href={`tel:${clinic.phone}`} className="text-sm text-primary font-medium">
                   {clinic.phone}
                 </a>
               </div>
@@ -187,68 +201,77 @@ export default function ClinicDetail() {
         </Card>
 
         {/* Current Wait Time */}
-        <Card>
-          <CardContent className="p-4 text-center">
-            <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-              Current Wait Time
-            </h2>
+        <Card className="border-border/50 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-transparent p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-card-foreground">Current Wait Time</h2>
+            </div>
             {reportsLoading ? (
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
             ) : waitTime ? (
-              <div className="space-y-1">
-                <WaitTimeBadge category={waitTime.category} className="text-base px-4 py-1" />
-                <p className="text-xs text-muted-foreground">
-                  Last report{" "}
-                  {formatDistanceToNow(new Date(waitTime.lastReported), {
-                    addSuffix: true,
-                  })}
-                </p>
+              <div className="flex items-center gap-3">
+                <WaitTimeBadge category={waitTime.category} showIcon className="text-sm px-4 py-1.5" />
+                <span className="text-xs text-muted-foreground">
+                  Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
+                </span>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No recent reports</p>
+              <p className="text-sm text-muted-foreground">No recent reports — be the first!</p>
             )}
-          </CardContent>
+          </div>
         </Card>
 
         {/* Report Wait Time */}
-        <Card>
+        <Card className="border-border/50">
           <CardContent className="p-4">
-            <h2 className="mb-1 text-sm font-medium text-card-foreground">
-              Report Wait Time
-            </h2>
-            <p className="mb-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 mb-1">
+              <Stethoscope className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-card-foreground">Report Wait Time</h2>
+            </div>
+            <p className="mb-4 text-xs text-muted-foreground">
               You must be at the clinic to report
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {WAIT_OPTIONS.map((opt) => (
-                <Button
+                <button
                   key={opt.value}
-                  className={opt.color}
+                  className={`flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
+                    selectedOption === opt.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card text-card-foreground hover:border-primary/50"
+                  } ${submitting || checkingLocation ? "opacity-50 pointer-events-none" : ""}`}
                   disabled={submitting || checkingLocation}
                   onClick={() => handleReport(opt.value)}
                 >
-                  {(submitting || checkingLocation) ? (
-                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {(submitting || checkingLocation) && selectedOption === opt.value ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <span>{opt.emoji}</span>
+                  )}
                   {opt.label}
-                </Button>
+                </button>
               ))}
             </div>
           </CardContent>
         </Card>
 
         {/* Map placeholder */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex h-48 items-center justify-center rounded-md bg-muted/30">
+        <Card className="border-border/50 overflow-hidden">
+          <div className="relative h-40 bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10">
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <MapPin className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">
+                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                  <MapPin className="h-5 w-5 text-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground font-medium">
                   {clinic.latitude.toFixed(4)}, {clinic.longitude.toFixed(4)}
                 </p>
               </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </main>
 

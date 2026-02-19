@@ -1,4 +1,4 @@
-import { Search, Clock, Plus, Settings } from "lucide-react";
+import { Search, Plus, Settings } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ export function BottomNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur-md">
       <div className="flex items-center justify-around py-2 pb-safe">
         {navItems.map((item) => {
           const isActive =
@@ -25,13 +25,16 @@ export function BottomNav() {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-4 py-1 text-xs transition-colors",
+                "relative flex flex-col items-center gap-0.5 px-5 py-1.5 text-xs transition-all duration-200",
                 isActive
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground"
+                  ? "text-primary font-medium scale-105"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              {isActive && (
+                <span className="absolute -top-2 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary" />
+              )}
+              <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
               <span>{item.label}</span>
             </button>
           );

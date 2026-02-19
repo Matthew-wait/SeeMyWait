@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BottomNav } from "@/components/BottomNav";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, UserPlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SuggestClinic() {
@@ -29,7 +29,6 @@ export default function SuggestClinic() {
       });
 
       if (error) throw error;
-
       setSubmitted(true);
       toast.success("Suggestion submitted! We'll review it soon.");
     } catch {
@@ -41,18 +40,29 @@ export default function SuggestClinic() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      <header className="sticky top-0 z-40 border-b bg-card px-4 py-3">
-        <h1 className="text-lg font-bold text-foreground">Suggest a Doctor</h1>
-        <p className="text-xs text-muted-foreground">
-          Can't find your doctor? Let us know!
-        </p>
+      <header className="relative overflow-hidden bg-primary px-4 pb-5 pt-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80" />
+        <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary-foreground/10" />
+        <div className="relative z-10">
+          <div className="mb-1 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/20">
+              <UserPlus className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <h1 className="text-xl font-bold text-primary-foreground">Suggest a Doctor</h1>
+          </div>
+          <p className="text-sm text-primary-foreground/80">
+            Can't find your doctor? Let us know!
+          </p>
+        </div>
       </header>
 
-      <main className="flex-1 px-4 py-4">
+      <main className="flex-1 px-4 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
         {submitted ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 p-8">
-              <CheckCircle className="h-12 w-12 text-green-500" />
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center gap-4 p-8">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 animate-in zoom-in duration-300">
+                <CheckCircle className="h-8 w-8 text-primary" />
+              </div>
               <h2 className="text-lg font-semibold text-card-foreground">Thank you!</h2>
               <p className="text-center text-sm text-muted-foreground">
                 Your suggestion has been submitted and will be reviewed by our team.
@@ -64,15 +74,20 @@ export default function SuggestClinic() {
                   setDoctorName("");
                   setAddress("");
                 }}
+                className="mt-2"
               >
+                <Sparkles className="mr-2 h-4 w-4" />
                 Submit Another
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
-              <CardTitle className="text-base">Add a Doctor</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" />
+                Add a Doctor
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
