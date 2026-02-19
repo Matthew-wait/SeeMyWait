@@ -9,20 +9,20 @@ export default function SettingsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      <header className="relative overflow-hidden bg-primary px-4 pb-5 pt-8">
+      <header className="relative overflow-hidden bg-primary px-3 pb-5 pt-8 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80" />
         <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary-foreground/10" />
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto max-w-2xl">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/20">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/20">
               <Settings className="h-4 w-4 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-primary-foreground">Settings</h1>
+            <h1 className="text-lg font-bold text-primary-foreground sm:text-xl">Settings</h1>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 space-y-4 px-4 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-3 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
         <Card className="border-border/50">
           <CardContent className="p-4">
             <Button

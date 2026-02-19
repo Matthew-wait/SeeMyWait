@@ -161,14 +161,14 @@ export default function ClinicDetail() {
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
       {/* Gradient Header */}
-      <header className="relative overflow-hidden bg-primary px-4 pb-5 pt-4">
+      <header className="relative overflow-hidden bg-primary px-3 pb-5 pt-4 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/70" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/10" />
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto max-w-2xl">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="mb-2 text-primary-foreground hover:bg-primary-foreground/10">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold text-primary-foreground">{clinic.name}</h1>
+          <h1 className="text-base font-bold text-primary-foreground break-words sm:text-lg">{clinic.name}</h1>
           {clinic.specialty && (
             <Badge className="mt-1 bg-primary-foreground/20 text-primary-foreground border-0 text-xs">
               {clinic.specialty}
@@ -177,7 +177,7 @@ export default function ClinicDetail() {
         </div>
       </header>
 
-      <main className="flex-1 space-y-4 px-4 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-3 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
         {/* Clinic Info */}
         <Card className="border-border/50">
           <CardContent className="space-y-3 p-4">
@@ -234,11 +234,11 @@ export default function ClinicDetail() {
             <p className="mb-4 text-xs text-muted-foreground">
               You must be at the clinic to report
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {WAIT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  className={`flex items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
                     selectedOption === opt.value
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-card text-card-foreground hover:border-primary/50"

@@ -126,48 +126,48 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Header */}
-      <header className="relative overflow-hidden bg-secondary px-4 pb-5 pt-4">
+      <header className="relative overflow-hidden bg-secondary px-3 pb-5 pt-4 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/80" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-secondary-foreground/5" />
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary-foreground/10">
+        <div className="relative z-10 mx-auto max-w-4xl flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary-foreground/10">
               <LayoutDashboard className="h-4 w-4 text-secondary-foreground" />
             </div>
-            <h1 className="text-lg font-bold text-secondary-foreground">Admin Dashboard</h1>
+            <h1 className="text-base font-bold text-secondary-foreground truncate sm:text-lg">Admin Dashboard</h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-secondary-foreground hover:bg-secondary-foreground/10">
-            <LogOut className="mr-1 h-4 w-4" /> Logout
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10">
+            <LogOut className="mr-1 h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </header>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 px-4 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400">
+      <div className="mx-auto max-w-4xl grid grid-cols-3 gap-2 px-3 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3 sm:px-6">
         <Card className="border-border/50">
-          <CardContent className="p-3 text-center">
-            <Activity className="mx-auto h-5 w-5 text-primary mb-1" />
-            <p className="text-2xl font-bold text-foreground">{totalClinics}</p>
-            <p className="text-[10px] text-muted-foreground">Clinics</p>
+          <CardContent className="p-2 text-center sm:p-3">
+            <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
+            <p className="text-xl font-bold text-foreground sm:text-2xl">{totalClinics}</p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Clinics</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
-          <CardContent className="p-3 text-center">
-            <Users className="mx-auto h-5 w-5 text-primary mb-1" />
-            <p className="text-2xl font-bold text-foreground">{totalSuggestions}</p>
-            <p className="text-[10px] text-muted-foreground">Pending</p>
+          <CardContent className="p-2 text-center sm:p-3">
+            <Users className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
+            <p className="text-xl font-bold text-foreground sm:text-2xl">{totalSuggestions}</p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Pending</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
-          <CardContent className="p-3 text-center">
-            <FileText className="mx-auto h-5 w-5 text-primary mb-1" />
-            <p className="text-2xl font-bold text-foreground">{totalReports}</p>
-            <p className="text-[10px] text-muted-foreground">Reports</p>
+          <CardContent className="p-2 text-center sm:p-3">
+            <FileText className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
+            <p className="text-xl font-bold text-foreground sm:text-2xl">{totalReports}</p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Reports</p>
           </CardContent>
         </Card>
       </div>
 
-      <main className="px-4 pb-8 animate-in fade-in duration-500">
+      <main className="mx-auto max-w-4xl px-3 pb-8 animate-in fade-in duration-500 sm:px-6">
         <Tabs defaultValue="clinics">
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="clinics" className="flex-1">Clinics</TabsTrigger>
@@ -246,12 +246,12 @@ export default function AdminDashboard() {
             {suggestions && suggestions.length > 0 ? (
               suggestions.map((s, i) => (
                 <Card key={s.id} className="border-border/50 animate-in fade-in slide-in-from-bottom-1" style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}>
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div>
-                      <p className="font-medium text-card-foreground">{s.doctor_name}</p>
-                      <p className="text-sm text-muted-foreground">{s.address}</p>
+                  <CardContent className="flex items-center justify-between gap-2 p-3 sm:p-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-card-foreground truncate text-sm sm:text-base">{s.doctor_name}</p>
+                      <p className="text-xs text-muted-foreground truncate sm:text-sm">{s.address}</p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex shrink-0 gap-1">
                       <Button size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20 text-primary" variant="ghost" onClick={() => approveSuggestion.mutate(s)}>
                         <Check className="h-4 w-4" />
                       </Button>

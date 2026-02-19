@@ -40,15 +40,15 @@ export default function SuggestClinic() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      <header className="relative overflow-hidden bg-primary px-4 pb-5 pt-8">
+      <header className="relative overflow-hidden bg-primary px-3 pb-5 pt-8 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80" />
         <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary-foreground/10" />
-        <div className="relative z-10">
+        <div className="relative z-10 mx-auto max-w-2xl">
           <div className="mb-1 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground/20">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/20">
               <UserPlus className="h-4 w-4 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold text-primary-foreground">Suggest a Doctor</h1>
+            <h1 className="text-lg font-bold text-primary-foreground sm:text-xl">Suggest a Doctor</h1>
           </div>
           <p className="text-sm text-primary-foreground/80">
             Can't find your doctor? Let us know!
@@ -56,7 +56,7 @@ export default function SuggestClinic() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-3 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
         {submitted ? (
           <Card className="border-border/50">
             <CardContent className="flex flex-col items-center gap-4 p-8">
