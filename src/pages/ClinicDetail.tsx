@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope, ExternalLink, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,35 @@ const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] 
   { value: "1_hour", label: "1 Hour", emoji: "🟠" },
   { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
 ];
+
+function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: string }) {
+  const query = encodeURIComponent(`${name}`);
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}&center=${lat},${lon}`;
+  const embedUrl = `https://maps.google.com/maps?q=${lat},${lon}&z=16&output=embed&hl=en`;
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-b-lg" style={{ height: 220 }}>
+      <iframe
+        title="Doctor Location Map"
+        src={embedUrl}
+        className="absolute inset-0 h-full w-full border-0"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        allowFullScreen
+      />
+      {/* Open in Google Maps button */}
+      <a
+        href={mapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg bg-card/95 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-foreground shadow-md border border-border/50 hover:bg-card transition-colors"
+      >
+        <ExternalLink className="h-3 w-3 text-primary" />
+        Open in Maps
+      </a>
+    </div>
+  );
+}
 
 export default function ClinicDetail() {
   const { id } = useParams<{ id: string }>();
@@ -141,7 +170,7 @@ export default function ClinicDetail() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="h-12 w-12 rounded-full border-4 border-muted animate-spin border-t-primary" />
-          <p className="text-sm text-muted-foreground">Loading clinic...</p>
+          <p className="text-sm text-muted-foreground">Loading doctor profile...</p>
         </div>
       </div>
     );
@@ -150,7 +179,7 @@ export default function ClinicDetail() {
   if (!clinic) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-3">
-        <p className="text-foreground font-medium">Clinic not found</p>
+        <p className="text-foreground font-medium">Doctor not found</p>
         <Button variant="link" onClick={() => navigate("/")}>
           Go back
         </Button>
@@ -165,10 +194,17 @@ export default function ClinicDetail() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/70" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/10" />
         <div className="relative z-10 mx-auto max-w-2xl">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="mb-2 text-primary-foreground hover:bg-primary-foreground/10">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="mb-2 text-primary-foreground hover:bg-primary-foreground/10"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-base font-bold text-primary-foreground break-words sm:text-lg">{clinic.name}</h1>
+          <h1 className="text-base font-bold text-primary-foreground break-words sm:text-lg">
+            {clinic.name}
+          </h1>
           {clinic.specialty && (
             <Badge className="mt-1 bg-primary-foreground/20 text-primary-foreground border-0 text-xs">
               {clinic.specialty}
@@ -178,26 +214,90 @@ export default function ClinicDetail() {
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-3 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
-        {/* Clinic Info */}
-        <Card className="border-border/50">
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-start gap-3">
+
+        {/* ─── Doctor Profile Card ─── */}
+        <Card className="border-border/50 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <MapPin className="h-4 w-4 text-primary" />
+                <User className="h-4 w-4 text-primary" />
               </div>
-              <p className="text-sm text-card-foreground pt-1">{clinic.address}</p>
+              <h2 className="text-sm font-semibold text-card-foreground">Doctor Profile</h2>
             </div>
-            {clinic.phone && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                  <Phone className="h-4 w-4 text-primary" />
+            <div className="space-y-2.5">
+              {/* Name */}
+              <div className="flex items-start gap-3">
+                <Stethoscope className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                    Doctor / Clinic Name
+                  </p>
+                  <p className="text-sm font-semibold text-card-foreground break-words">
+                    {clinic.name}
+                  </p>
                 </div>
-                <a href={`tel:${clinic.phone}`} className="text-sm text-primary font-medium">
-                  {clinic.phone}
-                </a>
               </div>
-            )}
-          </CardContent>
+              {/* Specialty */}
+              {clinic.specialty && (
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 h-4 w-4 shrink-0 flex items-center justify-center">
+                    <span className="text-xs">🩺</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                      Specialty
+                    </p>
+                    <Badge variant="secondary" className="mt-0.5 text-xs">
+                      {clinic.specialty}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              {/* Address */}
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                    Address
+                  </p>
+                  <p className="text-sm text-card-foreground break-words">{clinic.address}</p>
+                </div>
+              </div>
+              {/* Phone */}
+              {clinic.phone && (
+                <div className="flex items-start gap-3">
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                      Phone
+                    </p>
+                    <a
+                      href={`tel:${clinic.phone}`}
+                      className="text-sm text-primary font-medium hover:underline"
+                    >
+                      {clinic.phone}
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Embedded Map */}
+          <div className="border-t border-border/40">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/30">
+              <MapPin className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-medium text-muted-foreground">Location</span>
+              <span className="ml-auto text-[10px] text-muted-foreground font-mono">
+                {clinic.latitude.toFixed(5)}, {clinic.longitude.toFixed(5)}
+              </span>
+            </div>
+            <GoogleMapEmbed
+              lat={clinic.latitude}
+              lon={clinic.longitude}
+              name={clinic.name}
+            />
+          </div>
         </Card>
 
         {/* Current Wait Time */}
@@ -256,22 +356,6 @@ export default function ClinicDetail() {
               ))}
             </div>
           </CardContent>
-        </Card>
-
-        {/* Map placeholder */}
-        <Card className="border-border/50 overflow-hidden">
-          <div className="relative h-40 bg-gradient-to-br from-primary/5 via-muted/30 to-primary/10">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                  <MapPin className="h-5 w-5 text-primary" />
-                </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {clinic.latitude.toFixed(4)}, {clinic.longitude.toFixed(4)}
-                </p>
-              </div>
-            </div>
-          </div>
         </Card>
       </main>
 
