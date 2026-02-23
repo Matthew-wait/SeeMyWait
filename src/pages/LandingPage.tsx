@@ -108,7 +108,7 @@ function PhoneMockup() {
           </div>
           {/* header */}
           <div className="bg-gradient-to-r from-cyan-600 to-blue-700 px-4 py-3">
-            <p className="text-xs font-semibold text-white">See Your Wait Time</p>
+            <p className="text-xs font-semibold text-white">See My Wait Time</p>
             <p className="text-[9px] text-white/70">Miami, FL</p>
           </div>
           {/* clinic list */}
@@ -180,7 +180,7 @@ export default function LandingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
               <Clock className="h-4 w-4 text-white" />
             </div>
-            <span className="text-sm font-bold tracking-tight">See Your Wait Time</span>
+            <span className="text-sm font-bold tracking-tight">See My Wait Time</span>
           </div>
           <GlowButton variant="secondary" className="text-xs px-4 py-2">
             Get the App
@@ -287,7 +287,7 @@ export default function LandingPage() {
             {/* new way */}
             <Section delay={200}>
               <div className="rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-6 text-left">
-                <p className="mb-4 text-xs font-bold uppercase tracking-wider text-emerald-400">With See Your Wait Time</p>
+                <p className="mb-4 text-xs font-bold uppercase tracking-wider text-emerald-400">With See My Wait Time</p>
                 <div className="space-y-3">
                   {[
                     { icon: Search, text: "Check wait times from home" },
@@ -410,7 +410,7 @@ export default function LandingPage() {
                 <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-cyan-500/5" />
                 {/* Glow effect */}
                 <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[60px]" />
-                <p className="mb-6 text-xs font-bold uppercase tracking-wider text-cyan-400">See Your Wait Time</p>
+                <p className="mb-6 text-xs font-bold uppercase tracking-wider text-cyan-400">See My Wait Time</p>
                 <div className="space-y-5">
                   {[
                     { label: "Real-time updates", detail: "Live data from patients right now" },
@@ -675,7 +675,7 @@ export default function LandingPage() {
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
                 <Clock className="h-3.5 w-3.5 text-white" />
               </div>
-              <span className="text-sm font-bold">See Your Wait Time</span>
+              <span className="text-sm font-bold">See My Wait Time</span>
             </div>
             <div className="flex flex-wrap justify-center gap-6 text-xs text-white/40">
               <a href="#" className="transition-colors hover:text-white/70">Privacy Policy</a>
@@ -684,7 +684,7 @@ export default function LandingPage() {
             </div>
           </div>
           <p className="mt-6 text-center text-xs text-white/20">
-            Made for smarter healthcare visits. © {new Date().getFullYear()} See Your Wait Time.
+            Made for smarter healthcare visits. © {new Date().getFullYear()} See My Wait Time.
           </p>
         </div>
       </footer>

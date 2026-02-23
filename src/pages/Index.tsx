@@ -51,7 +51,7 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary-foreground tracking-tight sm:text-2xl">
-                See Your Wait Time
+                See My Wait Time
               </h1>
               <p className="text-[11px] text-primary-foreground/60 font-medium">
                 Real-time doctor wait times • Miami
