@@ -164,15 +164,16 @@ export default function SuggestClinic() {
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
       {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-6 pt-8 sm:px-6">
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-8 pt-12 sm:px-6">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-foreground/[0.07] blur-2xl" />
+        <div className="absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-primary-foreground/[0.04] blur-xl" />
         <div className="relative z-10 mx-auto max-w-2xl">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15 backdrop-blur-sm">
-              <UserPlus className="h-4 w-4 text-primary-foreground" />
+          <div className="flex items-center gap-3 mb-1.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10">
+              <UserPlus className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-primary-foreground tracking-tight sm:text-xl">
+              <h1 className="text-xl font-bold text-primary-foreground tracking-tight sm:text-2xl">
                 Can't Find Your Clinic?
               </h1>
               <p className="text-[11px] text-primary-foreground/60 font-medium">
@@ -183,9 +184,9 @@ export default function SuggestClinic() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 py-4 space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-3 py-4 space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
         {/* 3-Step Process */}
-        <div className="rounded-2xl border border-border/40 bg-card p-4">
+        <div className="rounded-2xl border border-border/30 bg-card p-4">
           <div className="flex items-start gap-2 sm:gap-0 sm:justify-between">
             {STEPS.map((step, i) => (
               <div key={step.title} className="flex flex-1 flex-col items-center text-center relative">
@@ -209,7 +210,7 @@ export default function SuggestClinic() {
 
         {/* Form / Success */}
         {submitted ? (
-          <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+          <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
             <div className="bg-gradient-to-br from-primary/10 to-transparent p-6 sm:p-8">
               <div className="flex flex-col items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-in zoom-in duration-300">
@@ -227,7 +228,7 @@ export default function SuggestClinic() {
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+          <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
             <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
@@ -249,7 +250,7 @@ export default function SuggestClinic() {
                     placeholder="e.g. Dr. Smith's Family Practice"
                     value={doctorName}
                     onChange={(e) => setDoctorName(e.target.value)}
-                    className="rounded-xl border-border/40 bg-background/50 h-11"
+                    className="rounded-xl border-border/40 bg-background/60 h-11"
                     required
                   />
                 </div>
@@ -262,7 +263,7 @@ export default function SuggestClinic() {
                       Type
                     </Label>
                     <Select value={clinicType} onValueChange={setClinicType}>
-                      <SelectTrigger className="rounded-xl border-border/40 bg-background/50 h-11">
+                      <SelectTrigger className="rounded-xl border-border/40 bg-background/60 h-11">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -281,7 +282,7 @@ export default function SuggestClinic() {
                       placeholder="e.g. Cardiology"
                       value={specialty}
                       onChange={(e) => setSpecialty(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/50 h-11"
+                      className="rounded-xl border-border/40 bg-background/60 h-11"
                     />
                   </div>
                 </div>
@@ -297,7 +298,7 @@ export default function SuggestClinic() {
                     placeholder="e.g. 123 Main St, Miami, FL 33101"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="rounded-xl border-border/40 bg-background/50 h-11"
+                    className="rounded-xl border-border/40 bg-background/60 h-11"
                     required
                   />
                 </div>
@@ -313,7 +314,7 @@ export default function SuggestClinic() {
                     placeholder="e.g. (305) 555-0100"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-xl border-border/40 bg-background/50 h-11"
+                    className="rounded-xl border-border/40 bg-background/60 h-11"
                   />
                 </div>
 
@@ -328,7 +329,7 @@ export default function SuggestClinic() {
                       placeholder="25.7617"
                       value={latitude}
                       onChange={(e) => setLatitude(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/50 h-11"
+                      className="rounded-xl border-border/40 bg-background/60 h-11"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -340,7 +341,7 @@ export default function SuggestClinic() {
                       placeholder="-80.1918"
                       value={longitude}
                       onChange={(e) => setLongitude(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/50 h-11"
+                      className="rounded-xl border-border/40 bg-background/60 h-11"
                     />
                   </div>
                 </div>
@@ -355,7 +356,7 @@ export default function SuggestClinic() {
                   </Alert>
                 )}
 
-                <Button type="submit" className="w-full rounded-xl h-11" disabled={submitting}>
+                <Button type="submit" className="w-full rounded-xl h-12 text-sm font-semibold" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Submit Suggestion
                 </Button>

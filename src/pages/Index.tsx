@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, MapPin, Loader2, Clock, Sparkles } from "lucide-react";
+import { Search, MapPin, Loader2, Clock, Sparkles, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClinicCard } from "@/components/ClinicCard";
@@ -37,19 +37,20 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      {/* Compact Hero */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-14 pt-10 sm:px-6">
+      {/* Hero Header */}
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-16 pt-12 sm:px-6">
         {/* Ambient orbs */}
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-foreground/[0.07] blur-2xl" />
         <div className="absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-primary-foreground/[0.04] blur-xl" />
+        <div className="absolute right-1/4 top-1/3 h-20 w-20 rounded-full bg-primary-foreground/[0.03] blur-2xl" />
 
         <div className="relative z-10 mx-auto max-w-2xl">
-          <div className="flex items-center gap-2.5 mb-1.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15 backdrop-blur-sm">
-              <Clock className="h-4.5 w-4.5 text-primary-foreground" />
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-foreground/15 backdrop-blur-sm border border-primary-foreground/10">
+              <Clock className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-primary-foreground tracking-tight sm:text-xl">
+              <h1 className="text-xl font-bold text-primary-foreground tracking-tight sm:text-2xl">
                 See Your Wait Time
               </h1>
               <p className="text-[11px] text-primary-foreground/60 font-medium">
@@ -61,8 +62,8 @@ const Index = () => {
       </header>
 
       {/* Search floating card */}
-      <div className="mx-auto w-full max-w-2xl px-3 -mt-7 relative z-20 sm:px-6">
-        <div className="rounded-2xl border border-border/50 bg-card p-3 shadow-lg shadow-primary/5">
+      <div className="mx-auto w-full max-w-2xl px-3 -mt-8 relative z-20 sm:px-6">
+        <div className="rounded-2xl border border-border/50 bg-card p-3.5 shadow-xl shadow-primary/5 backdrop-blur-sm">
           <div className="flex gap-2">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -70,14 +71,14 @@ const Index = () => {
                 placeholder="Search doctor or clinic..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 border-border/40 bg-background/50 h-11 rounded-xl text-sm"
+                className="pl-9 border-border/40 bg-background/60 h-11 rounded-xl text-sm"
               />
             </div>
             <Button
               variant="outline"
               onClick={handleNearMe}
               disabled={locating}
-              className="shrink-0 h-11 gap-2 rounded-xl border-border/40 bg-background/50 px-4 text-xs font-medium"
+              className="shrink-0 h-11 gap-2 rounded-xl border-border/40 bg-background/60 px-4 text-xs font-medium"
             >
               {locating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -87,11 +88,13 @@ const Index = () => {
               <span className="hidden sm:inline">Near Me</span>
             </Button>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 px-1">
-            <Sparkles className="h-3 w-3 text-primary/60" />
-            <span className="text-[11px] text-muted-foreground">
-              {clinics?.length || 0} clinics tracked • Updated live
-            </span>
+          <div className="mt-2.5 flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-primary/60" />
+              <span className="text-[11px] text-muted-foreground">
+                {clinics?.length || 0} clinics tracked • Updated live
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -125,7 +128,7 @@ const Index = () => {
           ))
         ) : (
           <div className="flex flex-col items-center py-20 gap-4 animate-in fade-in">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/30 border border-border/30">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/20 border border-border/30">
               <MapPin className="h-7 w-7 text-muted-foreground/60" />
             </div>
             <div className="text-center">

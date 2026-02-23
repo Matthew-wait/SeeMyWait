@@ -30,21 +30,21 @@ export function ClinicCard({
 
   return (
     <button
-      className="group relative w-full text-left rounded-2xl border border-border/40 bg-card p-3.5 transition-all duration-200 hover:shadow-md hover:shadow-primary/5 hover:border-primary/20 active:scale-[0.99] sm:p-4"
+      className="group relative w-full text-left rounded-2xl border border-border/30 bg-card p-4 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 hover:-translate-y-0.5 active:scale-[0.99] sm:p-4"
       onClick={() => navigate(`/clinic/${id}`)}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3.5">
         {/* Icon */}
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 mt-0.5">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 mt-0.5 transition-all duration-300 group-hover:shadow-md group-hover:shadow-primary/10">
           <Stethoscope className="h-5 w-5 text-primary" />
         </div>
 
         {/* Info */}
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-card-foreground group-hover:text-primary transition-colors sm:text-[15px]">
+          <h3 className="truncate text-sm font-bold text-card-foreground group-hover:text-primary transition-colors sm:text-[15px]">
             {name}
           </h3>
-          <div className="mt-0.5 flex items-center gap-1.5 text-muted-foreground">
+          <div className="mt-1 flex items-center gap-1.5 text-muted-foreground">
             <MapPin className="h-3 w-3 shrink-0" />
             <p className="truncate text-xs">{address}</p>
           </div>
@@ -63,7 +63,7 @@ export function ClinicCard({
         </div>
 
         {/* Wait + Arrow */}
-        <div className="shrink-0 flex items-center gap-1.5">
+        <div className="shrink-0 flex items-center gap-2">
           {waitTime ? (
             <div className="flex flex-col items-end gap-1">
               <WaitTimeBadge category={waitTime.category} />
@@ -76,7 +76,7 @@ export function ClinicCard({
           ) : (
             <span className="text-[10px] text-muted-foreground whitespace-nowrap italic">No reports</span>
           )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary/60 group-hover:translate-x-0.5 transition-all" />
         </div>
       </div>
     </button>
