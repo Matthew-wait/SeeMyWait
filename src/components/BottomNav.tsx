@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { path: "/", icon: Search, label: "Search" },
+  { path: "/app", icon: Search, label: "Search" },
   { path: "/suggest", icon: Plus, label: "Add Doctor" },
   { path: "/settings", icon: Settings, label: "Settings" },
 ];
