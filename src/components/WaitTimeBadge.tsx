@@ -16,7 +16,7 @@ export function WaitTimeBadge({ category, className, showIcon = false }: WaitTim
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-105",
+        "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-sm tracking-wide",
         WAIT_TIME_COLORS[category],
         className
       )}
