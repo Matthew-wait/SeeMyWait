@@ -17,37 +17,46 @@ export type Database = {
       clinic_suggestions: {
         Row: {
           address: string
+          clinic_type: string | null
           doctor_name: string
           google_place_id: string | null
           id: string
           latitude: number | null
           longitude: number | null
+          phone: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          specialty: string | null
           status: string
           submitted_at: string
         }
         Insert: {
           address: string
+          clinic_type?: string | null
           doctor_name: string
           google_place_id?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
+          phone?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          specialty?: string | null
           status?: string
           submitted_at?: string
         }
         Update: {
           address?: string
+          clinic_type?: string | null
           doctor_name?: string
           google_place_id?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
+          phone?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          specialty?: string | null
           status?: string
           submitted_at?: string
         }
