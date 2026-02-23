@@ -434,10 +434,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SECTION 5 – BENEFITS (Bento grid layout) ── */}
+      {/* ── SECTION 5 – BENEFITS ── */}
       <section className="relative py-28 sm:py-36 overflow-hidden">
+        {/* Ambient bg */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/10 to-transparent" />
-        <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/5 blur-[120px]" />
+        <div className="absolute left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-cyan-600/[0.04] blur-[150px]" />
+        <div className="absolute right-1/4 bottom-0 h-[400px] w-[400px] rounded-full bg-purple-600/[0.04] blur-[120px]" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
           <Section className="text-center mb-20">
@@ -446,45 +448,71 @@ export default function LandingPage() {
               Built For{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Smarter Visits</span>
             </h2>
+            <p className="mt-4 text-white/40 max-w-lg mx-auto">Everything you need to take control of your time and never sit in a waiting room longer than you have to.</p>
           </Section>
 
-          {/* Bento grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2">
-            {/* Large featured card */}
-            <Section delay={0}>
-              <div className="group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br from-cyan-500/[0.08] to-blue-600/[0.04] p-8 transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5 lg:row-span-2">
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                <div className="relative flex h-full flex-col">
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/15">
-                    <Clock className="h-7 w-7 text-cyan-400" />
+          {/* Hero stat banner */}
+          <Section delay={50} className="mb-8">
+            <div className="relative rounded-3xl border border-cyan-500/10 bg-gradient-to-r from-cyan-500/[0.06] via-blue-600/[0.04] to-purple-500/[0.06] p-8 sm:p-10 overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(6,182,212,0.08)_0%,_transparent_50%)]" />
+              <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
+              <div className="relative flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-2xl bg-cyan-500/20 blur-md" />
+                    <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/25 to-blue-600/25 border border-cyan-500/20">
+                      <Clock className="h-8 w-8 text-cyan-400" />
+                    </div>
                   </div>
-                  <h3 className="mb-3 text-2xl font-bold">Save Real Hours</h3>
-                  <p className="text-white/50 leading-relaxed mb-6">Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and arrive when it's your turn.</p>
-                  <div className="mt-auto flex items-center gap-2 text-cyan-400 text-sm font-medium">
-                    <span>Average saved: 45 min per visit</span>
-                    <ArrowRight className="h-4 w-4" />
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">45</span>
+                      <span className="text-lg text-white/50 font-medium">min</span>
+                    </div>
+                    <p className="text-sm text-white/40 mt-0.5">Average time saved per visit</p>
                   </div>
+                </div>
+                <div className="hidden sm:block h-14 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="text-xl sm:text-2xl font-bold mb-1">Save Real Hours</h3>
+                  <p className="text-white/45 text-sm leading-relaxed max-w-md">Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and arrive when it's your turn.</p>
                 </div>
               </div>
-            </Section>
+            </div>
+          </Section>
 
-            {/* Smaller cards */}
+          {/* Feature row — alternating layout */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
-              { icon: Eye, title: "Reduce Uncertainty", desc: "Real data replaces guesswork. See actual wait times from patients already there.", gradient: "from-purple-500/[0.06] to-blue-500/[0.03]", iconColor: "text-purple-400", borderHover: "hover:border-purple-500/20" },
-              { icon: CalendarCheck, title: "Plan Better", desc: "Choose the best time to visit based on real-time conditions and patterns.", gradient: "from-blue-500/[0.06] to-indigo-500/[0.03]", iconColor: "text-blue-400", borderHover: "hover:border-blue-500/20" },
-              { icon: Users, title: "Avoid Crowded Clinics", desc: "See which clinics are packed and which have shorter waits right now.", gradient: "from-amber-500/[0.06] to-orange-500/[0.03]", iconColor: "text-amber-400", borderHover: "hover:border-amber-500/20" },
-              { icon: Heart, title: "Community Powered", desc: "Built by patients, for patients. Every report helps the whole community.", gradient: "from-rose-500/[0.06] to-pink-500/[0.03]", iconColor: "text-rose-400", borderHover: "hover:border-rose-500/20" },
-            ].map((b, i) => (
-              <Section key={i} delay={(i + 1) * 80}>
-                <div className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${b.gradient} p-6 transition-all duration-500 ${b.borderHover} hover:shadow-lg hover:-translate-y-1`}>
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.06]">
-                    <b.icon className={`h-5 w-5 ${b.iconColor}`} />
+              { icon: Eye, title: "Reduce Uncertainty", desc: "Real data replaces guesswork. See actual wait times from patients already there.", color: "purple", span: "lg:col-span-3" },
+              { icon: CalendarCheck, title: "Plan Better", desc: "Choose the best time to visit based on real-time conditions and patterns.", color: "blue", span: "lg:col-span-2" },
+              { icon: Users, title: "Avoid Crowds", desc: "See which clinics are packed and which have shorter waits right now.", color: "amber", span: "lg:col-span-2" },
+              { icon: Heart, title: "Community Powered", desc: "Built by patients, for patients. Every report helps the entire community save time.", color: "rose", span: "lg:col-span-3" },
+            ].map((b, i) => {
+              const colors: Record<string, { accent: string; glow: string; border: string; bg: string }> = {
+                purple: { accent: "text-purple-400", glow: "bg-purple-500/10", border: "hover:border-purple-500/20", bg: "from-purple-500/[0.07] to-purple-600/[0.02]" },
+                blue: { accent: "text-blue-400", glow: "bg-blue-500/10", border: "hover:border-blue-500/20", bg: "from-blue-500/[0.07] to-indigo-600/[0.02]" },
+                amber: { accent: "text-amber-400", glow: "bg-amber-500/10", border: "hover:border-amber-500/20", bg: "from-amber-500/[0.07] to-orange-600/[0.02]" },
+                rose: { accent: "text-rose-400", glow: "bg-rose-500/10", border: "hover:border-rose-500/20", bg: "from-rose-500/[0.07] to-pink-600/[0.02]" },
+              };
+              const c = colors[b.color];
+              return (
+                <Section key={i} delay={80 + i * 60} className={b.span}>
+                  <div className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}>
+                    <div className={`absolute -top-6 -right-6 h-24 w-24 rounded-full ${c.glow} blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-100`} />
+                    <div className="relative flex items-start gap-5">
+                      <div className={`shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl ${c.glow} border border-white/[0.06]`}>
+                        <b.icon className={`h-6 w-6 ${c.accent}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-lg mb-1">{b.title}</h3>
+                        <p className="text-sm text-white/45 leading-relaxed">{b.desc}</p>
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="mb-1.5 font-bold">{b.title}</h3>
-                  <p className="text-sm text-white/45 leading-relaxed">{b.desc}</p>
-                </div>
-              </Section>
-            ))}
+                </Section>
+              );
+            })}
           </div>
         </div>
       </section>
