@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import {
   LogOut, Loader2, Check, X, Trash2, Search, Download,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
+  Upload, FileSpreadsheet, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -142,12 +143,239 @@ function ClinicFormDialog({
   );
 }
 
+/* ── CSV Upload Dialog ── */
+function CsvUploadDialog({
+  open,
+  onClose,
+  onUploadComplete,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onUploadComplete: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<Record<string, string>[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const reset = () => {
+    setFile(null);
+    setPreview([]);
+    setErrors([]);
+  };
+
+  const parseCSV = (text: string): Record<string, string>[] => {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
+    return lines.slice(1).map((line) => {
+      const values = line.split(",").map((v) => v.trim().replace(/^['"]|['"]$/g, ""));
+      const obj: Record<string, string> = {};
+      headers.forEach((h, i) => {
+        obj[h] = values[i] || "";
+      });
+      return obj;
+    });
+  };
+
+  const handleFile = async (f: File) => {
+    setFile(f);
+    setErrors([]);
+    try {
+      const text = await f.text();
+      const rows = parseCSV(text);
+      if (rows.length === 0) {
+        setErrors(["No data rows found in file."]);
+        return;
+      }
+      // Validate required columns
+      const first = rows[0];
+      const hasName = "name" in first || "doctor_name" in first || "clinic_name" in first;
+      const hasAddress = "address" in first;
+      if (!hasName || !hasAddress) {
+        setErrors([
+          `Missing required columns. Found: ${Object.keys(first).join(", ")}`,
+          "Required: name (or doctor_name), address",
+        ]);
+        return;
+      }
+      setPreview(rows.slice(0, 5));
+    } catch {
+      setErrors(["Failed to read file."]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    setErrors([]);
+    try {
+      const text = await file.text();
+      const rows = parseCSV(text);
+      const errs: string[] = [];
+      let inserted = 0;
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        const name = r["name"] || r["doctor_name"] || r["clinic_name"] || "";
+        const address = r["address"] || "";
+        if (!name.trim() || !address.trim()) {
+          errs.push(`Row ${i + 2}: Missing name or address, skipped.`);
+          continue;
+        }
+        const lat = parseFloat(r["latitude"] || r["lat"] || "");
+        const lng = parseFloat(r["longitude"] || r["lng"] || r["lon"] || "");
+
+        const { error } = await supabase.from("clinics").insert({
+          name: name.trim(),
+          address: address.trim(),
+          phone: (r["phone"] || "").trim() || null,
+          specialty: (r["specialty"] || "").trim() || null,
+          latitude: isNaN(lat) ? 25.7617 : lat,
+          longitude: isNaN(lng) ? -80.1918 : lng,
+        });
+        if (error) {
+          errs.push(`Row ${i + 2}: ${error.message}`);
+        } else {
+          inserted++;
+        }
+      }
+
+      if (inserted > 0) {
+        toast.success(`Successfully imported ${inserted} doctor(s)!`);
+        onUploadComplete();
+      }
+      if (errs.length > 0) {
+        setErrors(errs.slice(0, 10));
+      } else {
+        onClose();
+        reset();
+      }
+    } catch {
+      toast.error("Failed to process file.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { onClose(); reset(); } }}>
+      <DialogContent className="max-w-lg w-full mx-3">
+        <DialogHeader>
+          <DialogTitle className="text-base flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4 text-primary" />
+            Bulk Import Doctors (CSV)
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-1">
+          {/* Instructions */}
+          <div className="rounded-xl border border-border/40 bg-muted/20 p-3 space-y-2">
+            <p className="text-xs font-medium text-foreground">CSV Format</p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Your CSV must include columns: <strong>name</strong> (or doctor_name), <strong>address</strong>.
+              Optional: specialty, phone, latitude, longitude.
+            </p>
+            <div className="rounded-lg bg-background/50 border border-border/30 p-2 font-mono text-[10px] text-muted-foreground overflow-x-auto">
+              name,address,specialty,phone,latitude,longitude<br />
+              Dr. Smith,123 Main St Miami FL,Cardiology,(305) 555-0100,25.76,-80.19
+            </div>
+          </div>
+
+          {/* Drop zone */}
+          <div
+            className="relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/50 bg-background/50 p-6 cursor-pointer transition-colors hover:border-primary/40 hover:bg-primary/5"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-6 w-6 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">
+              {file ? file.name : "Click to select CSV or Excel file"}
+            </p>
+            {file && (
+              <Badge variant="secondary" className="text-[10px]">
+                {(file.size / 1024).toFixed(1)} KB
+              </Badge>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.txt"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
+          </div>
+
+          {/* Preview */}
+          {preview.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-foreground">Preview (first 5 rows)</p>
+              <div className="overflow-x-auto rounded-lg border border-border/40">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {Object.keys(preview[0]).slice(0, 5).map((h) => (
+                        <TableHead key={h} className="text-[10px] py-1.5 px-2 whitespace-nowrap">{h}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {preview.map((row, i) => (
+                      <TableRow key={i}>
+                        {Object.keys(preview[0]).slice(0, 5).map((h) => (
+                          <TableCell key={h} className="text-[10px] py-1 px-2 max-w-[120px] truncate">{row[h]}</TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+
+          {/* Errors */}
+          {errors.length > 0 && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 text-destructive" />
+                <p className="text-xs font-medium text-destructive">Issues Found</p>
+              </div>
+              {errors.map((err, i) => (
+                <p key={i} className="text-[11px] text-destructive/80">{err}</p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="pt-2 gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => { onClose(); reset(); }} disabled={uploading}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleUpload}
+            disabled={uploading || !file || preview.length === 0}
+            className="gap-1.5"
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+            Import {preview.length > 0 ? `(${preview.length}+ rows)` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [importQuery, setImportQuery] = useState("doctor Miami");
   const [importing, setImporting] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
 
   // CRUD dialog state
   const [createOpen, setCreateOpen] = useState(false);
@@ -386,7 +614,11 @@ export default function AdminDashboard() {
               </div>
               <Button size="sm" onClick={() => setCreateOpen(true)} className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add Doctor</span>
+                <span className="hidden sm:inline">Add</span>
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)} className="shrink-0 gap-1.5">
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">CSV</span>
               </Button>
             </div>
 
@@ -428,7 +660,6 @@ export default function AdminDashboard() {
                           {c.phone && (
                             <p className="text-xs text-muted-foreground mt-0.5">{c.phone}</p>
                           )}
-                          {/* Show specialty + address on mobile inline */}
                           {c.specialty && (
                             <Badge variant="secondary" className="mt-1 text-[10px] sm:hidden">
                               {c.specialty}
@@ -483,12 +714,17 @@ export default function AdminDashboard() {
 
           <TabsContent value="suggestions" className="space-y-3">
             {suggestions && suggestions.length > 0 ? (
-              suggestions.map((s, i) => (
+              suggestions.map((s: any, i: number) => (
                 <Card key={s.id} className="border-border/50 animate-in fade-in slide-in-from-bottom-1" style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}>
                   <CardContent className="flex items-center justify-between gap-2 p-3 sm:p-4">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-card-foreground truncate text-sm sm:text-base">{s.doctor_name}</p>
                       <p className="text-xs text-muted-foreground truncate sm:text-sm">{s.address}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {s.specialty && <Badge variant="secondary" className="text-[10px]">{s.specialty}</Badge>}
+                        {s.clinic_type && s.clinic_type !== "doctor" && <Badge variant="outline" className="text-[10px]">{s.clinic_type}</Badge>}
+                        {s.phone && <span className="text-[10px] text-muted-foreground">📞 {s.phone}</span>}
+                      </div>
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <Button size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20 text-primary" variant="ghost" onClick={() => approveSuggestion.mutate(s)}>
@@ -589,6 +825,15 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── CSV Upload Dialog ── */}
+      <CsvUploadDialog
+        open={csvOpen}
+        onClose={() => setCsvOpen(false)}
+        onUploadComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
+        }}
+      />
     </div>
   );
 }

@@ -1,10 +1,22 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BottomNav } from "@/components/BottomNav";
-import { Loader2, CheckCircle, UserPlus, Sparkles, ClipboardList, ShieldCheck, Eye, ArrowRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Loader2, CheckCircle, UserPlus, Sparkles,
+  ClipboardList, ShieldCheck, Eye, ArrowRight,
+  MapPin, Phone, Stethoscope, Building2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const STEPS = [
@@ -28,16 +40,36 @@ const STEPS = [
   },
 ];
 
+const CLINIC_TYPES = [
+  { value: "doctor", label: "Doctor" },
+  { value: "clinic", label: "Clinic" },
+  { value: "hospital", label: "Hospital" },
+  { value: "urgent_care", label: "Urgent Care" },
+];
+
 export default function SuggestClinic() {
   const [doctorName, setDoctorName] = useState("");
+  const [specialty, setSpecialty] = useState("");
   const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+  const [clinicType, setClinicType] = useState("doctor");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!doctorName.trim() || !address.trim()) {
-      toast.error("Please fill in all fields.");
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    if (latitude && isNaN(parseFloat(latitude))) {
+      toast.error("Latitude must be a valid number.");
+      return;
+    }
+    if (longitude && isNaN(parseFloat(longitude))) {
+      toast.error("Longitude must be a valid number.");
       return;
     }
 
@@ -46,6 +78,11 @@ export default function SuggestClinic() {
       const { error } = await supabase.from("clinic_suggestions").insert({
         doctor_name: doctorName.trim(),
         address: address.trim(),
+        specialty: specialty.trim() || null,
+        phone: phone.trim() || null,
+        clinic_type: clinicType,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
       });
 
       if (error) throw error;
@@ -56,6 +93,17 @@ export default function SuggestClinic() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setSubmitted(false);
+    setDoctorName("");
+    setSpecialty("");
+    setAddress("");
+    setPhone("");
+    setClinicType("doctor");
+    setLatitude("");
+    setLongitude("");
   };
 
   return (
@@ -109,24 +157,14 @@ export default function SuggestClinic() {
           <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
             <div className="bg-gradient-to-br from-primary/10 to-transparent p-6 sm:p-8">
               <div className="flex flex-col items-center gap-4">
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-in zoom-in duration-300"
-                >
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 animate-in zoom-in duration-300">
                   <CheckCircle className="h-8 w-8 text-primary" />
                 </div>
                 <h2 className="text-lg font-semibold text-card-foreground">Thank You!</h2>
                 <p className="text-center text-sm text-muted-foreground max-w-xs">
                   Your suggestion has been submitted. Our team will review and verify it shortly.
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSubmitted(false);
-                    setDoctorName("");
-                    setAddress("");
-                  }}
-                  className="mt-2 rounded-xl"
-                >
+                <Button variant="outline" onClick={resetForm} className="mt-2 rounded-xl">
                   <Sparkles className="mr-2 h-4 w-4" />
                   Submit Another
                 </Button>
@@ -144,10 +182,12 @@ export default function SuggestClinic() {
               </div>
             </div>
             <div className="px-4 pb-4 pt-2">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="doctorName" className="text-xs font-medium">
-                    Doctor / Clinic Name
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                {/* Name */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="doctorName" className="text-xs font-medium flex items-center gap-1.5">
+                    <Stethoscope className="h-3 w-3 text-primary/70" />
+                    Doctor / Clinic Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="doctorName"
@@ -155,11 +195,47 @@ export default function SuggestClinic() {
                     value={doctorName}
                     onChange={(e) => setDoctorName(e.target.value)}
                     className="rounded-xl border-border/40 bg-background/50 h-11"
+                    required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="text-xs font-medium">
-                    Full Address
+
+                {/* Type + Specialty row */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium flex items-center gap-1.5">
+                      <Building2 className="h-3 w-3 text-primary/70" />
+                      Type
+                    </Label>
+                    <Select value={clinicType} onValueChange={setClinicType}>
+                      <SelectTrigger className="rounded-xl border-border/40 bg-background/50 h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CLINIC_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="specialty" className="text-xs font-medium">
+                      Specialty
+                    </Label>
+                    <Input
+                      id="specialty"
+                      placeholder="e.g. Cardiology"
+                      value={specialty}
+                      onChange={(e) => setSpecialty(e.target.value)}
+                      className="rounded-xl border-border/40 bg-background/50 h-11"
+                    />
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="address" className="text-xs font-medium flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3 text-primary/70" />
+                    Full Address <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="address"
@@ -167,8 +243,53 @@ export default function SuggestClinic() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="rounded-xl border-border/40 bg-background/50 h-11"
+                    required
                   />
                 </div>
+
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-xs font-medium flex items-center gap-1.5">
+                    <Phone className="h-3 w-3 text-primary/70" />
+                    Phone <span className="text-[10px] text-muted-foreground">(optional)</span>
+                  </Label>
+                  <Input
+                    id="phone"
+                    placeholder="e.g. (305) 555-0100"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="rounded-xl border-border/40 bg-background/50 h-11"
+                  />
+                </div>
+
+                {/* Lat/Lng */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="latitude" className="text-xs font-medium">
+                      Latitude <span className="text-[10px] text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Input
+                      id="latitude"
+                      placeholder="25.7617"
+                      value={latitude}
+                      onChange={(e) => setLatitude(e.target.value)}
+                      className="rounded-xl border-border/40 bg-background/50 h-11"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="longitude" className="text-xs font-medium">
+                      Longitude <span className="text-[10px] text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Input
+                      id="longitude"
+                      placeholder="-80.1918"
+                      value={longitude}
+                      onChange={(e) => setLongitude(e.target.value)}
+                      className="rounded-xl border-border/40 bg-background/50 h-11"
+                    />
+                  </div>
+                </div>
+
                 <Button type="submit" className="w-full rounded-xl h-11" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Submit Suggestion
