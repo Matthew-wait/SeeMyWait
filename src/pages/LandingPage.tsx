@@ -309,149 +309,179 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SECTION 3 – HOW IT WORKS ── */}
-      <section className="relative py-24 sm:py-32">
+      {/* ── SECTION 3 – HOW IT WORKS (Horizontal journey with connecting line) ── */}
+      <section className="relative py-28 sm:py-36 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/10 to-transparent" />
-        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-          <Section className="text-center mb-16">
+        {/* Decorative orbs */}
+        <div className="absolute right-0 top-20 h-[300px] w-[300px] rounded-full bg-blue-600/5 blur-[100px]" />
+        <div className="absolute left-0 bottom-20 h-[200px] w-[200px] rounded-full bg-cyan-600/5 blur-[80px]" />
+
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+          <Section className="text-center mb-20">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
-              Simple.{" "}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Verified. Smart.</span>
+            <h2 className="text-3xl font-bold sm:text-5xl">
+              Four Steps to{" "}
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Smarter Visits</span>
             </h2>
           </Section>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: Search, step: "01", title: "Search", desc: "Find a doctor or clinic near you." },
-              { icon: Eye, step: "02", title: "View Wait Times", desc: "See live updates from real patients at the location." },
-              { icon: MapPin, step: "03", title: "Location Verified", desc: "Reports only accepted within 50–100m of the clinic." },
-              { icon: Zap, step: "04", title: "Arrive Smart", desc: "Plan your visit based on real conditions." },
-            ].map((s, i) => (
-              <Section key={i} delay={i * 100}>
-                <div className="group relative rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition-all duration-300 hover:border-cyan-500/20 hover:bg-white/[0.04] hover:-translate-y-1">
-                  <span className="mb-3 block text-3xl font-black text-white/5 transition-colors group-hover:text-cyan-500/20">
-                    {s.step}
-                  </span>
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/10">
-                    <s.icon className="h-5 w-5 text-cyan-400" />
+          {/* Vertical timeline layout */}
+          <div className="relative">
+            {/* Connecting vertical line */}
+            <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/40 via-blue-500/20 to-transparent hidden lg:block" />
+            <div className="space-y-16 lg:space-y-20">
+              {[
+                { icon: Search, step: "01", title: "Search", desc: "Find a doctor or clinic near you using our smart search.", visual: "search" },
+                { icon: Eye, step: "02", title: "View Verified Wait Times", desc: "See live updates submitted by real patients physically at the location.", visual: "eye" },
+                { icon: MapPin, step: "03", title: "Location-Verified Reporting", desc: "Reports are only accepted within 50–100 meters. No fake data passes through.", visual: "map" },
+                { icon: Zap, step: "04", title: "Arrive Smart", desc: "Plan your visit based on real conditions and save hours of wasted time.", visual: "zap" },
+              ].map((s, i) => (
+                <Section key={i} delay={i * 120}>
+                  <div className={`flex flex-col lg:flex-row items-start gap-6 lg:gap-12 ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                    {/* Step indicator */}
+                    <div className="flex items-center gap-4 lg:min-w-[200px]">
+                      <div className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/20 backdrop-blur-sm">
+                        <s.icon className="h-7 w-7 text-cyan-400" />
+                        {/* Glow behind */}
+                        <div className="absolute inset-0 rounded-2xl bg-cyan-500/10 blur-xl" />
+                      </div>
+                      <span className="text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">{s.step}</span>
+                    </div>
+
+                    {/* Content card */}
+                    <div className="group relative flex-1 rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-8 backdrop-blur-sm transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5">
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                      <div className="relative">
+                        <h3 className="mb-2 text-xl font-bold">{s.title}</h3>
+                        <p className="text-white/50 leading-relaxed max-w-md">{s.desc}</p>
+                      </div>
+                      {/* Decorative corner accent */}
+                      <div className="absolute top-0 right-0 h-20 w-20 rounded-tr-3xl bg-gradient-to-bl from-cyan-500/5 to-transparent" />
+                    </div>
                   </div>
-                  <h3 className="mb-1 font-bold">{s.title}</h3>
-                  <p className="text-sm text-white/50">{s.desc}</p>
-                </div>
-              </Section>
-            ))}
+                </Section>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── SECTION 4 – WHY DIFFERENT ── */}
-      <section className="py-24 sm:py-32">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <Section className="text-center mb-16">
+      {/* ── SECTION 4 – WHY DIFFERENT (Split layout with animated comparison) ── */}
+      <section className="relative py-28 sm:py-36">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <Section className="text-center mb-20">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+            <h2 className="text-3xl font-bold sm:text-5xl">
               Not Just Notifications.{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Verified Reality.</span>
             </h2>
           </Section>
 
-          <Section delay={100}>
-            <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    <th className="px-4 py-3 sm:px-6 font-medium text-white/40">Feature</th>
-                    <th className="px-4 py-3 sm:px-6 font-medium text-white/40">Typical Apps</th>
-                    <th className="px-4 py-3 sm:px-6 font-medium text-cyan-400">See Your Wait Time</th>
-                  </tr>
-                </thead>
-                <tbody>
+          {/* Comparison - side by side panels */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Others panel */}
+            <Section delay={100}>
+              <div className="relative h-full rounded-3xl border border-red-500/10 bg-gradient-to-b from-red-500/[0.04] to-transparent p-8 overflow-hidden">
+                <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-red-500/5" />
+                <p className="mb-6 text-xs font-bold uppercase tracking-wider text-red-400/80">Typical Apps</p>
+                <div className="space-y-5">
                   {[
-                    ["Data Source", "Static info", "Real-time updates"],
-                    ["Listings", "Dummy listings", "Verified location-based data"],
-                    ["Validation", "No validation", "Anti-spam & geofencing"],
-                    ["Accuracy", "Data guessing", "Real patient reports"],
-                    ["Privacy", "Tracks users", "Anonymous & privacy-first"],
-                  ].map(([f, old, us], i) => (
-                    <tr key={i} className="border-b border-white/5 transition-colors hover:bg-white/[0.02]">
-                      <td className="px-4 py-3 sm:px-6 text-white/70 font-medium">{f}</td>
-                      <td className="px-4 py-3 sm:px-6 text-white/30">{old}</td>
-                      <td className="px-4 py-3 sm:px-6 text-cyan-300">{us}</td>
-                    </tr>
+                    { label: "Static info", detail: "Outdated data from months ago" },
+                    { label: "Dummy listings", detail: "Unverified placeholder entries" },
+                    { label: "No validation", detail: "Anyone can post anything" },
+                    { label: "Data guessing", detail: "Estimated, never real" },
+                    { label: "Tracks users", detail: "Sells data to third parties" },
+                  ].map((row, i) => (
+                    <div key={i} className="flex items-start gap-3 group">
+                      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-red-500/40" />
+                      <div>
+                        <p className="text-sm font-medium text-white/50">{row.label}</p>
+                        <p className="text-xs text-white/25">{row.detail}</p>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
+                </div>
+              </div>
+            </Section>
+
+            {/* Our panel */}
+            <Section delay={200}>
+              <div className="relative h-full rounded-3xl border border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-8 overflow-hidden">
+                <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-cyan-500/5" />
+                {/* Glow effect */}
+                <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[60px]" />
+                <p className="mb-6 text-xs font-bold uppercase tracking-wider text-cyan-400">See Your Wait Time</p>
+                <div className="space-y-5">
+                  {[
+                    { label: "Real-time updates", detail: "Live data from patients right now" },
+                    { label: "Verified location data", detail: "GPS-confirmed within 50-100m" },
+                    { label: "Anti-spam & geofencing", detail: "Device + location verification" },
+                    { label: "Real patient reports", detail: "From people actually in the clinic" },
+                    { label: "Anonymous & private", detail: "Zero personal data collected" },
+                  ].map((row, i) => (
+                    <div key={i} className="flex items-start gap-3 group">
+                      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
+                      <div>
+                        <p className="text-sm font-medium text-white/80">{row.label}</p>
+                        <p className="text-xs text-white/40">{row.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Section>
+          </div>
         </div>
       </section>
 
-      {/* ── SECTION 5 – BENEFITS ── */}
-      <section className="relative py-24 sm:py-32">
+      {/* ── SECTION 5 – BENEFITS (Bento grid layout) ── */}
+      <section className="relative py-28 sm:py-36 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/10 to-transparent" />
-        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-          <Section className="text-center mb-16">
+        <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/5 blur-[120px]" />
+
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+          <Section className="text-center mb-20">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">Benefits</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+            <h2 className="text-3xl font-bold sm:text-5xl">
               Built For{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Smarter Visits</span>
             </h2>
           </Section>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { icon: Clock, title: "Save Time", desc: "Know the wait before you go." },
-              { icon: Eye, title: "Reduce Uncertainty", desc: "Real data, not guesses." },
-              { icon: CalendarCheck, title: "Plan Better", desc: "Choose the best time to visit." },
-              { icon: Users, title: "Avoid Crowds", desc: "Skip the packed waiting rooms." },
-              { icon: Lock, title: "Privacy-First", desc: "No personal data collected." },
-              { icon: Heart, title: "Community Powered", desc: "By patients, for patients." },
-            ].map((b, i) => (
-              <Section key={i} delay={i * 80}>
-                <div className="group rounded-2xl border border-white/5 bg-white/[0.02] p-6 transition-all duration-300 hover:border-cyan-500/20 hover:bg-white/[0.04] hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-500/5">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 border border-cyan-500/10 transition-colors group-hover:from-cyan-500/20 group-hover:to-blue-600/20">
-                    <b.icon className="h-5 w-5 text-cyan-400" />
+          {/* Bento grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2">
+            {/* Large featured card */}
+            <Section delay={0}>
+              <div className="group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br from-cyan-500/[0.08] to-blue-600/[0.04] p-8 transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5 lg:row-span-2">
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="relative flex h-full flex-col">
+                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/15">
+                    <Clock className="h-7 w-7 text-cyan-400" />
                   </div>
-                  <h3 className="mb-1 font-bold">{b.title}</h3>
-                  <p className="text-sm text-white/50">{b.desc}</p>
+                  <h3 className="mb-3 text-2xl font-bold">Save Real Hours</h3>
+                  <p className="text-white/50 leading-relaxed mb-6">Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and arrive when it's your turn.</p>
+                  <div className="mt-auto flex items-center gap-2 text-cyan-400 text-sm font-medium">
+                    <span>Average saved: 45 min per visit</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
-              </Section>
-            ))}
-          </div>
-        </div>
-      </section>
+              </div>
+            </Section>
 
-      {/* ── SECTION 6 – PRIVACY ── */}
-      <section className="py-24 sm:py-32">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
-          <Section>
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/10">
-              <ShieldCheck className="h-8 w-8 text-emerald-400" />
-            </div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">Privacy & Trust</p>
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-              Built With{" "}
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Privacy In Mind.</span>
-            </h2>
-            <p className="mx-auto mb-10 max-w-xl text-white/60">
-              We don't collect names, health conditions, or any personal info. Your privacy is the foundation of the app.
-            </p>
-          </Section>
-
-          <div className="grid gap-4 sm:grid-cols-2 text-left">
+            {/* Smaller cards */}
             {[
-              { icon: Lock, text: "No PII stored" },
-              { icon: Shield, text: "No health condition data collected" },
-              { icon: Fingerprint, text: "Anonymous reporting" },
-              { icon: Smartphone, text: "Device-based spam prevention" },
-              { icon: MapPin, text: "Location only for verification" },
-              { icon: Globe, text: "Transparent & open about data use" },
-            ].map((p, i) => (
-              <Section key={i} delay={i * 60}>
-                <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-colors hover:border-emerald-500/10">
-                  <p.icon className="h-4 w-4 shrink-0 text-emerald-400" />
-                  <span className="text-sm text-white/70">{p.text}</span>
+              { icon: Eye, title: "Reduce Uncertainty", desc: "Real data replaces guesswork. See actual wait times from patients already there.", gradient: "from-purple-500/[0.06] to-blue-500/[0.03]", iconColor: "text-purple-400", borderHover: "hover:border-purple-500/20" },
+              { icon: CalendarCheck, title: "Plan Better", desc: "Choose the best time to visit based on real-time conditions and patterns.", gradient: "from-blue-500/[0.06] to-indigo-500/[0.03]", iconColor: "text-blue-400", borderHover: "hover:border-blue-500/20" },
+              { icon: Users, title: "Avoid Crowded Clinics", desc: "See which clinics are packed and which have shorter waits right now.", gradient: "from-amber-500/[0.06] to-orange-500/[0.03]", iconColor: "text-amber-400", borderHover: "hover:border-amber-500/20" },
+              { icon: Heart, title: "Community Powered", desc: "Built by patients, for patients. Every report helps the whole community.", gradient: "from-rose-500/[0.06] to-pink-500/[0.03]", iconColor: "text-rose-400", borderHover: "hover:border-rose-500/20" },
+            ].map((b, i) => (
+              <Section key={i} delay={(i + 1) * 80}>
+                <div className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${b.gradient} p-6 transition-all duration-500 ${b.borderHover} hover:shadow-lg hover:-translate-y-1`}>
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.06]">
+                    <b.icon className={`h-5 w-5 ${b.iconColor}`} />
+                  </div>
+                  <h3 className="mb-1.5 font-bold">{b.title}</h3>
+                  <p className="text-sm text-white/45 leading-relaxed">{b.desc}</p>
                 </div>
               </Section>
             ))}
@@ -459,79 +489,153 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── SECTION 7 – CTA ── */}
-      <section className="relative py-24 sm:py-32">
-        <div className="absolute inset-0">
-          <div className="absolute left-1/2 top-1/2 h-[400px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-600/10 blur-[150px]" />
+      {/* ── SECTION 6 – PRIVACY (Horizontal cinematic layout) ── */}
+      <section className="relative py-28 sm:py-36 overflow-hidden">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="relative rounded-[2.5rem] border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.04] to-cyan-500/[0.02] p-10 sm:p-16 overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-emerald-500/10 blur-[80px]" />
+            <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
+            <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-emerald-500/20 via-transparent to-transparent" />
+
+            <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
+              {/* Left: Content */}
+              <Section>
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/15 mb-6">
+                  <ShieldCheck className="h-7 w-7 text-emerald-400" />
+                </div>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">Privacy & Trust</p>
+                <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+                  Built With{" "}
+                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Privacy In Mind.</span>
+                </h2>
+                <p className="text-white/50 leading-relaxed max-w-md">
+                  We don't collect names, health conditions, or any personal info. Your privacy is the foundation — not an afterthought.
+                </p>
+              </Section>
+
+              {/* Right: Privacy features as stacked rows */}
+              <Section delay={150}>
+                <div className="space-y-3">
+                  {[
+                    { icon: Lock, text: "No personally identifiable information stored", accent: "emerald" },
+                    { icon: Shield, text: "Zero health condition data collected", accent: "emerald" },
+                    { icon: Fingerprint, text: "Fully anonymous reporting system", accent: "cyan" },
+                    { icon: Smartphone, text: "Device-based spam prevention only", accent: "cyan" },
+                    { icon: MapPin, text: "Location used for verification only", accent: "teal" },
+                    { icon: Globe, text: "Transparent about every data practice", accent: "teal" },
+                  ].map((p, i) => (
+                    <div
+                      key={i}
+                      className="group flex items-center gap-4 rounded-2xl border border-white/[0.04] bg-white/[0.02] px-5 py-4 transition-all duration-300 hover:border-emerald-500/15 hover:bg-white/[0.04]"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/10">
+                        <p.icon className="h-4 w-4 text-emerald-400" />
+                      </div>
+                      <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">{p.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            </div>
+          </div>
         </div>
-        <div className="relative mx-auto max-w-2xl px-4 sm:px-6 text-center">
+      </section>
+
+      {/* ── SECTION 7 – CTA (Cinematic full-width) ── */}
+      <section className="relative py-32 sm:py-40 overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-600/15 to-blue-600/15 blur-[150px]" />
+          <div className="absolute left-1/4 bottom-0 h-[200px] w-[200px] rounded-full bg-purple-600/10 blur-[80px]" />
+          <div className="absolute right-1/4 top-0 h-[200px] w-[200px] rounded-full bg-cyan-500/10 blur-[80px]" />
+        </div>
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <Section>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">Coming Soon</p>
-            <h2 className="mb-4 text-3xl font-bold sm:text-5xl">
-              Launching Soon on{" "}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Google Play</span>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1.5 text-xs font-medium text-cyan-300">
+              <Smartphone className="h-3 w-3" />
+              Coming Soon to Google Play
+            </div>
+            <h2 className="mb-6 text-4xl font-extrabold sm:text-6xl leading-[1.1]">
+              Ready to Stop{" "}
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">Wasting Time?</span>
             </h2>
-            <p className="mb-8 text-lg text-white/60">Be the first to save hours.</p>
-            <GlowButton className="mx-auto">Get the App – Coming Soon</GlowButton>
+            <p className="mb-10 text-lg text-white/50 max-w-lg mx-auto">Be among the first to experience smarter healthcare visits. No more guessing. No more waiting blind.</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <GlowButton className="text-lg px-10 py-5">Get the App – Coming Soon</GlowButton>
+              <GlowButton variant="secondary">Notify Me at Launch</GlowButton>
+            </div>
           </Section>
         </div>
       </section>
 
-      {/* ── SECTION 8 – FAQ ── */}
-      <section className="py-24 sm:py-32">
-        <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          <Section className="text-center mb-12">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">Frequently Asked Questions</h2>
-          </Section>
+      {/* ── SECTION 8 – FAQ (Modern split layout) ── */}
+      <section className="py-28 sm:py-36">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.5fr] lg:items-start">
+            {/* Left: sticky heading */}
+            <Section>
+              <div className="lg:sticky lg:top-28">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
+                <h2 className="text-3xl font-bold sm:text-4xl mb-4">
+                  Got{" "}
+                  <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Questions?</span>
+                </h2>
+                <p className="text-white/40 leading-relaxed">Everything you need to know about how we protect your data and verify wait times.</p>
+              </div>
+            </Section>
 
-          <Section delay={100}>
-            <Accordion type="single" collapsible className="space-y-2">
-              {[
-                {
-                  q: "How do you verify wait times?",
-                  a: "Users can only submit wait time reports when physically present at a clinic, verified through GPS geofencing within 50–100 meters. Combined with device-based rate limiting, this ensures authentic reports.",
-                },
-                {
-                  q: "Is my location tracked?",
-                  a: "No. Your location is only checked momentarily to verify you're at the clinic. We don't store location history or track your movements.",
-                },
-                {
-                  q: "Do I need to create an account?",
-                  a: "No. You can browse wait times without any account. Reporting wait times is anonymous and doesn't require personal information.",
-                },
-                {
-                  q: "Is my medical information stored?",
-                  a: "Absolutely not. We don't collect, store, or process any medical or health-related information. The app only deals with wait times.",
-                },
-                {
-                  q: "What if someone submits fake data?",
-                  a: "Our system uses GPS geofencing to ensure reporters are physically at the clinic, plus device-based rate limiting to prevent spam. Anomalous reports are automatically flagged.",
-                },
-                {
-                  q: "When is the app launching?",
-                  a: "We're launching soon on Google Play Store. Join our notification list to be the first to know!",
-                },
-                {
-                  q: "Is this available nationwide?",
-                  a: "We're starting with Miami, FL and expanding to more cities based on demand. Stay tuned for updates!",
-                },
-              ].map((faq, i) => (
-                <AccordionItem
-                  key={i}
-                  value={`faq-${i}`}
-                  className="rounded-xl border border-white/5 bg-white/[0.02] px-4 transition-colors hover:border-white/10 data-[state=open]:border-cyan-500/20"
-                >
-                  <AccordionTrigger className="text-left text-sm font-medium hover:no-underline text-white/90">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-white/50">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </Section>
+            {/* Right: accordion */}
+            <Section delay={100}>
+              <Accordion type="single" collapsible className="space-y-3">
+                {[
+                  {
+                    q: "How do you verify wait times?",
+                    a: "Users can only submit wait time reports when physically present at a clinic, verified through GPS geofencing within 50–100 meters. Combined with device-based rate limiting, this ensures authentic reports.",
+                  },
+                  {
+                    q: "Is my location tracked?",
+                    a: "No. Your location is only checked momentarily to verify you're at the clinic. We don't store location history or track your movements.",
+                  },
+                  {
+                    q: "Do I need to create an account?",
+                    a: "No. You can browse wait times without any account. Reporting wait times is anonymous and doesn't require personal information.",
+                  },
+                  {
+                    q: "Is my medical information stored?",
+                    a: "Absolutely not. We don't collect, store, or process any medical or health-related information. The app only deals with wait times.",
+                  },
+                  {
+                    q: "What if someone submits fake data?",
+                    a: "Our system uses GPS geofencing to ensure reporters are physically at the clinic, plus device-based rate limiting to prevent spam. Anomalous reports are automatically flagged.",
+                  },
+                  {
+                    q: "When is the app launching?",
+                    a: "We're launching soon on Google Play Store. Join our notification list to be the first to know!",
+                  },
+                  {
+                    q: "Is this available nationwide?",
+                    a: "We're starting with Miami, FL and expanding to more cities based on demand. Stay tuned for updates!",
+                  },
+                ].map((faq, i) => (
+                  <AccordionItem
+                    key={i}
+                    value={`faq-${i}`}
+                    className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 transition-all duration-300 hover:border-white/10 data-[state=open]:border-cyan-500/15 data-[state=open]:bg-cyan-500/[0.03]"
+                  >
+                    <AccordionTrigger className="text-left text-[15px] font-medium hover:no-underline text-white/90 py-5">
+                      {faq.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-white/50 leading-relaxed pb-5">
+                      {faq.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </Section>
+          </div>
         </div>
       </section>
 
