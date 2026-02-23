@@ -157,7 +157,7 @@ export default function SettingsPage() {
         {/* About */}
         <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-3">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            <strong className="text-card-foreground">See Your Wait Time</strong> helps patients find real-time wait times at
+            <strong className="text-card-foreground">See My Wait Time</strong> helps patients find real-time wait times at
             doctor's offices in Miami. Reports are anonymous and voluntary.
           </p>
           <div className="flex items-center gap-2 pt-2 border-t border-border/30">
