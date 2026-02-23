@@ -195,7 +195,6 @@ export default function ClinicDetail() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
-      {/* Location error overlay */}
       {locationError && (
         <LocationErrorOverlay
           type={locationError}
@@ -205,7 +204,7 @@ export default function ClinicDetail() {
       )}
 
       {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-6 pt-4 sm:px-6">
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-8 pt-4 sm:px-6">
         <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary-foreground/[0.07] blur-2xl" />
         <div className="absolute -left-4 bottom-0 h-16 w-16 rounded-full bg-primary-foreground/[0.04] blur-xl" />
         <div className="relative z-10 mx-auto max-w-2xl">
@@ -213,15 +212,15 @@ export default function ClinicDetail() {
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="mb-3 -ml-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-xl"
+            className="mb-4 -ml-2 text-primary-foreground hover:bg-primary-foreground/10 rounded-xl"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold text-primary-foreground break-words tracking-tight sm:text-xl">
+          <h1 className="text-xl font-bold text-primary-foreground break-words tracking-tight sm:text-2xl">
             {clinic.name}
           </h1>
           {clinic.specialty && (
-            <Badge className="mt-1.5 bg-primary-foreground/15 text-primary-foreground border-0 text-[11px] font-medium rounded-md backdrop-blur-sm">
+            <Badge className="mt-2 bg-primary-foreground/15 text-primary-foreground border-0 text-[11px] font-medium rounded-lg backdrop-blur-sm px-3 py-0.5">
               {clinic.specialty}
             </Badge>
           )}
@@ -230,16 +229,17 @@ export default function ClinicDetail() {
 
       <main className="mx-auto w-full max-w-2xl flex-1 space-y-3 px-3 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
 
-        {/* Doctor Info Section */}
-        <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
-              <User className="h-4 w-4 text-primary" />
+        {/* Doctor Info */}
+        <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold text-card-foreground">Doctor Profile</h2>
             </div>
-            <h2 className="text-sm font-semibold text-card-foreground">Doctor Profile</h2>
           </div>
-
-          <div className="space-y-2.5 pl-0.5">
+          <div className="px-4 pb-4 pt-2 space-y-3">
             <div className="flex items-start gap-3">
               <Stethoscope className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
               <div className="min-w-0">
@@ -279,62 +279,70 @@ export default function ClinicDetail() {
         <GoogleMapEmbed lat={clinic.latitude} lon={clinic.longitude} name={clinic.name} />
 
         {/* Current Wait Time */}
-        <div className="rounded-2xl border border-border/40 bg-card p-4">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
-              <Clock className="h-4 w-4 text-primary" />
+        <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
+                <Clock className="h-4 w-4 text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold text-card-foreground">Current Wait Time</h2>
             </div>
-            <h2 className="text-sm font-semibold text-card-foreground">Current Wait Time</h2>
           </div>
-          {reportsLoading ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : waitTime ? (
-            <div className="flex items-center gap-3 rounded-xl bg-muted/10 border border-border/20 p-3">
-              <WaitTimeBadge category={waitTime.category} showIcon className="text-sm px-4 py-1.5" />
-              <span className="text-xs text-muted-foreground">
-                Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
-              </span>
-            </div>
-          ) : (
-            <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
-              <p className="text-sm text-muted-foreground">No recent reports — be the first!</p>
-            </div>
-          )}
+          <div className="px-4 pb-4 pt-2">
+            {reportsLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : waitTime ? (
+              <div className="flex items-center gap-3 rounded-xl bg-muted/10 border border-border/20 p-3">
+                <WaitTimeBadge category={waitTime.category} showIcon className="text-sm px-4 py-1.5" />
+                <span className="text-xs text-muted-foreground">
+                  Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
+                </span>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
+                <p className="text-sm text-muted-foreground">No recent reports — be the first!</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Report Wait Time */}
-        <div className="rounded-2xl border border-border/40 bg-card p-4">
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
-              <Stethoscope className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-card-foreground">Report Wait Time</h2>
-              <p className="text-[11px] text-muted-foreground">You must be at the clinic to report</p>
+        <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
+                <Stethoscope className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-card-foreground">Report Wait Time</h2>
+                <p className="text-[11px] text-muted-foreground">You must be at the clinic to report</p>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 mt-4">
-            {WAIT_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-xs font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] sm:text-sm ${
-                  selectedOption === opt.value
-                    ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                    : "border-border/40 bg-card text-card-foreground hover:border-primary/40 hover:bg-primary/5"
-                } ${submitting || checkingLocation ? "opacity-50 pointer-events-none" : ""}`}
-                disabled={submitting || checkingLocation}
-                onClick={() => handleReport(opt.value)}
-              >
-                {(submitting || checkingLocation) && selectedOption === opt.value ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <span className="text-base">{opt.emoji}</span>
-                )}
-                {opt.label}
-              </button>
-            ))}
+          <div className="px-4 pb-4 pt-2">
+            <div className="grid grid-cols-2 gap-2.5">
+              {WAIT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3.5 text-xs font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] sm:text-sm ${
+                    selectedOption === opt.value
+                      ? "border-primary bg-primary/10 text-primary shadow-md shadow-primary/10"
+                      : "border-border/30 bg-card text-card-foreground hover:border-primary/30 hover:bg-primary/5"
+                  } ${submitting || checkingLocation ? "opacity-50 pointer-events-none" : ""}`}
+                  disabled={submitting || checkingLocation}
+                  onClick={() => handleReport(opt.value)}
+                >
+                  {(submitting || checkingLocation) && selectedOption === opt.value ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <span className="text-base">{opt.emoji}</span>
+                  )}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </main>
