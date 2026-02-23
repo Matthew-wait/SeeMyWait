@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BottomNav } from "@/components/BottomNav";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,7 @@ import {
 import {
   Loader2, CheckCircle, UserPlus, Sparkles,
   ClipboardList, ShieldCheck, Eye, ArrowRight,
-  MapPin, Phone, Stethoscope, Building2,
+  MapPin, Phone, Stethoscope, Building2, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -57,9 +58,56 @@ export default function SuggestClinic() {
   const [longitude, setLongitude] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [duplicateFound, setDuplicateFound] = useState<string | null>(null);
+
+  const checkDuplicate = async (): Promise<boolean> => {
+    const nameTrimmed = doctorName.trim().toLowerCase();
+    const addressTrimmed = address.trim().toLowerCase();
+    const specTrimmed = specialty.trim().toLowerCase() || null;
+
+    // Check existing clinics
+    const { data: existingClinics } = await supabase
+      .from("clinics")
+      .select("name, address, specialty")
+      .eq("is_active", true);
+
+    const clinicMatch = (existingClinics || []).find(
+      (c) =>
+        c.name.toLowerCase() === nameTrimmed &&
+        c.address.toLowerCase() === addressTrimmed &&
+        (c.specialty?.toLowerCase() || null) === specTrimmed
+    );
+
+    if (clinicMatch) {
+      setDuplicateFound(`"${clinicMatch.name}" at "${clinicMatch.address}" is already listed in our directory.`);
+      return true;
+    }
+
+    // Check pending suggestions
+    const { data: pendingSuggestions } = await supabase
+      .from("clinic_suggestions")
+      .select("doctor_name, address, specialty")
+      .eq("status", "pending");
+
+    const suggestionMatch = (pendingSuggestions || []).find(
+      (s) =>
+        s.doctor_name.toLowerCase() === nameTrimmed &&
+        s.address.toLowerCase() === addressTrimmed &&
+        (s.specialty?.toLowerCase() || null) === specTrimmed
+    );
+
+    if (suggestionMatch) {
+      setDuplicateFound(`"${suggestionMatch.doctor_name}" at "${suggestionMatch.address}" has already been submitted and is pending review.`);
+      return true;
+    }
+
+    return false;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDuplicateFound(null);
+
     if (!doctorName.trim() || !address.trim()) {
       toast.error("Please fill in all required fields.");
       return;
@@ -75,6 +123,12 @@ export default function SuggestClinic() {
 
     setSubmitting(true);
     try {
+      const isDuplicate = await checkDuplicate();
+      if (isDuplicate) {
+        setSubmitting(false);
+        return;
+      }
+
       const { error } = await supabase.from("clinic_suggestions").insert({
         doctor_name: doctorName.trim(),
         address: address.trim(),
@@ -97,6 +151,7 @@ export default function SuggestClinic() {
 
   const resetForm = () => {
     setSubmitted(false);
+    setDuplicateFound(null);
     setDoctorName("");
     setSpecialty("");
     setAddress("");
@@ -289,6 +344,16 @@ export default function SuggestClinic() {
                     />
                   </div>
                 </div>
+
+                {duplicateFound && (
+                  <Alert variant="destructive" className="rounded-xl border-destructive/30 bg-destructive/5 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle className="text-sm font-semibold">Already Exists!</AlertTitle>
+                    <AlertDescription className="text-xs mt-1">
+                      {duplicateFound}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <Button type="submit" className="w-full rounded-xl h-11" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
