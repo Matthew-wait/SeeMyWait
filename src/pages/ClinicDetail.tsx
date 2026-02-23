@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope, ExternalLink, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { BottomNav } from "@/components/BottomNav";
+import { LocationErrorOverlay } from "@/components/LocationErrorOverlay";
 import {
   WaitTimeCategory,
   getAverageWaitTime,
@@ -39,7 +40,6 @@ function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: st
         referrerPolicy="no-referrer-when-downgrade"
         allowFullScreen
       />
-      {/* Open in Google Maps button */}
       <a
         href={mapsUrl}
         target="_blank"
@@ -59,6 +59,7 @@ export default function ClinicDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
+  const [locationError, setLocationError] = useState<"gps_off" | "too_far" | "rate_limited" | null>(null);
 
   const { data: clinic, isLoading: clinicLoading } = useQuery({
     queryKey: ["clinic", id],
@@ -115,15 +116,15 @@ export default function ClinicDetail() {
       );
 
       if (!withinRange) {
-        toast.error("You need to be at the clinic to report wait times.");
         setCheckingLocation(false);
         setSelectedOption(null);
+        setLocationError("too_far");
         return;
       }
     } catch {
-      toast.error("Please enable location services to report wait times.");
       setCheckingLocation(false);
       setSelectedOption(null);
+      setLocationError("gps_off");
       return;
     }
 
@@ -142,9 +143,9 @@ export default function ClinicDetail() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        toast.error("You already reported for this clinic recently.");
         setSubmitting(false);
         setSelectedOption(null);
+        setLocationError("rate_limited");
         return;
       }
 
@@ -189,6 +190,15 @@ export default function ClinicDetail() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
+      {/* Location error overlay */}
+      {locationError && (
+        <LocationErrorOverlay
+          type={locationError}
+          clinicName={clinic.name}
+          onDismiss={() => setLocationError(null)}
+        />
+      )}
+
       {/* Gradient Header */}
       <header className="relative overflow-hidden bg-primary px-3 pb-5 pt-4 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/70" />
@@ -215,7 +225,7 @@ export default function ClinicDetail() {
 
       <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-3 py-4 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
 
-        {/* ─── Doctor Profile Card ─── */}
+        {/* Doctor Profile Card */}
         <Card className="border-border/50 overflow-hidden">
           <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
             <div className="flex items-center gap-2 mb-3">
@@ -225,58 +235,37 @@ export default function ClinicDetail() {
               <h2 className="text-sm font-semibold text-card-foreground">Doctor Profile</h2>
             </div>
             <div className="space-y-2.5">
-              {/* Name */}
               <div className="flex items-start gap-3">
                 <Stethoscope className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                    Doctor / Clinic Name
-                  </p>
-                  <p className="text-sm font-semibold text-card-foreground break-words">
-                    {clinic.name}
-                  </p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Doctor / Clinic Name</p>
+                  <p className="text-sm font-semibold text-card-foreground break-words">{clinic.name}</p>
                 </div>
               </div>
-              {/* Specialty */}
               {clinic.specialty && (
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 h-4 w-4 shrink-0 flex items-center justify-center">
                     <span className="text-xs">🩺</span>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                      Specialty
-                    </p>
-                    <Badge variant="secondary" className="mt-0.5 text-xs">
-                      {clinic.specialty}
-                    </Badge>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Specialty</p>
+                    <Badge variant="secondary" className="mt-0.5 text-xs">{clinic.specialty}</Badge>
                   </div>
                 </div>
               )}
-              {/* Address */}
               <div className="flex items-start gap-3">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                    Address
-                  </p>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Address</p>
                   <p className="text-sm text-card-foreground break-words">{clinic.address}</p>
                 </div>
               </div>
-              {/* Phone */}
               {clinic.phone && (
                 <div className="flex items-start gap-3">
                   <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                      Phone
-                    </p>
-                    <a
-                      href={`tel:${clinic.phone}`}
-                      className="text-sm text-primary font-medium hover:underline"
-                    >
-                      {clinic.phone}
-                    </a>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Phone</p>
+                    <a href={`tel:${clinic.phone}`} className="text-sm text-primary font-medium hover:underline">{clinic.phone}</a>
                   </div>
                 </div>
               )}
@@ -292,11 +281,7 @@ export default function ClinicDetail() {
                 {clinic.latitude.toFixed(5)}, {clinic.longitude.toFixed(5)}
               </span>
             </div>
-            <GoogleMapEmbed
-              lat={clinic.latitude}
-              lon={clinic.longitude}
-              name={clinic.name}
-            />
+            <GoogleMapEmbed lat={clinic.latitude} lon={clinic.longitude} name={clinic.name} />
           </div>
         </Card>
 
@@ -325,8 +310,8 @@ export default function ClinicDetail() {
         </Card>
 
         {/* Report Wait Time */}
-        <Card className="border-border/50">
-          <CardContent className="p-4">
+        <Card className="border-border/50 overflow-hidden">
+          <div className="p-4">
             <div className="flex items-center gap-2 mb-1">
               <Stethoscope className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold text-card-foreground">Report Wait Time</h2>
@@ -355,7 +340,7 @@ export default function ClinicDetail() {
                 </button>
               ))}
             </div>
-          </CardContent>
+          </div>
         </Card>
       </main>
 
