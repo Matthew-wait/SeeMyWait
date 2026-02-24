@@ -38,13 +38,12 @@ export function ProximityPrompt({ clinic, onDismiss, onReported }: ProximityProm
       }
 
       const fingerprint = getDeviceFingerprint();
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const sixtyMinAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
-        .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
-        .gte("reported_at", thirtyMinAgo)
+        .gte("reported_at", sixtyMinAgo)
         .limit(1);
 
       if (existing && existing.length > 0) {

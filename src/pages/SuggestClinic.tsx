@@ -54,11 +54,10 @@ export default function SuggestClinic() {
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [clinicType, setClinicType] = useState("doctor");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateFound, setDuplicateFound] = useState<string | null>(null);
+  const [locatingAddress, setLocatingAddress] = useState(false);
 
   const checkDuplicate = async (): Promise<boolean> => {
     const nameTrimmed = doctorName.trim().toLowerCase();
@@ -112,15 +111,6 @@ export default function SuggestClinic() {
       toast.error("Please fill in all required fields.");
       return;
     }
-    if (latitude && isNaN(parseFloat(latitude))) {
-      toast.error("Latitude must be a valid number.");
-      return;
-    }
-    if (longitude && isNaN(parseFloat(longitude))) {
-      toast.error("Longitude must be a valid number.");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const isDuplicate = await checkDuplicate();
@@ -135,8 +125,6 @@ export default function SuggestClinic() {
         specialty: specialty.trim() || null,
         phone: phone.trim() || null,
         clinic_type: clinicType,
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
       });
 
       if (error) throw error;
@@ -157,8 +145,6 @@ export default function SuggestClinic() {
     setAddress("");
     setPhone("");
     setClinicType("doctor");
-    setLatitude("");
-    setLongitude("");
   };
 
   return (
@@ -293,79 +279,60 @@ export default function SuggestClinic() {
                     <MapPin className="h-3 w-3 text-primary/70" />
                     Full Address <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="address"
-                    placeholder="e.g. 123 Main St, Miami, FL 33101"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="rounded-xl border-border/40 bg-background/60 h-11"
-                    required
-                  />
-                </div>
-
-                {/* Phone */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-xs font-medium flex items-center gap-1.5">
-                    <Phone className="h-3 w-3 text-primary/70" />
-                    Phone <span className="text-[10px] text-muted-foreground">(optional)</span>
-                  </Label>
-                  <Input
-                    id="phone"
-                    placeholder="e.g. (305) 555-0100"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="rounded-xl border-border/40 bg-background/60 h-11"
-                  />
-                </div>
-
-                {/* Lat/Lng */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-medium flex items-center gap-1.5">
-                      <MapPin className="h-3 w-3 text-primary/70" />
-                      Coordinates
-                    </Label>
+                  <div className="relative">
+                    <Input
+                      id="address"
+                      placeholder="e.g. 123 Main St, Miami, FL 33101"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="rounded-xl border-border/40 bg-background/60 h-11 pr-32"
+                      required
+                    />
                     <button
                       type="button"
+                      disabled={locatingAddress}
                       onClick={() => {
                         if (!navigator.geolocation) {
                           toast.error("Geolocation not supported by your browser.");
                           return;
                         }
+                        setLocatingAddress(true);
                         navigator.geolocation.getCurrentPosition(
-                          (pos) => {
-                            setLatitude(pos.coords.latitude.toFixed(6));
-                            setLongitude(pos.coords.longitude.toFixed(6));
-                            toast.success("Current location captured!");
+                          async (pos) => {
+                            try {
+                              const res = await fetch(
+                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`
+                              );
+                              const data = await res.json();
+                              if (data.display_name) {
+                                setAddress(data.display_name);
+                                toast.success("Address captured from your location!");
+                              } else {
+                                toast.error("Could not resolve address. Please enter manually.");
+                              }
+                            } catch {
+                              toast.error("Failed to get address. Please enter manually.");
+                            } finally {
+                              setLocatingAddress(false);
+                            }
                           },
-                          () => toast.error("Unable to get location. Please enter manually."),
+                          () => {
+                            toast.error("Unable to get location. Please enter manually.");
+                            setLocatingAddress(false);
+                          },
                           { enableHighAccuracy: true }
                         );
                       }}
-                      className="text-[10px] font-semibold text-primary hover:underline"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
                     >
-                      📍 Use My Location
+                      {locatingAddress ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <MapPin className="h-3 w-3" />
+                      )}
+                      Use Current Location
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <Input
-                      id="latitude"
-                      placeholder="Latitude (e.g. 33.6007)"
-                      value={latitude}
-                      onChange={(e) => setLatitude(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/60 h-11"
-                    />
-                    <Input
-                      id="longitude"
-                      placeholder="Longitude (e.g. 73.0679)"
-                      value={longitude}
-                      onChange={(e) => setLongitude(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/60 h-11"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Tip: Use "Use My Location" while at the clinic, or find coordinates on Google Maps.
-                  </p>
                 </div>
 
                 {duplicateFound && (

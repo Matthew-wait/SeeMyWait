@@ -70,7 +70,6 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
-        .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
         .gte("reported_at", cooldownAgo)
         .limit(1);
