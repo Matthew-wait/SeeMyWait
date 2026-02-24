@@ -102,19 +102,19 @@ function GlowButton({
 
 function PhoneMockup() {
   return (
-    <div className="relative mx-auto w-[260px] sm:w-[280px]">
-      {/* floating labels */}
-      <div className="absolute -left-20 top-16 animate-float-slow z-20">
+    <div className="relative mx-auto w-[240px] sm:w-[260px] md:w-[280px]">
+      {/* floating labels - hidden on small screens to prevent overflow */}
+      <div className="hidden sm:block absolute -left-20 top-16 animate-float-slow z-20">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 text-xs font-medium text-emerald-300 backdrop-blur-md">
           <CheckCircle className="h-3 w-3" /> Location Verified
         </span>
       </div>
-      <div className="absolute -right-16 top-36 animate-float-delayed z-20">
+      <div className="hidden sm:block absolute -right-16 top-36 animate-float-delayed z-20">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 px-3 py-1.5 text-xs font-medium text-blue-300 backdrop-blur-md">
           <Radio className="h-3 w-3" /> Live Updates
         </span>
       </div>
-      <div className="absolute -left-12 bottom-28 animate-float z-20">
+      <div className="hidden sm:block absolute -left-12 bottom-28 animate-float z-20">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 px-3 py-1.5 text-xs font-medium text-purple-300 backdrop-blur-md">
           <Shield className="h-3 w-3" /> Spam Protected
         </span>
@@ -267,29 +267,30 @@ export default function LandingPage() {
       <section className="relative min-h-screen pt-20 flex items-center">
         {/* bg effects */}
         <div className="absolute inset-0">
-          <div className="absolute left-1/4 top-1/4 h-[500px] w-[500px] rounded-full bg-cyan-600/10 blur-[120px]" />
-          <div className="absolute right-1/4 bottom-1/4 h-[400px] w-[400px] rounded-full bg-blue-600/10 blur-[120px]" />
-          <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/5 blur-[100px]" />
+          <div className="absolute left-1/4 top-1/4 h-[300px] w-[300px] sm:h-[500px] sm:w-[500px] rounded-full bg-cyan-600/10 blur-[120px]" />
+          <div className="absolute right-1/4 bottom-1/4 h-[250px] w-[250px] sm:h-[400px] sm:w-[400px] rounded-full bg-blue-600/10 blur-[120px]" />
+          <div className="absolute left-1/2 top-1/2 h-[200px] w-[200px] sm:h-[300px] sm:w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/5 blur-[100px]" />
         </div>
 
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center">
+        <div className="relative z-10 mx-auto grid max-w-6xl gap-8 sm:gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:items-center py-8 sm:py-0">
           {/* left */}
-          <Section>
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1.5 text-sm font-medium text-cyan-300">
-              <Activity className="h-3.5 w-3.5" />
-              Real-Time Wait Updates • Launching Soon
+          <Section className="text-center lg:text-left">
+            <p className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium text-cyan-300">
+              <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="hidden sm:inline">Real-Time Wait Updates • Launching Soon</span>
+              <span className="sm:hidden">Live Wait Updates • Soon</span>
             </p>
-            <h1 className="mb-6 text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mb-4 sm:mb-6 text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
               Stop Waiting.{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Start Saving Time.
               </span>
             </h1>
-            <p className="mb-2 max-w-lg text-lg text-white/70">
+            <p className="mb-2 mx-auto lg:mx-0 max-w-lg text-base sm:text-lg text-white/70">
               See real-time, location-verified wait times at doctor's offices before you leave home.
             </p>
-            <p className="mb-6 text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
-            <ul className="mb-8 space-y-3 text-sm text-white/80">
+            <p className="mb-4 sm:mb-6 text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
+            <ul className="mb-6 sm:mb-8 space-y-2 sm:space-y-3 text-sm text-white/80 text-left mx-auto lg:mx-0 max-w-sm lg:max-w-none">
               {[
                 "Verified by real patients physically at the clinic",
                 "Live updates that refresh every few minutes",
@@ -302,7 +303,9 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
-            <StoreButtons />
+            <div className="flex justify-center lg:justify-start">
+              <StoreButtons />
+            </div>
           </Section>
 
           {/* right - phone mockup */}
@@ -312,7 +315,7 @@ export default function LandingPage() {
         </div>
 
         {/* scroll hint */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
           <ChevronDown className="h-5 w-5 text-white/30" />
         </div>
       </section>
