@@ -91,25 +91,22 @@ const Index = () => {
         if (matched.length > 0) {
           setDbMatchedClinics(matched);
 
-          // Calculate bounds to fit all matched clinics + user location
-          const lats = matched.map((c) => c.latitude);
-          const lngs = matched.map((c) => c.longitude);
-          if (userLocation) {
-            lats.push(userLocation.lat);
-            lngs.push(userLocation.lng);
-          }
           const avgLat = matched.reduce((s, c) => s + c.latitude, 0) / matched.length;
           const avgLng = matched.reduce((s, c) => s + c.longitude, 0) / matched.length;
 
-          // Radius to encompass all matched clinics
+          // Radius to encompass all matched clinics only (don't include user if far away)
           let maxDist = 1000;
           matched.forEach((c) => {
             const d = getDistanceMeters(avgLat, avgLng, c.latitude, c.longitude);
             if (d > maxDist) maxDist = d;
           });
+
+          // Only include user location in radius if within 100km of results
           if (userLocation) {
             const userDist = getDistanceMeters(avgLat, avgLng, userLocation.lat, userLocation.lng);
-            if (userDist > maxDist) maxDist = userDist;
+            if (userDist < 100000 && userDist > maxDist) {
+              maxDist = userDist;
+            }
           }
 
           setSearchArea({

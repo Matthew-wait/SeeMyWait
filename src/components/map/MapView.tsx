@@ -218,28 +218,35 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
     });
     L.marker([searchArea.lat, searchArea.lng], { icon: searchIcon, interactive: false }).addTo(searchLayerRef.current);
 
-    // Dashed line from user to search area
+    // Dashed line from user to search area (only if within 100km)
     if (userLocation) {
-      L.polyline(
-        [[userLocation.lat, userLocation.lng], [searchArea.lat, searchArea.lng]],
-        {
-          color: "hsl(200 98% 39%)",
-          weight: 2,
-          opacity: 0.35,
-          dashArray: "6 8",
-        }
-      ).addTo(searchLayerRef.current);
+      const distToSearch = L.latLng(userLocation.lat, userLocation.lng)
+        .distanceTo(L.latLng(searchArea.lat, searchArea.lng));
+      
+      if (distToSearch < 100000) {
+        L.polyline(
+          [[userLocation.lat, userLocation.lng], [searchArea.lat, searchArea.lng]],
+          { color: "hsl(200 98% 39%)", weight: 2, opacity: 0.35, dashArray: "6 8" }
+        ).addTo(searchLayerRef.current);
+      }
     }
 
-    // Fit bounds to show both user and search
+    // Fit bounds: include user only if close enough
     if (userLocation) {
-      const bounds = L.latLngBounds(
-        [userLocation.lat, userLocation.lng],
-        [searchArea.lat, searchArea.lng]
-      ).pad(0.3);
-      mapRef.current.flyToBounds(bounds, { duration: 1.2, maxZoom: 14 });
+      const distToSearch = L.latLng(userLocation.lat, userLocation.lng)
+        .distanceTo(L.latLng(searchArea.lat, searchArea.lng));
+      
+      if (distToSearch < 100000) {
+        const bounds = L.latLngBounds(
+          [userLocation.lat, userLocation.lng],
+          [searchArea.lat, searchArea.lng]
+        ).pad(0.3);
+        mapRef.current.flyToBounds(bounds, { duration: 1, maxZoom: 14 });
+      } else {
+        mapRef.current.flyTo([searchArea.lat, searchArea.lng], 13, { duration: 1 });
+      }
     } else {
-      mapRef.current.flyTo([searchArea.lat, searchArea.lng], 14, { duration: 1.2 });
+      mapRef.current.flyTo([searchArea.lat, searchArea.lng], 13, { duration: 1 });
     }
   }, [searchArea, clinicsInSearchArea, userLocation]);
 
