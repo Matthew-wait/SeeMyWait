@@ -36,7 +36,7 @@ const PIN_STYLES = `
     0%, 100% { opacity: 0.15; }
     50% { opacity: 0.25; }
   }
-  .leaflet-container { background: hsl(222 47% 11%) !important; z-index: 0 !important; }
+  .leaflet-container { background: #f2f2f2 !important; z-index: 0 !important; }
   .leaflet-pane { z-index: 0 !important; }
   .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
   .leaflet-control-attribution { display: none !important; }
@@ -231,7 +231,7 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
       }
     }
 
-    // Fit bounds: include user only if close enough
+    // Fit bounds: instant setView for performance
     if (userLocation) {
       const distToSearch = L.latLng(userLocation.lat, userLocation.lng)
         .distanceTo(L.latLng(searchArea.lat, searchArea.lng));
@@ -241,12 +241,12 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
           [userLocation.lat, userLocation.lng],
           [searchArea.lat, searchArea.lng]
         ).pad(0.3);
-        mapRef.current.flyToBounds(bounds, { duration: 1, maxZoom: 14 });
+        mapRef.current.fitBounds(bounds, { maxZoom: 14, animate: false });
       } else {
-        mapRef.current.flyTo([searchArea.lat, searchArea.lng], 13, { duration: 1 });
+        mapRef.current.setView([searchArea.lat, searchArea.lng], 13, { animate: false });
       }
     } else {
-      mapRef.current.flyTo([searchArea.lat, searchArea.lng], 13, { duration: 1 });
+      mapRef.current.setView([searchArea.lat, searchArea.lng], 13, { animate: false });
     }
   }, [searchArea, clinicsInSearchArea, userLocation]);
 
@@ -299,9 +299,7 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
   // Center on changes (only when no search area — search area handles its own centering)
   useEffect(() => {
     if (!mapRef.current || !centerOn || searchArea) return;
-    mapRef.current.flyTo([centerOn.lat, centerOn.lng], centerOn.zoom || mapRef.current.getZoom(), {
-      duration: 1.2,
-    });
+    mapRef.current.setView([centerOn.lat, centerOn.lng], centerOn.zoom || mapRef.current.getZoom(), { animate: false });
   }, [centerOn, searchArea]);
 
   return (
