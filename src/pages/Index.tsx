@@ -9,12 +9,13 @@ import { MapLegend } from "@/components/map/MapLegend";
 import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
 import { ProximityPrompt } from "@/components/map/ProximityPrompt";
 import { SearchCircleOverlay } from "@/components/map/SearchCircleOverlay";
+import { ClinicListPanel } from "@/components/map/ClinicListPanel";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { useGeocode } from "@/hooks/use-geocode";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const SEARCH_RADIUS_METERS = 5000; // 5km search radius
+const SEARCH_RADIUS_METERS = 5000;
 
 const Index = () => {
   const [search, setSearch] = useState("");
@@ -25,6 +26,7 @@ const Index = () => {
   const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
+  const [dbMatchedClinics, setDbMatchedClinics] = useState<ClinicWithWaitTime[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
 
@@ -36,7 +38,6 @@ const Index = () => {
     userLocation?.lng
   );
 
-  // Request location on mount
   useEffect(() => {
     (async () => {
       try {
@@ -55,7 +56,6 @@ const Index = () => {
     })();
   }, []);
 
-  // Detect nearby clinic for auto-prompt
   useEffect(() => {
     if (!userLocation || !clinics) return;
     const nearby = clinics.find(
@@ -66,52 +66,72 @@ const Index = () => {
     setNearbyClinic(nearby || null);
   }, [userLocation, clinics, dismissedPrompts]);
 
-  // Debounced search: first try matching clinic names in DB, then geocode
+  // Search logic: DB-first, then geocode fallback
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!search.trim()) {
       setSearchArea(null);
+      setDbMatchedClinics([]);
       return;
     }
 
     debounceRef.current = setTimeout(async () => {
       const query = search.trim().toLowerCase();
-      
-      // First: check if any clinic name matches the search query
+
+      // Step 1: Search DB for exact/partial matches across name, specialty, address
       if (clinics && clinics.length > 0) {
-        const matchedClinics = clinics.filter(
+        const matched = clinics.filter(
           (c) =>
             c.name.toLowerCase().includes(query) ||
             (c.specialty && c.specialty.toLowerCase().includes(query)) ||
             c.address.toLowerCase().includes(query)
         );
 
-        if (matchedClinics.length > 0) {
-          // Calculate center of matched clinics
-          const avgLat = matchedClinics.reduce((s, c) => s + c.latitude, 0) / matchedClinics.length;
-          const avgLng = matchedClinics.reduce((s, c) => s + c.longitude, 0) / matchedClinics.length;
-          
-          // Calculate radius to encompass all matched clinics (min 2km)
-          let maxDist = 2000;
-          matchedClinics.forEach((c) => {
+        if (matched.length > 0) {
+          setDbMatchedClinics(matched);
+
+          // Calculate bounds to fit all matched clinics + user location
+          const lats = matched.map((c) => c.latitude);
+          const lngs = matched.map((c) => c.longitude);
+          if (userLocation) {
+            lats.push(userLocation.lat);
+            lngs.push(userLocation.lng);
+          }
+          const avgLat = matched.reduce((s, c) => s + c.latitude, 0) / matched.length;
+          const avgLng = matched.reduce((s, c) => s + c.longitude, 0) / matched.length;
+
+          // Radius to encompass all matched clinics
+          let maxDist = 1000;
+          matched.forEach((c) => {
             const d = getDistanceMeters(avgLat, avgLng, c.latitude, c.longitude);
             if (d > maxDist) maxDist = d;
           });
-          
+          if (userLocation) {
+            const userDist = getDistanceMeters(avgLat, avgLng, userLocation.lat, userLocation.lng);
+            if (userDist > maxDist) maxDist = userDist;
+          }
+
           setSearchArea({
             lat: avgLat,
             lng: avgLng,
-            radiusMeters: Math.max(maxDist * 1.5, SEARCH_RADIUS_METERS),
+            radiusMeters: Math.max(maxDist * 1.3, 2000),
             name: search.trim(),
           });
           return;
         }
       }
 
-      // Fallback: geocode the search query as a location
+      // Step 2: No DB match — geocode as location
+      setDbMatchedClinics([]);
       const result = await geocode(search.trim());
       if (result) {
+        // Check if any clinics exist near this geocoded location
+        const nearbyClinics = (clinics || []).filter((c) => {
+          const dist = getDistanceMeters(result.lat, result.lng, c.latitude, c.longitude);
+          return dist <= SEARCH_RADIUS_METERS;
+        });
+        setDbMatchedClinics(nearbyClinics);
         setSearchArea({
           lat: result.lat,
           lng: result.lng,
@@ -121,28 +141,26 @@ const Index = () => {
       } else {
         setSearchArea(null);
       }
-    }, 600);
+    }, 400);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, geocode, clinics]);
+  }, [search, geocode, clinics, userLocation]);
 
-  // Clinics within search area
-  const clinicsInSearchArea = useMemo(() => {
-    if (!searchArea || !clinics) return [];
-    return clinics.filter((c) => {
-      const dist = getDistanceMeters(searchArea.lat, searchArea.lng, c.latitude, c.longitude);
-      return dist <= searchArea.radiusMeters;
-    });
-  }, [searchArea, clinics]);
-
-  // Filtered clinics: when searching show only those in the search circle, otherwise all
+  // Clinics to show on map: DB matches if searching, otherwise all
   const displayedClinics = useMemo(() => {
     if (!clinics) return [];
-    if (searchArea) return clinicsInSearchArea;
+    if (search.trim() && dbMatchedClinics.length > 0) return dbMatchedClinics;
+    if (searchArea && clinics) {
+      // Show clinics within the search area circle
+      return clinics.filter((c) => {
+        const dist = getDistanceMeters(searchArea.lat, searchArea.lng, c.latitude, c.longitude);
+        return dist <= searchArea.radiusMeters;
+      });
+    }
     return clinics;
-  }, [clinics, searchArea, clinicsInSearchArea]);
+  }, [clinics, search, dbMatchedClinics, searchArea]);
 
   const handleClinicClick = useCallback((clinic: ClinicWithWaitTime) => {
     setSelectedClinic(clinic);
@@ -158,6 +176,8 @@ const Index = () => {
     setNearbyClinic(null);
     refetch();
   }, [refetch]);
+
+  const isSearching = Boolean(search.trim());
 
   return (
     <div className="relative flex h-screen flex-col bg-background overflow-hidden">
@@ -187,7 +207,8 @@ const Index = () => {
               <div className="border-t border-border/20 px-4 py-2 flex items-center gap-1.5">
                 <MapPin className="h-3 w-3 text-primary shrink-0" />
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {clinicsInSearchArea.length} clinic{clinicsInSearchArea.length !== 1 ? "s" : ""} found near this location
+                  {displayedClinics.length} clinic{displayedClinics.length !== 1 ? "s" : ""} found
+                  {dbMatchedClinics.length > 0 ? " matching your search" : " near this location"}
                 </p>
               </div>
             )}
@@ -209,53 +230,61 @@ const Index = () => {
         </div>
       )}
 
-      {/* Map */}
-      <div className="flex-1 relative">
-        {!isLoading && (
-          <MapView
-            clinics={displayedClinics}
-            userLocation={userLocation}
-            onClinicClick={handleClinicClick}
-            onEmptyClick={handleEmptyClick}
-            centerOn={centerOn}
-            searchArea={searchArea}
-            clinicsInSearchArea={clinicsInSearchArea.length}
-          />
-        )}
+      {/* Map + List layout */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Map area */}
+        <div className="relative flex-1 min-h-[45vh]">
+          {!isLoading && (
+            <MapView
+              clinics={displayedClinics}
+              userLocation={userLocation}
+              onClinicClick={handleClinicClick}
+              onEmptyClick={handleEmptyClick}
+              centerOn={centerOn}
+              searchArea={searchArea}
+              clinicsInSearchArea={displayedClinics.length}
+            />
+          )}
 
-        {/* Legend */}
-        <MapLegend />
+          <MapLegend />
 
-        {/* No clinics in search area overlay */}
-        {searchArea && !geocoding && (
-          <SearchCircleOverlay
-            clinicCount={clinicsInSearchArea.length}
-            searchName={searchArea.name}
-            onSuggestClinic={() => navigate("/suggest")}
-          />
-        )}
+          {searchArea && !geocoding && displayedClinics.length === 0 && (
+            <SearchCircleOverlay
+              clinicCount={0}
+              searchName={searchArea.name}
+              onSuggestClinic={() => navigate("/suggest")}
+            />
+          )}
 
-        {/* Proximity prompt */}
-        {nearbyClinic && !selectedClinic && !searchArea && (
-          <ProximityPrompt
-            clinic={nearbyClinic}
-            onDismiss={() => {
-              setDismissedPrompts((prev) => new Set(prev).add(nearbyClinic.id));
-              setNearbyClinic(null);
-            }}
-            onReported={handleReported}
-          />
-        )}
+          {nearbyClinic && !selectedClinic && !searchArea && (
+            <ProximityPrompt
+              clinic={nearbyClinic}
+              onDismiss={() => {
+                setDismissedPrompts((prev) => new Set(prev).add(nearbyClinic.id));
+                setNearbyClinic(null);
+              }}
+              onReported={handleReported}
+            />
+          )}
 
-        {/* Bottom sheet */}
-        {selectedClinic && (
-          <ClinicBottomSheet
-            clinic={selectedClinic}
-            onClose={() => setSelectedClinic(null)}
-            onReported={handleReported}
-            userLocation={userLocation}
-          />
-        )}
+          {selectedClinic && (
+            <ClinicBottomSheet
+              clinic={selectedClinic}
+              onClose={() => setSelectedClinic(null)}
+              onReported={handleReported}
+              userLocation={userLocation}
+            />
+          )}
+        </div>
+
+        {/* Clinic list panel */}
+        <ClinicListPanel
+          clinics={displayedClinics}
+          allClinics={clinics || []}
+          isSearching={isSearching}
+          searchQuery={search.trim()}
+          onClinicClick={handleClinicClick}
+        />
       </div>
 
       <BottomNav />
