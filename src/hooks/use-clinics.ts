@@ -53,7 +53,12 @@ export function useClinics(searchQuery?: string, userLat?: number, userLon?: num
         return acc;
       }, {});
 
-      let result: ClinicWithWaitTime[] = clinics.map((c) => ({
+      // Filter out clinics with invalid coordinates
+      const validClinics = clinics.filter(
+        (c) => c.latitude >= -90 && c.latitude <= 90 && c.longitude >= -180 && c.longitude <= 180
+      );
+
+      let result: ClinicWithWaitTime[] = validClinics.map((c) => ({
         ...c,
         waitTime: getAverageWaitTime(reportsByClinic[c.id] || []),
         distance:

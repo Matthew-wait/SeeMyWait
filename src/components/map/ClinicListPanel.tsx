@@ -22,7 +22,7 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
   const displayList = expanded ? listToShow : listToShow.slice(0, INITIAL_COUNT);
   const hasMore = listToShow.length > INITIAL_COUNT;
 
-  if (listToShow.length === 0) return null;
+  if (listToShow.length === 0 && isSearching) return null;
 
   return (
     <div className="bg-background border-t border-border/30">
