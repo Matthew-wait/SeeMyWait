@@ -138,7 +138,14 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
       }, 50);
     });
 
+    // Observe container resizes to fix tile gaps
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize({ animate: false });
+    });
+    ro.observe(mapContainerRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
     };
@@ -231,6 +238,9 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
       }
     }
 
+    // Invalidate size first so Leaflet recalculates container dimensions
+    mapRef.current.invalidateSize({ animate: false });
+
     // Fit bounds: instant setView for performance
     if (userLocation) {
       const distToSearch = L.latLng(userLocation.lat, userLocation.lng)
@@ -248,6 +258,11 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
     } else {
       mapRef.current.setView([searchArea.lat, searchArea.lng], 13, { animate: false });
     }
+
+    // Force tile reload after repositioning
+    setTimeout(() => {
+      mapRef.current?.invalidateSize({ animate: false });
+    }, 200);
   }, [searchArea, clinicsInSearchArea, userLocation]);
 
   // Track previous clinic IDs to avoid unnecessary marker rebuilds
@@ -299,6 +314,7 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
   // Center on changes (only when no search area — search area handles its own centering)
   useEffect(() => {
     if (!mapRef.current || !centerOn || searchArea) return;
+    mapRef.current.invalidateSize({ animate: false });
     mapRef.current.setView([centerOn.lat, centerOn.lng], centerOn.zoom || mapRef.current.getZoom(), { animate: false });
   }, [centerOn, searchArea]);
 
