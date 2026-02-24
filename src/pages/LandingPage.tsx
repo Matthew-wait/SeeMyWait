@@ -321,7 +321,7 @@ export default function LandingPage() {
       <section className="relative py-24 sm:py-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
           <Section>
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">The Problem</p>
+            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">The Problem</p>
             <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
               Doctor Visits Shouldn't{" "}
               <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
@@ -390,7 +390,7 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
           <Section className="text-center mb-20">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
+            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
             <h2 className="text-3xl font-bold sm:text-4xl">
               Four Steps to{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -536,7 +536,7 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
           <Section className="text-center mb-20">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">Benefits</p>
+            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">Benefits</p>
             <h2 className="text-3xl font-bold sm:text-4xl">
               Built For{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -739,7 +739,7 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <Section>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1.5 text-sm font-medium text-cyan-300">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1.5 text-sm font-large text-cyan-300">
               <Smartphone className="h-3.5 w-3.5" />
               Coming Soon to Google Play & App Store
             </div>
@@ -769,7 +769,7 @@ export default function LandingPage() {
           <div className="grid gap-12 lg:grid-cols-[1fr_1.5fr] lg:items-start">
             <Section>
               <div className="lg:sticky lg:top-28">
-                <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
+                <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
                 <h2 className="text-3xl font-bold sm:text-4xl mb-4">
                   Got{" "}
                   <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
