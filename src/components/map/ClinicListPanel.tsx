@@ -24,7 +24,7 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
 
   if (listToShow.length === 0) {
     return (
-      <div className="bg-background border-t border-border/30 px-3 py-4 text-center">
+      <div className="bg-background border-t border-border/30 px-3 py-4 pb-24 text-center">
         <p className="text-xs text-muted-foreground">
           {isSearching ? `No results for "${searchQuery}"` : "No nearby clinics found. Try searching for a location."}
         </p>
@@ -33,7 +33,7 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
   }
 
   return (
-    <div className="bg-background border-t border-border/30">
+    <div className="bg-background border-t border-border/30 pb-20">
       <div className="px-3 pt-3 pb-1 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">
           {isSearching

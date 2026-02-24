@@ -125,20 +125,6 @@ export default function SettingsPage() {
           </div>
           <div className="px-4 pb-4 pt-2 space-y-1">
             <button
-              onClick={() => navigate("/admin/login")}
-              className="flex w-full items-center gap-3 rounded-xl p-3 transition-all hover:bg-muted/20 active:scale-[0.99]"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
-                <Shield className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <span className="text-sm font-semibold text-card-foreground">Admin Portal</span>
-                <p className="text-[11px] text-muted-foreground">Manage clinics & submissions</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
-            </button>
-
-            <button
               onClick={() => toast.info("Feedback feature coming soon!")}
               className="flex w-full items-center gap-3 rounded-xl p-3 transition-all hover:bg-muted/20 active:scale-[0.99]"
             >
