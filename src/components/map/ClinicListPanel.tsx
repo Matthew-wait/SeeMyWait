@@ -22,7 +22,15 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
   const displayList = expanded ? listToShow : listToShow.slice(0, INITIAL_COUNT);
   const hasMore = listToShow.length > INITIAL_COUNT;
 
-  if (listToShow.length === 0 && isSearching) return null;
+  if (listToShow.length === 0) {
+    return (
+      <div className="bg-background border-t border-border/30 px-3 py-4 text-center">
+        <p className="text-xs text-muted-foreground">
+          {isSearching ? `No results for "${searchQuery}"` : "No nearby clinics found. Try searching for a location."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background border-t border-border/30">
