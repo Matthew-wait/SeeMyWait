@@ -66,7 +66,7 @@ const Index = () => {
     setNearbyClinic(nearby || null);
   }, [userLocation, clinics, dismissedPrompts]);
 
-  // Debounced geocode search
+  // Debounced search: first try matching clinic names in DB, then geocode
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -76,6 +76,40 @@ const Index = () => {
     }
 
     debounceRef.current = setTimeout(async () => {
+      const query = search.trim().toLowerCase();
+      
+      // First: check if any clinic name matches the search query
+      if (clinics && clinics.length > 0) {
+        const matchedClinics = clinics.filter(
+          (c) =>
+            c.name.toLowerCase().includes(query) ||
+            (c.specialty && c.specialty.toLowerCase().includes(query)) ||
+            c.address.toLowerCase().includes(query)
+        );
+
+        if (matchedClinics.length > 0) {
+          // Calculate center of matched clinics
+          const avgLat = matchedClinics.reduce((s, c) => s + c.latitude, 0) / matchedClinics.length;
+          const avgLng = matchedClinics.reduce((s, c) => s + c.longitude, 0) / matchedClinics.length;
+          
+          // Calculate radius to encompass all matched clinics (min 2km)
+          let maxDist = 2000;
+          matchedClinics.forEach((c) => {
+            const d = getDistanceMeters(avgLat, avgLng, c.latitude, c.longitude);
+            if (d > maxDist) maxDist = d;
+          });
+          
+          setSearchArea({
+            lat: avgLat,
+            lng: avgLng,
+            radiusMeters: Math.max(maxDist * 1.5, SEARCH_RADIUS_METERS),
+            name: search.trim(),
+          });
+          return;
+        }
+      }
+
+      // Fallback: geocode the search query as a location
       const result = await geocode(search.trim());
       if (result) {
         setSearchArea({
@@ -92,7 +126,7 @@ const Index = () => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, geocode]);
+  }, [search, geocode, clinics]);
 
   // Clinics within search area
   const clinicsInSearchArea = useMemo(() => {
@@ -138,7 +172,7 @@ const Index = () => {
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               )}
               <Input
-                placeholder="Search location, clinic, or area…"
+                placeholder="Search doctor, clinic, or location…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="border-0 bg-transparent h-12 text-sm shadow-none focus-visible:ring-0 px-0"

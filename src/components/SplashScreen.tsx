@@ -86,7 +86,7 @@ export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps)
           className="text-2xl font-bold tracking-tight sm:text-3xl"
           style={{ color: "hsl(210 40% 98%)" }}
         >
-          See My Wait Time
+          SeeMyWait
         </h1>
 
         {/* Tagline */}

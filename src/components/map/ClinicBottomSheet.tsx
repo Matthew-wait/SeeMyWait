@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Clock, Navigation, Loader2, X, Stethoscope, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
@@ -32,6 +32,11 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation }:
 
   const isNearby = userLocation
     ? isWithinRadius(userLocation.lat, userLocation.lng, clinic.latitude, clinic.longitude, 150)
+    : false;
+
+  // Check if the wait time is about to expire (older than 2.5 hours)
+  const isExpiringSoon = clinic.waitTime
+    ? (Date.now() - new Date(clinic.waitTime.lastReported).getTime()) > 2.5 * 60 * 60 * 1000
     : false;
 
   const handleReport = async (category: WaitTimeCategory) => {
@@ -139,13 +144,23 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation }:
           {/* Wait status */}
           <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
             {clinic.waitTime ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <WaitTimeBadge category={clinic.waitTime.category} showIcon />
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
-                  </span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <WaitTimeBadge category={clinic.waitTime.category} showIcon />
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
+                    </span>
+                  </div>
                 </div>
+                {isExpiringSoon && (
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 animate-in fade-in duration-300">
+                    <TimerOff className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                      This wait time is expiring soon. Help update it!
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
