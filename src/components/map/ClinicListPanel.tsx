@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface ClinicListPanelProps {
   clinics: ClinicWithWaitTime[];
-  allClinics: ClinicWithWaitTime[];
+  nearbyClinics: ClinicWithWaitTime[];
   isSearching: boolean;
   searchQuery: string;
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
@@ -15,10 +15,10 @@ interface ClinicListPanelProps {
 
 const INITIAL_COUNT = 5;
 
-export function ClinicListPanel({ clinics, allClinics, isSearching, searchQuery, onClinicClick }: ClinicListPanelProps) {
+export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQuery, onClinicClick }: ClinicListPanelProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const listToShow = isSearching ? clinics : allClinics;
+  const listToShow = isSearching ? clinics : nearbyClinics;
   const displayList = expanded ? listToShow : listToShow.slice(0, INITIAL_COUNT);
   const hasMore = listToShow.length > INITIAL_COUNT;
 
@@ -30,7 +30,7 @@ export function ClinicListPanel({ clinics, allClinics, isSearching, searchQuery,
         <h3 className="text-sm font-semibold text-foreground">
           {isSearching
             ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
-            : `Explore Clinics (${allClinics.length})`}
+            : `Nearby Clinics (${nearbyClinics.length})`}
         </h3>
       </div>
       <div className="px-3 pb-2 space-y-2 max-h-[40vh] overflow-y-auto">

@@ -243,9 +243,19 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
     }
   }, [searchArea, clinicsInSearchArea, userLocation]);
 
-  // Update clinic markers
+  // Track previous clinic IDs to avoid unnecessary marker rebuilds
+  const prevClinicIdsRef = useRef<string>("");
+
+  // Update clinic markers — only when the set of clinics actually changes
   useEffect(() => {
     if (!mapRef.current || !markersRef.current) return;
+
+    const newIds = clinics.map((c) => c.id).sort().join(",");
+    // Also include wait time categories so pins update color on new reports
+    const newKey = clinics.map((c) => `${c.id}:${c.waitTime?.category || "none"}`).sort().join(",");
+    if (newKey === prevClinicIdsRef.current) return;
+    prevClinicIdsRef.current = newKey;
+
     markersRef.current.clearLayers();
 
     clinics.forEach((clinic) => {
