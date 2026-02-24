@@ -2,21 +2,40 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import {
-  MapPin, Clock, Shield, Search, CheckCircle, Eye, Zap,
-  Users, Lock, ArrowRight, ChevronDown, Smartphone,
-  Timer, AlertTriangle, TrendingDown, Fingerprint, Globe,
-  Heart, CalendarCheck, ShieldCheck, Activity, Mail, Send,
-  Twitter, Instagram, Linkedin, Github, Bell, Radio
+  MapPin,
+  Clock,
+  Shield,
+  Search,
+  CheckCircle,
+  Eye,
+  Zap,
+  Users,
+  Lock,
+  ArrowRight,
+  ChevronDown,
+  Smartphone,
+  Timer,
+  AlertTriangle,
+  TrendingDown,
+  Fingerprint,
+  Globe,
+  Heart,
+  CalendarCheck,
+  ShieldCheck,
+  Activity,
+  Mail,
+  Send,
+  Twitter,
+  Instagram,
+  Linkedin,
+  Github,
+  Bell,
+  Radio,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 
 /* ──────────────────── helpers ──────────────────── */
@@ -35,9 +54,7 @@ function Section({
     <div
       ref={ref}
       className={`transition-all duration-700 ease-out ${
-        isVisible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-10"
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
       } ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
@@ -136,10 +153,10 @@ function PhoneMockup() {
                   <p className="text-[11px] font-medium text-white">{c.name}</p>
                   <p className="text-[9px] text-white/40">Family Medicine</p>
                 </div>
-                <span className={`relative flex items-center gap-1 rounded-full ${c.color}/20 px-2 py-0.5 text-[10px] font-semibold text-white`}>
-                  {c.pulse && (
-                    <span className={`absolute inset-0 rounded-full ${c.color}/30 animate-ping`} />
-                  )}
+                <span
+                  className={`relative flex items-center gap-1 rounded-full ${c.color}/20 px-2 py-0.5 text-[10px] font-semibold text-white`}
+                >
+                  {c.pulse && <span className={`absolute inset-0 rounded-full ${c.color}/30 animate-ping`} />}
                   <Clock className="h-2.5 w-2.5" />
                   {c.wait}
                 </span>
@@ -150,7 +167,10 @@ function PhoneMockup() {
               <p className="mb-1.5 text-[9px] text-white/40 text-center">Report Wait Time</p>
               <div className="flex gap-1.5 justify-center">
                 {["On Time", "30 Min", "1 Hour"].map((t) => (
-                  <span key={t} className="rounded-lg bg-cyan-500/20 border border-cyan-500/20 px-2 py-1 text-[9px] font-medium text-cyan-300">
+                  <span
+                    key={t}
+                    className="rounded-lg bg-cyan-500/20 border border-cyan-500/20 px-2 py-1 text-[9px] font-medium text-cyan-300"
+                  >
                     {t}
                   </span>
                 ))}
@@ -187,7 +207,7 @@ function StoreButtons() {
         className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:scale-105 active:scale-[0.98]"
       >
         <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="currentColor">
-          <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302-2.302 2.302-2.816-2.302 2.816-2.302zM5.864 2.658L16.8 8.99l-2.302 2.302L5.864 2.658z"/>
+          <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302-2.302 2.302-2.816-2.302 2.816-2.302zM5.864 2.658L16.8 8.99l-2.302 2.302L5.864 2.658z" />
         </svg>
         <div className="text-left">
           <p className="text-[9px] uppercase tracking-wider text-white/50 leading-none">Get it on</p>
@@ -199,7 +219,7 @@ function StoreButtons() {
         className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:scale-105 active:scale-[0.98]"
       >
         <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="currentColor">
-          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
         </svg>
         <div className="text-left">
           <p className="text-[9px] uppercase tracking-wider text-white/50 leading-none">Download on the</p>
@@ -268,9 +288,7 @@ export default function LandingPage() {
             <p className="mb-2 max-w-lg text-lg text-white/70">
               See real-time, location-verified wait times at doctor's offices before you leave home.
             </p>
-            <p className="mb-6 text-sm font-medium text-cyan-300/80 italic">
-              Right data. Right spot. Right time.
-            </p>
+            <p className="mb-6 text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
             <ul className="mb-8 space-y-3 text-sm text-white/80">
               {[
                 "Verified by real patients physically at the clinic",
@@ -306,10 +324,13 @@ export default function LandingPage() {
             <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">The Problem</p>
             <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
               Doctor Visits Shouldn't{" "}
-              <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">Waste Your Time.</span>
+              <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+                Waste Your Time.
+              </span>
             </h2>
             <p className="mx-auto mb-12 max-w-2xl text-white/60">
-              Patients often wait 30–90 minutes with no information. You drive across town, sit in a crowded waiting room, and wonder if you should have just stayed home.
+              Patients often wait 30–90 minutes with no information. You drive across town, sit in a crowded waiting
+              room, and wonder if you should have just stayed home.
             </p>
           </Section>
 
@@ -372,7 +393,9 @@ export default function LandingPage() {
             <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
             <h2 className="text-3xl font-bold sm:text-4xl">
               Four Steps to{" "}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Smarter Visits</span>
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Smarter Visits
+              </span>
             </h2>
           </Section>
 
@@ -381,19 +404,47 @@ export default function LandingPage() {
             <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/40 via-blue-500/20 to-transparent hidden lg:block" />
             <div className="space-y-16 lg:space-y-20">
               {[
-                { icon: Search, step: "01", title: "Search", desc: "Find a doctor or clinic near you using our smart search.", visual: "search" },
-                { icon: Eye, step: "02", title: "View Verified Wait Times", desc: "See live updates submitted by real patients physically at the location.", visual: "eye" },
-                { icon: MapPin, step: "03", title: "Location-Verified Reporting", desc: "Reports are only accepted within 50–100 meters. No fake data passes through.", visual: "map" },
-                { icon: Zap, step: "04", title: "Arrive Smart", desc: "Plan your visit based on real conditions and save hours of wasted time.", visual: "zap" },
+                {
+                  icon: Search,
+                  step: "01",
+                  title: "Search",
+                  desc: "Find a doctor or clinic near you using our smart search.",
+                  visual: "search",
+                },
+                {
+                  icon: Eye,
+                  step: "02",
+                  title: "View Verified Wait Times",
+                  desc: "See live updates submitted by real patients physically at the location.",
+                  visual: "eye",
+                },
+                {
+                  icon: MapPin,
+                  step: "03",
+                  title: "Location-Verified Reporting",
+                  desc: "Reports are only accepted within 50–100 meters. No fake data passes through.",
+                  visual: "map",
+                },
+                {
+                  icon: Zap,
+                  step: "04",
+                  title: "Arrive Smart",
+                  desc: "Plan your visit based on real conditions and save hours of wasted time.",
+                  visual: "zap",
+                },
               ].map((s, i) => (
                 <Section key={i} delay={i * 120}>
-                  <div className={`flex flex-col lg:flex-row items-start gap-6 lg:gap-12 ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+                  <div
+                    className={`flex flex-col lg:flex-row items-start gap-6 lg:gap-12 ${i % 2 === 1 ? "lg:flex-row-reverse" : ""}`}
+                  >
                     <div className="flex items-center gap-4 lg:min-w-[200px]">
                       <div className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/20 backdrop-blur-sm">
                         <s.icon className="h-7 w-7 text-cyan-400" />
                         <div className="absolute inset-0 rounded-2xl bg-cyan-500/10 blur-xl" />
                       </div>
-                      <span className="text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">{s.step}</span>
+                      <span className="text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">
+                        {s.step}
+                      </span>
                     </div>
                     <div className="group relative flex-1 rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-8 backdrop-blur-sm transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5">
                       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -415,10 +466,12 @@ export default function LandingPage() {
       <section className="relative py-28 sm:py-36">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Section className="text-center mb-20">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
+            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
             <h2 className="text-3xl font-bold sm:text-4xl">
               Not Just Notifications.{" "}
-              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Verified Reality.</span>
+              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                Verified Reality.
+              </span>
             </h2>
           </Section>
 
@@ -486,9 +539,13 @@ export default function LandingPage() {
             <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">Benefits</p>
             <h2 className="text-3xl font-bold sm:text-4xl">
               Built For{" "}
-              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Smarter Visits</span>
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Smarter Visits
+              </span>
             </h2>
-            <p className="mt-4 text-white/40 max-w-lg mx-auto">Everything you need to take control of your time and never sit in a waiting room longer than you have to.</p>
+            <p className="mt-4 text-white/40 max-w-lg mx-auto">
+              Everything you need to take control of your time and never sit in a waiting room longer than you have to.
+            </p>
           </Section>
 
           {/* Hero stat banner */}
@@ -506,7 +563,9 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">45</span>
+                      <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                        45
+                      </span>
                       <span className="text-lg text-white/50 font-medium">min</span>
                     </div>
                     <p className="text-sm text-white/40 mt-0.5">Average time saved per visit</p>
@@ -515,7 +574,10 @@ export default function LandingPage() {
                 <div className="hidden sm:block h-14 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
                 <div className="flex-1 text-center sm:text-left">
                   <h3 className="text-xl sm:text-2xl font-bold mb-1">Save Real Hours</h3>
-                  <p className="text-white/45 text-sm leading-relaxed max-w-md">Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and arrive when it's your turn.</p>
+                  <p className="text-white/45 text-sm leading-relaxed max-w-md">
+                    Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and
+                    arrive when it's your turn.
+                  </p>
                 </div>
               </div>
             </div>
@@ -524,24 +586,74 @@ export default function LandingPage() {
           {/* Feature row */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
-              { icon: Eye, title: "Reduce Uncertainty", desc: "Real data replaces guesswork. See actual wait times from patients already there.", color: "purple", span: "lg:col-span-3" },
-              { icon: CalendarCheck, title: "Plan Better", desc: "Choose the best time to visit based on real-time conditions and patterns.", color: "blue", span: "lg:col-span-2" },
-              { icon: Users, title: "Avoid Crowds", desc: "See which clinics are packed and which have shorter waits right now.", color: "amber", span: "lg:col-span-2" },
-              { icon: Heart, title: "Community Powered", desc: "Built by patients, for patients. Every report helps the entire community save time.", color: "rose", span: "lg:col-span-3" },
+              {
+                icon: Eye,
+                title: "Reduce Uncertainty",
+                desc: "Real data replaces guesswork. See actual wait times from patients already there.",
+                color: "purple",
+                span: "lg:col-span-3",
+              },
+              {
+                icon: CalendarCheck,
+                title: "Plan Better",
+                desc: "Choose the best time to visit based on real-time conditions and patterns.",
+                color: "blue",
+                span: "lg:col-span-2",
+              },
+              {
+                icon: Users,
+                title: "Avoid Crowds",
+                desc: "See which clinics are packed and which have shorter waits right now.",
+                color: "amber",
+                span: "lg:col-span-2",
+              },
+              {
+                icon: Heart,
+                title: "Community Powered",
+                desc: "Built by patients, for patients. Every report helps the entire community save time.",
+                color: "rose",
+                span: "lg:col-span-3",
+              },
             ].map((b, i) => {
               const colors: Record<string, { accent: string; glow: string; border: string; bg: string }> = {
-                purple: { accent: "text-purple-400", glow: "bg-purple-500/10", border: "hover:border-purple-500/20", bg: "from-purple-500/[0.07] to-purple-600/[0.02]" },
-                blue: { accent: "text-blue-400", glow: "bg-blue-500/10", border: "hover:border-blue-500/20", bg: "from-blue-500/[0.07] to-indigo-600/[0.02]" },
-                amber: { accent: "text-amber-400", glow: "bg-amber-500/10", border: "hover:border-amber-500/20", bg: "from-amber-500/[0.07] to-orange-600/[0.02]" },
-                rose: { accent: "text-rose-400", glow: "bg-rose-500/10", border: "hover:border-rose-500/20", bg: "from-rose-500/[0.07] to-pink-600/[0.02]" },
+                purple: {
+                  accent: "text-purple-400",
+                  glow: "bg-purple-500/10",
+                  border: "hover:border-purple-500/20",
+                  bg: "from-purple-500/[0.07] to-purple-600/[0.02]",
+                },
+                blue: {
+                  accent: "text-blue-400",
+                  glow: "bg-blue-500/10",
+                  border: "hover:border-blue-500/20",
+                  bg: "from-blue-500/[0.07] to-indigo-600/[0.02]",
+                },
+                amber: {
+                  accent: "text-amber-400",
+                  glow: "bg-amber-500/10",
+                  border: "hover:border-amber-500/20",
+                  bg: "from-amber-500/[0.07] to-orange-600/[0.02]",
+                },
+                rose: {
+                  accent: "text-rose-400",
+                  glow: "bg-rose-500/10",
+                  border: "hover:border-rose-500/20",
+                  bg: "from-rose-500/[0.07] to-pink-600/[0.02]",
+                },
               };
               const c = colors[b.color];
               return (
                 <Section key={i} delay={80 + i * 60} className={b.span}>
-                  <div className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}>
-                    <div className={`absolute -top-6 -right-6 h-24 w-24 rounded-full ${c.glow} blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-100`} />
+                  <div
+                    className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}
+                  >
+                    <div
+                      className={`absolute -top-6 -right-6 h-24 w-24 rounded-full ${c.glow} blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
+                    />
                     <div className="relative flex items-start gap-5">
-                      <div className={`shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl ${c.glow} border border-white/[0.06]`}>
+                      <div
+                        className={`shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl ${c.glow} border border-white/[0.06]`}
+                      >
                         <b.icon className={`h-6 w-6 ${c.accent}`} />
                       </div>
                       <div className="min-w-0">
@@ -573,10 +685,13 @@ export default function LandingPage() {
                 <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-emerald-400">Privacy & Trust</p>
                 <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
                   Built With{" "}
-                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Privacy In Mind.</span>
+                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                    Privacy In Mind.
+                  </span>
                 </h2>
                 <p className="text-white/50 leading-relaxed max-w-md">
-                  We don't collect names, health conditions, or any personal info. Your privacy is the foundation — not an afterthought.
+                  We don't collect names, health conditions, or any personal info. Your privacy is the foundation — not
+                  an afterthought.
                 </p>
               </Section>
 
@@ -597,7 +712,9 @@ export default function LandingPage() {
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/10">
                         <p.icon className="h-4 w-4 text-emerald-400" />
                       </div>
-                      <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">{p.text}</span>
+                      <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">
+                        {p.text}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -612,7 +729,13 @@ export default function LandingPage() {
         <div className="absolute inset-0">
           <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-600/15 to-blue-600/15 blur-[150px]" />
         </div>
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
 
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <Section>
@@ -622,9 +745,13 @@ export default function LandingPage() {
             </div>
             <h2 className="mb-6 text-4xl font-extrabold sm:text-5xl leading-[1.1]">
               Ready to Stop{" "}
-              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">Wasting Time?</span>
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Wasting Time?
+              </span>
             </h2>
-            <p className="mb-10 text-lg text-white/50 max-w-lg mx-auto">Be among the first to experience smarter healthcare visits. No more guessing. No more waiting blind.</p>
+            <p className="mb-10 text-lg text-white/50 max-w-lg mx-auto">
+              Be among the first to experience smarter healthcare visits. No more guessing. No more waiting blind.
+            </p>
             <div className="flex flex-col items-center gap-6">
               <StoreButtons />
               <GlowButton variant="secondary" onClick={() => toast.info("We'll notify you at launch! 🔔")}>
@@ -645,9 +772,13 @@ export default function LandingPage() {
                 <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
                 <h2 className="text-3xl font-bold sm:text-4xl mb-4">
                   Got{" "}
-                  <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Questions?</span>
+                  <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    Questions?
+                  </span>
                 </h2>
-                <p className="text-white/40 leading-relaxed">Everything you need to know about how we protect your data and verify wait times.</p>
+                <p className="text-white/40 leading-relaxed">
+                  Everything you need to know about how we protect your data and verify wait times.
+                </p>
               </div>
             </Section>
 
@@ -687,9 +818,7 @@ export default function LandingPage() {
                     <AccordionTrigger className="text-left text-[15px] font-medium hover:no-underline text-white/90 py-5">
                       {faq.q}
                     </AccordionTrigger>
-                    <AccordionContent className="text-sm text-white/50 leading-relaxed pb-5">
-                      {faq.a}
-                    </AccordionContent>
+                    <AccordionContent className="text-sm text-white/50 leading-relaxed pb-5">{faq.a}</AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
@@ -711,14 +840,16 @@ export default function LandingPage() {
               Get In{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Touch</span>
             </h2>
-            <p className="text-white/40 max-w-lg mx-auto">Have questions, feedback, or partnership ideas? We'd love to hear from you.</p>
+            <p className="text-white/40 max-w-lg mx-auto">
+              Have questions, feedback, or partnership ideas? We'd love to hear from you.
+            </p>
           </Section>
 
           <Section delay={100}>
             <div className="relative rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-8 sm:p-10 backdrop-blur-sm overflow-hidden">
               <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
               <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-blue-500/10 blur-[60px]" />
-              
+
               <div className="relative grid gap-8 lg:grid-cols-[1fr_1.2fr]">
                 {/* Info side */}
                 <div className="space-y-6">
@@ -728,11 +859,15 @@ export default function LandingPage() {
                   <div>
                     <h3 className="text-xl font-bold mb-2">Let's Connect</h3>
                     <p className="text-white/50 text-sm leading-relaxed">
-                      Whether you're a clinic looking to partner, a patient with feedback, or just curious — drop us a message.
+                      Whether you're a clinic looking to partner, a patient with feedback, or just curious — drop us a
+                      message.
                     </p>
                   </div>
                   <div className="space-y-3">
-                    <a href="mailto:contact@seemywait.com" className="flex items-center gap-3 text-sm text-white/60 hover:text-cyan-400 transition-colors">
+                    <a
+                      href="mailto:contact@seemywait.com"
+                      className="flex items-center gap-3 text-sm text-white/60 hover:text-cyan-400 transition-colors"
+                    >
                       <Mail className="h-4 w-4" />
                       contact@seemywait.com
                     </a>
@@ -823,10 +958,21 @@ export default function LandingPage() {
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-4">Quick Links</h4>
               <div className="space-y-2.5">
-                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">How It Works</a>
-                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">Privacy Policy</a>
-                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">Terms of Service</a>
-                <button onClick={() => navigate("/app")} className="block text-sm text-white/40 hover:text-white/70 transition-colors">Try the App</button>
+                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">
+                  How It Works
+                </a>
+                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">
+                  Privacy Policy
+                </a>
+                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">
+                  Terms of Service
+                </a>
+                <button
+                  onClick={() => navigate("/app")}
+                  className="block text-sm text-white/40 hover:text-white/70 transition-colors"
+                >
+                  Try the App
+                </button>
               </div>
             </div>
 
@@ -834,7 +980,12 @@ export default function LandingPage() {
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-4">Contact</h4>
               <div className="space-y-2.5">
-                <a href="mailto:contact@seemywait.com" className="block text-sm text-white/40 hover:text-white/70 transition-colors">contact@seemywait.com</a>
+                <a
+                  href="mailto:contact@seemywait.com"
+                  className="block text-sm text-white/40 hover:text-white/70 transition-colors"
+                >
+                  contact@seemywait.com
+                </a>
                 <p className="text-sm text-white/30">Miami, FL</p>
               </div>
             </div>
@@ -862,12 +1013,8 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-white/20">
-              © {new Date().getFullYear()} SeeMyWait. All rights reserved.
-            </p>
-            <p className="text-xs text-white/20">
-              Made with ❤️ for smarter healthcare visits
-            </p>
+            <p className="text-xs text-white/20">© {new Date().getFullYear()} SeeMyWait. All rights reserved.</p>
+            <p className="text-xs text-white/20">Made with ❤️ for smarter healthcare visits</p>
           </div>
         </div>
       </footer>
