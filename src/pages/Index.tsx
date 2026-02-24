@@ -10,8 +10,10 @@ import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
 import { ProximityPrompt } from "@/components/map/ProximityPrompt";
 import { SearchCircleOverlay } from "@/components/map/SearchCircleOverlay";
 import { ClinicListPanel } from "@/components/map/ClinicListPanel";
+import { FindMeButton } from "@/components/map/FindMeButton";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { useGeocode } from "@/hooks/use-geocode";
+import { useAppSettings } from "@/hooks/use-app-settings";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -31,6 +33,9 @@ const Index = () => {
   const navigate = useNavigate();
 
   const { geocode, geocoding } = useGeocode();
+  const { data: appSettings } = useAppSettings();
+  const nearbyRadiusMiles = appSettings?.nearby_radius_miles ?? 100;
+  const reportCooldownMinutes = appSettings?.report_cooldown_minutes ?? 60;
 
   const { data: clinics, isLoading, refetch } = useClinics(
     undefined,
@@ -162,8 +167,16 @@ const Index = () => {
   const nearbyClinics = useMemo(() => {
     if (!clinics) return [];
     if (!userLocation) return clinics;
-    return [...clinics].sort((a, b) => (a.distance || 999) - (b.distance || 999));
-  }, [clinics, userLocation]);
+    return [...clinics]
+      .filter((c) => (c.distance || 999) <= nearbyRadiusMiles)
+      .sort((a, b) => (a.distance || 999) - (b.distance || 999));
+  }, [clinics, userLocation, nearbyRadiusMiles]);
+
+  const handleFindMe = useCallback(() => {
+    if (userLocation) {
+      setCenterOn({ lat: userLocation.lat, lng: userLocation.lng, zoom: 14 });
+    }
+  }, [userLocation]);
 
   const handleClinicClick = useCallback((clinic: ClinicWithWaitTime) => {
     setSelectedClinic(clinic);
@@ -246,8 +259,11 @@ const Index = () => {
               centerOn={centerOn}
               searchArea={searchArea}
               clinicsInSearchArea={displayedClinics.length}
+              nearbyRadiusMiles={nearbyRadiusMiles}
             />
           )}
+
+          <FindMeButton onClick={handleFindMe} visible={!!userLocation} />
 
           <MapLegend />
 
@@ -276,6 +292,7 @@ const Index = () => {
               onClose={() => setSelectedClinic(null)}
               onReported={handleReported}
               userLocation={userLocation}
+              cooldownMinutes={reportCooldownMinutes}
             />
           )}
         </div>

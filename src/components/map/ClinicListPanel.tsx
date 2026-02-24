@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, MapPin, Stethoscope } from "lucide-react";
+import { ChevronDown, ChevronUp, MapPin, Stethoscope, PanelBottomClose, PanelBottomOpen } from "lucide-react";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { formatDistanceToNow } from "date-fns";
@@ -25,10 +25,26 @@ const INITIAL_COUNT = 5;
 
 export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQuery, onClinicClick }: ClinicListPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const listToShow = isSearching ? clinics : nearbyClinics;
   const displayList = expanded ? listToShow : listToShow.slice(0, INITIAL_COUNT);
   const hasMore = listToShow.length > INITIAL_COUNT;
+
+  // Collapsed state - just show a toggle bar
+  if (collapsed) {
+    return (
+      <div className="bg-background border-t border-border/30 pb-20">
+        <button
+          onClick={() => setCollapsed(false)}
+          className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+        >
+          <PanelBottomOpen className="h-4 w-4" />
+          Show Nearby Clinics ({listToShow.length})
+        </button>
+      </div>
+    );
+  }
 
   if (listToShow.length === 0) {
     return (
@@ -48,6 +64,13 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
             ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
             : `Nearby Clinics (${nearbyClinics.length})`}
         </h3>
+        <button
+          onClick={() => setCollapsed(true)}
+          className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+          title="Collapse to see full map"
+        >
+          <PanelBottomClose className="h-3.5 w-3.5" />
+        </button>
       </div>
       <div className="px-3 pb-2 space-y-2 max-h-[40vh] overflow-y-auto">
         {displayList.map((clinic) => (
