@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,10 +18,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { WaitTimeBadge } from "@/components/WaitTimeBadge";
+import { WaitTimeCategory } from "@/lib/wait-time-utils";
 import {
   LogOut, Loader2, Check, X, Trash2, Search, Download,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
-  Upload, FileSpreadsheet, AlertCircle,
+  Upload, FileSpreadsheet, AlertCircle, Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -376,6 +379,10 @@ export default function AdminDashboard() {
   const [importQuery, setImportQuery] = useState("doctor Miami");
   const [importing, setImporting] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [showActiveReports, setShowActiveReports] = useState(true);
+  const [nearbyRadius, setNearbyRadius] = useState("");
+  const [cooldownMinutes, setCooldownMinutes] = useState("");
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // CRUD dialog state
   const [createOpen, setCreateOpen] = useState(false);
@@ -415,11 +422,67 @@ export default function AdminDashboard() {
   const { data: recentReports } = useQuery({
     queryKey: ["admin-reports"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("wait_time_reports").select("*, clinics(name)").order("reported_at", { ascending: false }).limit(50);
+      const { data, error } = await supabase.from("wait_time_reports").select("*, clinics(name)").order("reported_at", { ascending: false }).limit(100);
       if (error) throw error;
       return data || [];
     },
   });
+
+  const { data: appSettings } = useQuery({
+    queryKey: ["admin-app-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("app_settings").select("key, value");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Load settings into state
+  useEffect(() => {
+    if (appSettings) {
+      const radius = appSettings.find((s: any) => s.key === "nearby_radius_miles");
+      const cooldown = appSettings.find((s: any) => s.key === "report_cooldown_minutes");
+      if (radius) setNearbyRadius(radius.value);
+      if (cooldown) setCooldownMinutes(cooldown.value);
+    }
+  }, [appSettings]);
+
+  const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).getTime();
+
+  const filteredReports = useMemo(() => {
+    if (!recentReports) return [];
+    return recentReports.filter((r: any) => {
+      const reportTime = new Date(r.reported_at).getTime();
+      const isActive = reportTime > threeHoursAgo;
+      return showActiveReports ? isActive : !isActive;
+    });
+  }, [recentReports, showActiveReports, threeHoursAgo]);
+
+  const activeReportCount = useMemo(() => {
+    if (!recentReports) return 0;
+    return recentReports.filter((r: any) => new Date(r.reported_at).getTime() > threeHoursAgo && !r.is_flagged).length;
+  }, [recentReports, threeHoursAgo]);
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const updates = [
+        { key: "nearby_radius_miles", value: nearbyRadius },
+        { key: "report_cooldown_minutes", value: cooldownMinutes },
+      ];
+      for (const u of updates) {
+        const { error } = await supabase.from("app_settings").update({ value: u.value }).eq("key", u.key);
+        if (error) throw error;
+      }
+      toast.success("Settings saved!");
+      queryClient.invalidateQueries({ queryKey: ["admin-app-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["app-settings"] });
+    } catch {
+      toast.error("Failed to save settings.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // ── CREATE ──
   const createClinic = useMutation({
@@ -528,7 +591,6 @@ export default function AdminDashboard() {
 
   const totalClinics = clinics?.length || 0;
   const totalSuggestions = suggestions?.length || 0;
-  const totalReports = recentReports?.length || 0;
 
   const editFormData = editClinic
     ? {
@@ -579,8 +641,8 @@ export default function AdminDashboard() {
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <FileText className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">{totalReports}</p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Reports</p>
+            <p className="text-xl font-bold text-foreground sm:text-2xl">{activeReportCount}</p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Active Reports</p>
           </CardContent>
         </Card>
       </div>
@@ -598,6 +660,10 @@ export default function AdminDashboard() {
               )}
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1">Reports</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">
+              <Settings className="h-3.5 w-3.5 mr-1" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           {/* ── DOCTORS / CLINICS TAB ── */}
@@ -747,7 +813,27 @@ export default function AdminDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="reports">
+          <TabsContent value="reports" className="space-y-4">
+            {/* Active/Expired Toggle */}
+            <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="report-toggle" className="text-sm font-medium">
+                  {showActiveReports ? "Active Reports" : "Expired Reports"}
+                </Label>
+                <Badge variant={showActiveReports ? "default" : "secondary"} className="text-[10px]">
+                  {filteredReports.length}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{showActiveReports ? "Active" : "Expired"}</span>
+                <Switch
+                  id="report-toggle"
+                  checked={showActiveReports}
+                  onCheckedChange={setShowActiveReports}
+                />
+              </div>
+            </div>
+
             <div className="overflow-x-auto rounded-lg border border-border/50">
               <Table>
                 <TableHeader>
@@ -759,27 +845,81 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentReports?.map((r: any) => (
-                    <TableRow key={r.id} className={r.is_flagged ? "opacity-40" : "transition-colors"}>
-                      <TableCell className="text-sm font-medium">{r.clinics?.name || "Unknown"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs">{r.wait_time}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
-                        {new Date(r.reported_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {!r.is_flagged && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => flagReport.mutate(r.id)}>
-                            <X className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
+                  {filteredReports.map((r: any) => {
+                    const waitCategory = r.wait_time as WaitTimeCategory;
+                    return (
+                      <TableRow key={r.id} className={r.is_flagged ? "opacity-40" : "transition-colors"}>
+                        <TableCell className="text-sm font-medium">{r.clinics?.name || "Unknown"}</TableCell>
+                        <TableCell>
+                          <WaitTimeBadge category={waitCategory} />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
+                          {new Date(r.reported_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {!r.is_flagged && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => flagReport.mutate(r.id)}>
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {filteredReports.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                        No {showActiveReports ? "active" : "expired"} reports found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          {/* ── SETTINGS TAB ── */}
+          <TabsContent value="settings" className="space-y-4">
+            <Card className="border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-primary" />
+                  App Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="radius" className="text-xs">Nearby Radius (miles)</Label>
+                  <Input
+                    id="radius"
+                    type="number"
+                    value={nearbyRadius}
+                    onChange={(e) => setNearbyRadius(e.target.value)}
+                    placeholder="100"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Users will see clinics within this radius on the map. A circle will be shown around their location.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cooldown" className="text-xs">Report Cooldown (minutes)</Label>
+                  <Input
+                    id="cooldown"
+                    type="number"
+                    value={cooldownMinutes}
+                    onChange={(e) => setCooldownMinutes(e.target.value)}
+                    placeholder="60"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    How long before a user can report again for the same clinic.
+                  </p>
+                </div>
+                <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5">
+                  {savingSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  Save Settings
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

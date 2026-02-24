@@ -23,9 +23,10 @@ interface ClinicBottomSheetProps {
   onClose: () => void;
   onReported: () => void;
   userLocation: { lat: number; lng: number } | null;
+  cooldownMinutes?: number;
 }
 
-export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation }: ClinicBottomSheetProps) {
+export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, cooldownMinutes = 60 }: ClinicBottomSheetProps) {
   const [submitting, setSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,17 +66,17 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation }:
       }
 
       const fingerprint = getDeviceFingerprint();
-      const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const cooldownAgo = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
         .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
-        .gte("reported_at", thirtyMinAgo)
+        .gte("reported_at", cooldownAgo)
         .limit(1);
 
       if (existing && existing.length > 0) {
-        setError("You already reported recently. Try again in 30 minutes.");
+        setError(`You already reported recently. Try again in ${cooldownMinutes} minutes.`);
         setSubmitting(false);
         setSelectedOption(null);
         return;

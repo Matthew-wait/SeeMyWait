@@ -90,9 +90,10 @@ interface MapViewProps {
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
   searchArea?: SearchArea | null;
   clinicsInSearchArea?: number;
+  nearbyRadiusMiles?: number;
 }
 
-function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, centerOn, searchArea, clinicsInSearchArea = 0 }: MapViewProps) {
+function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, centerOn, searchArea, clinicsInSearchArea = 0, nearbyRadiusMiles = 100 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
@@ -151,19 +152,22 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update user location marker
+  // Update user location marker + nearby radius
   useEffect(() => {
     if (!mapRef.current || !userMarkerRef.current) return;
     userMarkerRef.current.clearLayers();
 
     if (userLocation) {
+      // Nearby radius circle (miles to meters)
+      const radiusMeters = nearbyRadiusMiles * 1609.34;
       L.circle([userLocation.lat, userLocation.lng], {
-        radius: 200,
+        radius: radiusMeters,
         color: "hsl(200 98% 39%)",
         fillColor: "hsl(200 98% 39%)",
-        fillOpacity: 0.08,
+        fillOpacity: 0.04,
         weight: 1.5,
-        opacity: 0.3,
+        opacity: 0.2,
+        dashArray: "6 4",
       }).addTo(userMarkerRef.current);
 
       const userIcon = L.divIcon({
@@ -179,7 +183,7 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
       });
       L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, interactive: false }).addTo(userMarkerRef.current);
     }
-  }, [userLocation]);
+  }, [userLocation, nearbyRadiusMiles]);
 
   // Update search area overlay
   useEffect(() => {
