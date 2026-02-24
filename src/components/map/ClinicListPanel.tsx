@@ -4,6 +4,14 @@ import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { WaitTimeCategory } from "@/lib/wait-time-utils";
+
+const WAIT_BG: Record<WaitTimeCategory, string> = {
+  on_time: "bg-green-500/10 border-green-500/25",
+  "30_min": "bg-yellow-500/10 border-yellow-500/25",
+  "1_hour": "bg-orange-500/10 border-orange-500/25",
+  "1.5_hours_plus": "bg-red-500/10 border-red-500/25",
+};
 
 interface ClinicListPanelProps {
   clinics: ClinicWithWaitTime[];
@@ -46,7 +54,9 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
           <button
             key={clinic.id}
             onClick={() => onClinicClick(clinic)}
-            className="w-full text-left rounded-xl border border-border/30 bg-card p-3 transition-all hover:border-primary/20 hover:shadow-sm active:scale-[0.99]"
+            className={`w-full text-left rounded-xl border p-3 transition-all hover:shadow-sm active:scale-[0.99] ${
+              clinic.waitTime ? WAIT_BG[clinic.waitTime.category] : "border-border/30 bg-card"
+            } hover:border-primary/20`}
           >
             <div className="flex items-start gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/10">
