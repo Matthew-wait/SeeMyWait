@@ -319,31 +319,53 @@ export default function SuggestClinic() {
                 </div>
 
                 {/* Lat/Lng */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="latitude" className="text-xs font-medium">
-                      Latitude <span className="text-[10px] text-muted-foreground">(optional)</span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-medium flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3 text-primary/70" />
+                      Coordinates
                     </Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!navigator.geolocation) {
+                          toast.error("Geolocation not supported by your browser.");
+                          return;
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setLatitude(pos.coords.latitude.toFixed(6));
+                            setLongitude(pos.coords.longitude.toFixed(6));
+                            toast.success("Current location captured!");
+                          },
+                          () => toast.error("Unable to get location. Please enter manually."),
+                          { enableHighAccuracy: true }
+                        );
+                      }}
+                      className="text-[10px] font-semibold text-primary hover:underline"
+                    >
+                      📍 Use My Location
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
                     <Input
                       id="latitude"
-                      placeholder="25.7617"
+                      placeholder="Latitude (e.g. 33.6007)"
                       value={latitude}
                       onChange={(e) => setLatitude(e.target.value)}
                       className="rounded-xl border-border/40 bg-background/60 h-11"
                     />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="longitude" className="text-xs font-medium">
-                      Longitude <span className="text-[10px] text-muted-foreground">(optional)</span>
-                    </Label>
                     <Input
                       id="longitude"
-                      placeholder="-80.1918"
+                      placeholder="Longitude (e.g. 73.0679)"
                       value={longitude}
                       onChange={(e) => setLongitude(e.target.value)}
                       className="rounded-xl border-border/40 bg-background/60 h-11"
                     />
                   </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Tip: Use "Use My Location" while at the clinic, or find coordinates on Google Maps.
+                  </p>
                 </div>
 
                 {duplicateFound && (

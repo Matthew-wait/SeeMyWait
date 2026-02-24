@@ -158,15 +158,11 @@ const Index = () => {
     return clinics;
   }, [clinics, search, dbMatchedClinics, searchArea]);
 
-  // Nearby clinics for "Explore" list (within 50km of user, sorted by distance)
+  // Nearby clinics for "Explore" list — show all sorted by distance, or all if no location
   const nearbyClinics = useMemo(() => {
-    if (!clinics || !userLocation) return clinics || [];
-    return clinics
-      .filter((c) => {
-        const dist = getDistanceMeters(userLocation.lat, userLocation.lng, c.latitude, c.longitude);
-        return dist <= 50000; // 50km
-      })
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    if (!clinics) return [];
+    if (!userLocation) return clinics;
+    return [...clinics].sort((a, b) => (a.distance || 999) - (b.distance || 999));
   }, [clinics, userLocation]);
 
   const handleClinicClick = useCallback((clinic: ClinicWithWaitTime) => {
