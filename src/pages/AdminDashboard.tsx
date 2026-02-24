@@ -911,7 +911,7 @@ export default function AdminDashboard() {
                     placeholder="60"
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    How long before a user can report again for the same clinic.
+                    How long before a user can report again for any clinic (global cooldown across all clinics).
                   </p>
                 </div>
                 <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5">
