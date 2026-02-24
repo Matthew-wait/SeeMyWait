@@ -57,8 +57,8 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation }:
         return;
       }
 
-      if (pos.coords.accuracy > 100) {
-        setError("Location signal weak. Move closer to verify.");
+      if (pos.coords.accuracy > 300) {
+        setError("GPS signal too weak. Try stepping outside or near a window.");
         setSubmitting(false);
         setSelectedOption(null);
         return;
