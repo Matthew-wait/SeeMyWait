@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, memo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
@@ -32,6 +32,10 @@ const PIN_STYLES = `
     0%, 100% { transform: scale(1); opacity: 0.3; }
     50% { transform: scale(2.5); opacity: 0; }
   }
+  @keyframes searchPulse {
+    0%, 100% { opacity: 0.15; }
+    50% { opacity: 0.25; }
+  }
   .leaflet-container { background: hsl(222 47% 11%) !important; z-index: 0 !important; }
   .leaflet-pane { z-index: 0 !important; }
   .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
@@ -56,7 +60,27 @@ const PIN_STYLES = `
     background: hsl(217 32% 17%) !important;
     color: hsl(210 40% 98%) !important;
   }
+  .search-count-tooltip {
+    background: hsl(222 47% 11% / 0.9) !important;
+    border: 1px solid hsl(200 98% 39% / 0.4) !important;
+    border-radius: 12px !important;
+    padding: 6px 12px !important;
+    color: white !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    white-space: nowrap !important;
+  }
+  .search-count-tooltip::before { display: none !important; }
+  .leaflet-tooltip-top.search-count-tooltip::before { display: none !important; }
 `;
+
+export interface SearchArea {
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  name: string;
+}
 
 interface MapViewProps {
   clinics: ClinicWithWaitTime[];
@@ -64,16 +88,21 @@ interface MapViewProps {
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
   onEmptyClick: () => void;
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
+  searchArea?: SearchArea | null;
+  clinicsInSearchArea?: number;
 }
 
-export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, centerOn }: MapViewProps) {
+function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, centerOn, searchArea, clinicsInSearchArea = 0 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.LayerGroup | null>(null);
+  const searchLayerRef = useRef<L.LayerGroup | null>(null);
   const onEmptyClickRef = useRef(onEmptyClick);
   const markerClickedRef = useRef(false);
+  const onClinicClickRef = useRef(onClinicClick);
   onEmptyClickRef.current = onEmptyClick;
+  onClinicClickRef.current = onClinicClick;
 
   // Initialize map
   useEffect(() => {
@@ -98,9 +127,9 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
     mapRef.current = map;
     markersRef.current = L.layerGroup().addTo(map);
     userMarkerRef.current = L.layerGroup().addTo(map);
+    searchLayerRef.current = L.layerGroup().addTo(map);
 
     map.on("click", () => {
-      // Delay to let marker click fire first
       setTimeout(() => {
         if (!markerClickedRef.current) {
           onEmptyClickRef.current();
@@ -121,7 +150,6 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
     userMarkerRef.current.clearLayers();
 
     if (userLocation) {
-      // Glowing circle
       L.circle([userLocation.lat, userLocation.lng], {
         radius: 200,
         color: "hsl(200 98% 39%)",
@@ -131,7 +159,6 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
         opacity: 0.3,
       }).addTo(userMarkerRef.current);
 
-      // User dot
       const userIcon = L.divIcon({
         className: "user-location-pin",
         html: `
@@ -146,6 +173,75 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
       L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, interactive: false }).addTo(userMarkerRef.current);
     }
   }, [userLocation]);
+
+  // Update search area overlay
+  useEffect(() => {
+    if (!mapRef.current || !searchLayerRef.current) return;
+    searchLayerRef.current.clearLayers();
+
+    if (!searchArea) return;
+
+    // Search area circle
+    const circle = L.circle([searchArea.lat, searchArea.lng], {
+      radius: searchArea.radiusMeters,
+      color: "hsl(200 98% 39%)",
+      fillColor: "hsl(200 98% 39%)",
+      fillOpacity: 0.08,
+      weight: 2,
+      opacity: 0.5,
+      dashArray: "8 6",
+      className: "search-area-circle",
+    });
+    circle.addTo(searchLayerRef.current);
+
+    // Tooltip with count on hover
+    const countLabel = clinicsInSearchArea === 0
+      ? "No clinics found"
+      : `${clinicsInSearchArea} clinic${clinicsInSearchArea !== 1 ? "s" : ""} in this area`;
+    circle.bindTooltip(countLabel, {
+      permanent: false,
+      direction: "top",
+      className: "search-count-tooltip",
+    });
+
+    // Search destination marker
+    const searchIcon = L.divIcon({
+      className: "search-destination-pin",
+      html: `
+        <div style="position:relative;width:28px;height:28px;">
+          <div style="position:absolute;inset:0;border-radius:50%;background:hsl(200 98% 39%);opacity:0.2;animation:searchPulse 2s ease-in-out infinite;"></div>
+          <div style="position:absolute;inset:4px;border-radius:50%;background:hsl(200 98% 39%);border:3px solid white;box-shadow:0 2px 10px hsl(200 98% 39%/0.5);"></div>
+        </div>
+      `,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+    L.marker([searchArea.lat, searchArea.lng], { icon: searchIcon, interactive: false }).addTo(searchLayerRef.current);
+
+    // Dashed line from user to search area
+    if (userLocation) {
+      L.polyline(
+        [[userLocation.lat, userLocation.lng], [searchArea.lat, searchArea.lng]],
+        {
+          color: "hsl(200 98% 39%)",
+          weight: 2,
+          opacity: 0.35,
+          dashArray: "6 8",
+        }
+      ).addTo(searchLayerRef.current);
+    }
+
+    // Fit bounds to show both user and search
+    if (userLocation) {
+      const bounds = L.latLngBounds(
+        [userLocation.lat, userLocation.lng],
+        [searchArea.lat, searchArea.lng]
+      ).pad(0.3);
+      mapRef.current.flyToBounds(bounds, { duration: 1.2, maxZoom: 14 });
+    } else {
+      mapRef.current.flyTo([searchArea.lat, searchArea.lng], 14, { duration: 1.2 });
+    }
+  }, [searchArea, clinicsInSearchArea, userLocation]);
 
   // Update clinic markers
   useEffect(() => {
@@ -165,11 +261,10 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
       const marker = L.marker([clinic.latitude, clinic.longitude], { icon });
       marker.on("click", () => {
         markerClickedRef.current = true;
-        onClinicClick(clinic);
+        onClinicClickRef.current(clinic);
       });
       marker.addTo(markersRef.current!);
 
-      // Glow circle for active reports
       if (clinic.waitTime) {
         L.circle([clinic.latitude, clinic.longitude], {
           radius: 100,
@@ -182,15 +277,15 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
         }).addTo(markersRef.current!);
       }
     });
-  }, [clinics, onClinicClick]);
+  }, [clinics]);
 
-  // Center on changes
+  // Center on changes (only when no search area — search area handles its own centering)
   useEffect(() => {
-    if (!mapRef.current || !centerOn) return;
+    if (!mapRef.current || !centerOn || searchArea) return;
     mapRef.current.flyTo([centerOn.lat, centerOn.lng], centerOn.zoom || mapRef.current.getZoom(), {
       duration: 1.2,
     });
-  }, [centerOn]);
+  }, [centerOn, searchArea]);
 
   return (
     <div className="absolute inset-0">
@@ -199,3 +294,5 @@ export function MapView({ clinics, userLocation, onClinicClick, onEmptyClick, ce
     </div>
   );
 }
+
+export const MapView = memo(MapViewInner);
