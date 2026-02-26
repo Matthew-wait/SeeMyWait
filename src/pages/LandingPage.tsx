@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { Menu, X as XIcon } from "lucide-react";
 import {
   MapPin,
   Clock,
@@ -230,6 +231,105 @@ function StoreButtons() {
   );
 }
 
+const NAV_LINKS = [
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Benefits", href: "#benefits" },
+  { label: "FAQs", href: "#faqs" },
+  { label: "Contact Us", href: "#contact" },
+];
+
+function NavHeader({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleNavClick = (href: string) => {
+    setMobileOpen(false);
+    const el = document.querySelector(href);
+    el?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <nav
+      className={`fixed top-0 z-50 w-full transition-all duration-500 ${
+        scrolled
+          ? "border-b border-white/10 bg-[#0a0e1a]/90 backdrop-blur-2xl shadow-lg shadow-black/20"
+          : "border-b border-white/5 bg-[#0a0e1a]/80 backdrop-blur-xl"
+      }`}
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+            <Clock className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-sm font-bold tracking-tight">SeeMyWait</span>
+        </div>
+
+        {/* Desktop nav links */}
+        <div className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link.href}
+              onClick={() => handleNavClick(link.href)}
+              className="relative px-4 py-2 text-sm font-medium text-white/60 transition-colors duration-300 hover:text-white group"
+            >
+              {link.label}
+              <span className="absolute bottom-0 left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300 group-hover:w-2/3" />
+            </button>
+          ))}
+        </div>
+
+        {/* Right side */}
+        <div className="flex items-center gap-3">
+          <GlowButton variant="secondary" className="text-xs px-4 py-2 hidden sm:inline-flex" onClick={() => navigate("/app")}>
+            Get Started
+          </GlowButton>
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white"
+          >
+            {mobileOpen ? <XIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile dropdown */}
+      <div
+        className={`md:hidden overflow-hidden transition-all duration-400 ease-out ${
+          mobileOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="border-t border-white/5 bg-[#0a0e1a]/95 backdrop-blur-2xl px-4 py-4 space-y-1">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link.href}
+              onClick={() => handleNavClick(link.href)}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/60 transition-all duration-300 hover:bg-white/5 hover:text-white"
+            >
+              {link.label}
+            </button>
+          ))}
+          <div className="pt-2">
+            <button
+              onClick={() => { setMobileOpen(false); navigate("/app"); }}
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:shadow-lg hover:shadow-cyan-500/25"
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 /* ──────────────────── LANDING PAGE ──────────────────── */
 
 export default function LandingPage() {
@@ -249,19 +349,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-white overflow-x-hidden">
       {/* ── NAV ── */}
-      <nav className="fixed top-0 z-50 w-full border-b border-white/5 bg-[#0a0e1a]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
-              <Clock className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-sm font-bold tracking-tight">SeeMyWait</span>
-          </div>
-          <GlowButton variant="secondary" className="text-xs px-4 py-2" onClick={() => navigate("/app")}>
-            Get Started
-          </GlowButton>
-        </div>
-      </nav>
+      <NavHeader navigate={navigate} />
 
       {/* ── HERO ── */}
       <section className="relative min-h-screen pt-20 flex items-center">
@@ -386,7 +474,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 3 – HOW IT WORKS ── */}
-      <section className="relative py-28 sm:py-36 overflow-hidden">
+      <section id="how-it-works" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/10 to-transparent" />
         <div className="absolute right-0 top-20 h-[300px] w-[300px] rounded-full bg-blue-600/5 blur-[100px]" />
         <div className="absolute left-0 bottom-20 h-[200px] w-[200px] rounded-full bg-cyan-600/5 blur-[80px]" />
@@ -532,7 +620,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 5 – BENEFITS ── */}
-      <section className="relative py-28 sm:py-36 overflow-hidden">
+      <section id="benefits" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/10 to-transparent" />
         <div className="absolute left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-cyan-600/[0.04] blur-[150px]" />
         <div className="absolute right-1/4 bottom-0 h-[400px] w-[400px] rounded-full bg-purple-600/[0.04] blur-[120px]" />
@@ -767,7 +855,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 8 – FAQ ── */}
-      <section className="py-28 sm:py-36">
+      <section id="faqs" className="py-28 sm:py-36 scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.5fr] lg:items-start">
             <Section>
@@ -831,7 +919,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 9 – GET IN TOUCH ── */}
-      <section className="relative py-28 sm:py-36 overflow-hidden">
+      <section id="contact" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/10 to-transparent" />
         <div className="absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-blue-600/5 blur-[120px]" />
         <div className="absolute left-0 bottom-0 h-[300px] w-[300px] rounded-full bg-cyan-600/5 blur-[100px]" />
