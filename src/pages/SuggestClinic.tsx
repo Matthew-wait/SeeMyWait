@@ -175,26 +175,8 @@ export default function SuggestClinic() {
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 py-4 space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-500 sm:px-6">
         {/* 3-Step Process */}
-        <div className="rounded-2xl border border-border/30 bg-card p-4">
-          <div className="flex items-start gap-2 sm:gap-0 sm:justify-between">
-            {STEPS.map((step, i) => (
-              <div key={step.title} className="flex flex-1 flex-col items-center text-center relative">
-                {i < STEPS.length - 1 && (
-                  <div className="absolute top-5 left-[calc(50%+20px)] right-[calc(-50%+20px)] hidden sm:block">
-                    <div className="h-px bg-gradient-to-r from-primary/30 to-primary/10" />
-                    <ArrowRight className="absolute -right-1.5 -top-1.5 h-3 w-3 text-primary/30" />
-                  </div>
-                )}
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10 text-lg mb-2">
-                  {step.emoji}
-                </div>
-                <h3 className="text-xs font-semibold text-card-foreground sm:text-sm">{step.title}</h3>
-                <p className="mt-0.5 text-[10px] text-muted-foreground leading-tight max-w-[110px] sm:text-[11px] sm:max-w-[150px]">
-                  {step.description}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
+          <img src={stepsFlowImg} alt="3-step process: You Report, Admin Reviews, Approved & Visible" className="w-full rounded-2xl" />
         </div>
 
         {/* Form / Success */}
