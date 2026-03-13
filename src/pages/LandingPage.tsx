@@ -1052,12 +1052,12 @@ export default function LandingPage() {
                 <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">
                   How It Works
                 </a>
-                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">
+                <button onClick={() => navigate("/privacy")} className="block text-sm text-white/40 hover:text-white/70 transition-colors">
                   Privacy Policy
-                </a>
-                <a href="#" className="block text-sm text-white/40 hover:text-white/70 transition-colors">
+                </button>
+                <button onClick={() => navigate("/terms")} className="block text-sm text-white/40 hover:text-white/70 transition-colors">
                   Terms of Service
-                </a>
+                </button>
                 <button
                   onClick={() => navigate("/app")}
                   className="block text-sm text-white/40 hover:text-white/70 transition-colors"
