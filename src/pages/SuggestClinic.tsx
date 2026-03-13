@@ -200,13 +200,8 @@ export default function SuggestClinic() {
           </div>
         ) : (
           <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
-                  <UserPlus className="h-4 w-4 text-primary" />
-                </div>
-                <h2 className="text-sm font-semibold text-card-foreground">Add a Doctor</h2>
-              </div>
+            <div className="overflow-hidden rounded-t-2xl">
+              <img src={addDoctorHeaderImg} alt="Add a Doctor - Can't Find Your Clinic? Report it here." className="w-full" />
             </div>
             <div className="px-4 pb-4 pt-2">
               <form onSubmit={handleSubmit} className="space-y-3.5">
