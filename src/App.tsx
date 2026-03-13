@@ -12,6 +12,8 @@ import SuggestClinic from "./pages/SuggestClinic";
 import SettingsPage from "./pages/SettingsPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
