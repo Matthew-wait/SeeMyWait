@@ -335,11 +335,8 @@ export default function SuggestClinic() {
         )}
 
         {/* Community note */}
-        <div className="flex items-start gap-3 rounded-2xl border border-border/30 bg-muted/10 px-4 py-3">
-          <span className="text-lg mt-0.5">💡</span>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            All submissions are reviewed manually. Only verified locations are published. No personal information is shared.
-          </p>
+        <div className="rounded-2xl border border-border/30 overflow-hidden">
+          <img src={communityNoteImg} alt="All submissions are reviewed manually. Only verified locations are published. No personal information is shared." className="w-full rounded-2xl" />
         </div>
       </main>
 
