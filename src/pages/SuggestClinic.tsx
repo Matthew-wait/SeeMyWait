@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BottomNav } from "@/components/BottomNav";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import stepsFlowImg from "@/assets/suggest-steps-flow.png";
+import addDoctorHeaderImg from "@/assets/add-doctor-header.png";
+import communityNoteImg from "@/assets/community-note.png";
 import {
   Select,
   SelectContent,
