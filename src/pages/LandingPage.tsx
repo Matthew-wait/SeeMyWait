@@ -88,7 +88,7 @@ function GlowButton({
   return (
     <button
       onClick={onClick}
-      className={`group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-500/40 hover:shadow-xl hover:scale-105 active:scale-[0.98] ${className}`}
+      className={`group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm sm:px-8 sm:py-4 sm:text-base font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-500/40 hover:shadow-xl hover:scale-105 active:scale-[0.98] ${className}`}
     >
       <span className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-50" />
       <span className="relative z-10 flex items-center gap-2">
