@@ -568,7 +568,7 @@ export default function LandingPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Section delay={100}>
-              <div className="relative h-full rounded-3xl border border-red-500/10 bg-gradient-to-b from-red-500/[0.04] to-transparent p-8 overflow-hidden">
+              <div className="relative h-full rounded-2xl sm:rounded-3xl border border-red-500/10 bg-gradient-to-b from-red-500/[0.04] to-transparent p-5 sm:p-8 overflow-hidden">
                 <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-red-500/5" />
                 <p className="mb-6 text-sm font-bold uppercase tracking-wider text-red-400/80">Typical Apps</p>
                 <div className="space-y-5">
