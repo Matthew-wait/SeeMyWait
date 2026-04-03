@@ -556,9 +556,9 @@ export default function LandingPage() {
       {/* ── SECTION 4 – WHY DIFFERENT ── */}
       <section className="relative py-16 sm:py-28 md:py-36">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <Section className="text-center mb-20">
-            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+          <Section className="text-center mb-10 sm:mb-20">
+            <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
               Not Just Notifications.{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Verified Reality.
