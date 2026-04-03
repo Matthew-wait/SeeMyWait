@@ -413,7 +413,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
           <Section>
             <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">The Problem</p>
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+            <h2 className="mb-4 text-2xl font-bold sm:text-3xl md:text-4xl">
               Doctor Visits Shouldn't{" "}
               <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
                 Waste Your Time.
