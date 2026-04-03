@@ -592,7 +592,7 @@ export default function LandingPage() {
             </Section>
 
             <Section delay={200}>
-              <div className="relative h-full rounded-3xl border border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-8 overflow-hidden">
+              <div className="relative h-full rounded-2xl sm:rounded-3xl border border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-5 sm:p-8 overflow-hidden">
                 <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-cyan-500/5" />
                 <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[60px]" />
                 <p className="mb-6 text-sm font-bold uppercase tracking-wider text-cyan-400">SeeMyWait</p>
