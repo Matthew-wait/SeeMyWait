@@ -198,7 +198,7 @@ const Index = () => {
   return (
     <div className="relative flex h-screen flex-col bg-background overflow-hidden">
       {/* Search bar overlay */}
-      <div className="absolute top-0 left-0 right-0 z-[50] px-3 pt-3 pb-2 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[50] px-2 sm:px-3 pt-2 sm:pt-3 pb-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-lg">
           <div className="relative rounded-2xl border border-border/40 bg-card/90 backdrop-blur-xl shadow-xl">
             <div className="flex items-center gap-2 px-3">
