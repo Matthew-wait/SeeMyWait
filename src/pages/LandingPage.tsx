@@ -736,7 +736,7 @@ export default function LandingPage() {
               return (
                 <Section key={i} delay={80 + i * 60} className={b.span}>
                   <div
-                    className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}
+                    className={`group relative h-full rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-4 sm:p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}
                   >
                     <div
                       className={`absolute -top-6 -right-6 h-24 w-24 rounded-full ${c.glow} blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
