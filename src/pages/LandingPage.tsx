@@ -540,8 +540,8 @@ export default function LandingPage() {
                     <div className="group relative flex-1 rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 sm:p-8 backdrop-blur-sm transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5">
                       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                       <div className="relative">
-                        <h3 className="mb-2 text-xl font-bold">{s.title}</h3>
-                        <p className="text-white/50 leading-relaxed max-w-md">{s.desc}</p>
+                        <h3 className="mb-1 sm:mb-2 text-base sm:text-xl font-bold">{s.title}</h3>
+                        <p className="text-xs sm:text-base text-white/50 leading-relaxed max-w-md">{s.desc}</p>
                       </div>
                       <div className="absolute top-0 right-0 h-20 w-20 rounded-tr-3xl bg-gradient-to-bl from-cyan-500/5 to-transparent" />
                     </div>
