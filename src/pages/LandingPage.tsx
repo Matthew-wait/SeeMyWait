@@ -803,7 +803,7 @@ export default function LandingPage() {
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/10">
                         <p.icon className="h-4 w-4 text-emerald-400" />
                       </div>
-                      <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">
+                      <span className="text-xs sm:text-sm text-white/70 group-hover:text-white/90 transition-colors">
                         {p.text}
                       </span>
                     </div>
