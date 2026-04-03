@@ -554,7 +554,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 4 – WHY DIFFERENT ── */}
-      <section className="relative py-28 sm:py-36">
+      <section className="relative py-16 sm:py-28 md:py-36">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Section className="text-center mb-20">
             <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
