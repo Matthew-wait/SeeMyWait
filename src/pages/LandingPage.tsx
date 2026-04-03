@@ -374,7 +374,7 @@ export default function LandingPage() {
                 Start Saving Time.
               </span>
             </h1>
-            <p className="mb-2 mx-auto lg:mx-0 max-w-lg text-base sm:text-lg text-white/70">
+            <p className="mb-2 mx-auto lg:mx-0 max-w-lg text-sm sm:text-base md:text-lg text-white/70">
               See real-time, location-verified wait times at doctor's offices before you leave home.
             </p>
             <p className="mb-4 sm:mb-6 text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
