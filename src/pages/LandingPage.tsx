@@ -352,7 +352,7 @@ export default function LandingPage() {
       <NavHeader navigate={navigate} />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen pt-20 flex items-center">
+      <section className="relative min-h-screen pt-16 sm:pt-20 flex items-center">
         {/* bg effects */}
         <div className="absolute inset-0">
           <div className="absolute left-1/4 top-1/4 h-[300px] w-[300px] sm:h-[500px] sm:w-[500px] rounded-full bg-cyan-600/10 blur-[120px]" />
