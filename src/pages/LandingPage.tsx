@@ -79,7 +79,7 @@ function GlowButton({
     return (
       <button
         onClick={onClick}
-        className={`group relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-medium text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-105 ${className}`}
+        className={`group relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2.5 text-xs sm:text-sm sm:px-6 sm:py-3 font-medium text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-105 ${className}`}
       >
         {children}
       </button>
