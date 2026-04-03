@@ -377,8 +377,8 @@ export default function LandingPage() {
             <p className="mb-2 mx-auto lg:mx-0 max-w-lg text-sm sm:text-base md:text-lg text-white/70">
               See real-time, location-verified wait times at doctor's offices before you leave home.
             </p>
-            <p className="mb-4 sm:mb-6 text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
-            <ul className="mb-6 sm:mb-8 space-y-2 sm:space-y-3 text-sm text-white/80 text-left mx-auto lg:mx-0 max-w-sm lg:max-w-none">
+            <p className="mb-3 sm:mb-6 text-xs sm:text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
+            <ul className="mb-4 sm:mb-8 space-y-1.5 sm:space-y-3 text-xs sm:text-sm text-white/80 text-left mx-auto lg:mx-0 max-w-sm lg:max-w-none">
               {[
                 "Verified by real patients physically at the clinic",
                 "Live updates that refresh every few minutes",
