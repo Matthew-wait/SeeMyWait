@@ -641,7 +641,7 @@ export default function LandingPage() {
 
           {/* Hero stat banner */}
           <Section delay={50} className="mb-8">
-            <div className="relative rounded-3xl border border-cyan-500/10 bg-gradient-to-r from-cyan-500/[0.06] via-blue-600/[0.04] to-purple-500/[0.06] p-8 sm:p-10 overflow-hidden">
+            <div className="relative rounded-2xl sm:rounded-3xl border border-cyan-500/10 bg-gradient-to-r from-cyan-500/[0.06] via-blue-600/[0.04] to-purple-500/[0.06] p-5 sm:p-8 md:p-10 overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(6,182,212,0.08)_0%,_transparent_50%)]" />
               <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
               <div className="relative flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
