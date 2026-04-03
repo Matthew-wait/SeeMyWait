@@ -927,7 +927,7 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6">
           <Section className="text-center mb-16">
             <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">Contact Us</p>
-            <h2 className="text-3xl font-bold sm:text-4xl mb-4">
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl mb-4">
               Get In{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Touch</span>
             </h2>
