@@ -198,7 +198,7 @@ const Index = () => {
   return (
     <div className="relative flex h-screen flex-col bg-background overflow-hidden">
       {/* Search bar overlay */}
-      <div className="absolute top-0 left-0 right-0 z-[50] px-3 pt-3 pb-2 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[50] px-2 sm:px-3 pt-2 sm:pt-3 pb-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-lg">
           <div className="relative rounded-2xl border border-border/40 bg-card/90 backdrop-blur-xl shadow-xl">
             <div className="flex items-center gap-2 px-3">
@@ -211,7 +211,7 @@ const Index = () => {
                 placeholder="Search doctor, clinic, or location…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-0 bg-transparent h-12 text-sm shadow-none focus-visible:ring-0 px-0"
+                className="border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 px-0"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="shrink-0 text-muted-foreground hover:text-foreground">

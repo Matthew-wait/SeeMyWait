@@ -649,20 +649,21 @@ export default function AdminDashboard() {
 
       <main className="mx-auto max-w-4xl px-3 pb-8 animate-in fade-in duration-500 sm:px-6">
         <Tabs defaultValue="clinics">
-          <TabsList className="mb-4 w-full">
-            <TabsTrigger value="clinics" className="flex-1">Doctors</TabsTrigger>
-            <TabsTrigger value="suggestions" className="flex-1">
-              Suggestions
+          <TabsList className="mb-4 w-full grid grid-cols-4">
+            <TabsTrigger value="clinics" className="text-xs sm:text-sm px-1 sm:px-3">Doctors</TabsTrigger>
+            <TabsTrigger value="suggestions" className="text-xs sm:text-sm px-1 sm:px-3">
+              <span className="hidden sm:inline">Suggestions</span>
+              <span className="sm:hidden">Suggest</span>
               {totalSuggestions > 0 && (
-                <Badge variant="destructive" className="ml-1.5 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                <Badge variant="destructive" className="ml-1 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[9px] sm:text-[10px]">
                   {totalSuggestions}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex-1">Reports</TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">
-              <Settings className="h-3.5 w-3.5 mr-1" />
-              Settings
+            <TabsTrigger value="reports" className="text-xs sm:text-sm px-1 sm:px-3">Reports</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm px-1 sm:px-3">
+              <Settings className="h-3.5 w-3.5 sm:mr-1" />
+              <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
 

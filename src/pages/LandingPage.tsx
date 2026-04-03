@@ -79,7 +79,7 @@ function GlowButton({
     return (
       <button
         onClick={onClick}
-        className={`group relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-medium text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-105 ${className}`}
+        className={`group relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2.5 text-xs sm:text-sm sm:px-6 sm:py-3 font-medium text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/40 hover:bg-white/10 hover:scale-105 ${className}`}
       >
         {children}
       </button>
@@ -88,7 +88,7 @@ function GlowButton({
   return (
     <button
       onClick={onClick}
-      className={`group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-500/40 hover:shadow-xl hover:scale-105 active:scale-[0.98] ${className}`}
+      className={`group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm sm:px-8 sm:py-4 sm:text-base font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-500/40 hover:shadow-xl hover:scale-105 active:scale-[0.98] ${className}`}
     >
       <span className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-50" />
       <span className="relative z-10 flex items-center gap-2">
@@ -202,29 +202,29 @@ function PhoneMockup() {
 
 function StoreButtons() {
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2 sm:gap-3">
       <button
         onClick={() => toast.info("Coming soon to Google Play! 🚀")}
-        className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:scale-105 active:scale-[0.98]"
+        className="group flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 py-2 sm:px-5 sm:py-3 backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:scale-105 active:scale-[0.98]"
       >
-        <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="currentColor">
+        <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-7 sm:w-7 text-white" fill="currentColor">
           <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302-2.302 2.302-2.816-2.302 2.816-2.302zM5.864 2.658L16.8 8.99l-2.302 2.302L5.864 2.658z" />
         </svg>
         <div className="text-left">
-          <p className="text-[9px] uppercase tracking-wider text-white/50 leading-none">Get it on</p>
-          <p className="text-sm font-semibold text-white leading-tight">Google Play</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-white/50 leading-none">Get it on</p>
+          <p className="text-xs sm:text-sm font-semibold text-white leading-tight">Google Play</p>
         </div>
       </button>
       <button
         onClick={() => toast.info("Coming soon to the App Store! 🍎")}
-        className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:scale-105 active:scale-[0.98]"
+        className="group flex items-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 px-3 py-2 sm:px-5 sm:py-3 backdrop-blur-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:scale-105 active:scale-[0.98]"
       >
-        <svg viewBox="0 0 24 24" className="h-7 w-7 text-white" fill="currentColor">
+        <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-7 sm:w-7 text-white" fill="currentColor">
           <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
         </svg>
         <div className="text-left">
-          <p className="text-[9px] uppercase tracking-wider text-white/50 leading-none">Download on the</p>
-          <p className="text-sm font-semibold text-white leading-tight">App Store</p>
+          <p className="text-[8px] sm:text-[9px] uppercase tracking-wider text-white/50 leading-none">Download on the</p>
+          <p className="text-xs sm:text-sm font-semibold text-white leading-tight">App Store</p>
         </div>
       </button>
     </div>
@@ -352,7 +352,7 @@ export default function LandingPage() {
       <NavHeader navigate={navigate} />
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen pt-20 flex items-center">
+      <section className="relative min-h-screen pt-16 sm:pt-20 flex items-center">
         {/* bg effects */}
         <div className="absolute inset-0">
           <div className="absolute left-1/4 top-1/4 h-[300px] w-[300px] sm:h-[500px] sm:w-[500px] rounded-full bg-cyan-600/10 blur-[120px]" />
@@ -360,7 +360,7 @@ export default function LandingPage() {
           <div className="absolute left-1/2 top-1/2 h-[200px] w-[200px] sm:h-[300px] sm:w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/5 blur-[100px]" />
         </div>
 
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-8 sm:gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:items-center py-8 sm:py-0">
+        <div className="relative z-10 mx-auto grid max-w-6xl gap-6 sm:gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center py-6 sm:py-0">
           {/* left */}
           <Section className="text-center lg:text-left">
             <p className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium text-cyan-300">
@@ -368,17 +368,17 @@ export default function LandingPage() {
               <span className="hidden sm:inline">Real-Time Wait Updates • Launching Soon</span>
               <span className="sm:hidden">Live Wait Updates • Soon</span>
             </p>
-            <h1 className="mb-4 sm:mb-6 text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+            <h1 className="mb-3 sm:mb-6 text-2xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
               Stop Waiting.{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Start Saving Time.
               </span>
             </h1>
-            <p className="mb-2 mx-auto lg:mx-0 max-w-lg text-base sm:text-lg text-white/70">
+            <p className="mb-2 mx-auto lg:mx-0 max-w-lg text-sm sm:text-base md:text-lg text-white/70">
               See real-time, location-verified wait times at doctor's offices before you leave home.
             </p>
-            <p className="mb-4 sm:mb-6 text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
-            <ul className="mb-6 sm:mb-8 space-y-2 sm:space-y-3 text-sm text-white/80 text-left mx-auto lg:mx-0 max-w-sm lg:max-w-none">
+            <p className="mb-3 sm:mb-6 text-xs sm:text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
+            <ul className="mb-4 sm:mb-8 space-y-1.5 sm:space-y-3 text-xs sm:text-sm text-white/80 text-left mx-auto lg:mx-0 max-w-sm lg:max-w-none">
               {[
                 "Verified by real patients physically at the clinic",
                 "Live updates that refresh every few minutes",
@@ -409,17 +409,17 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 2 – THE PROBLEM ── */}
-      <section className="relative py-24 sm:py-32">
+      <section className="relative py-16 sm:py-24 md:py-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
           <Section>
             <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">The Problem</p>
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+            <h2 className="mb-4 text-2xl font-bold sm:text-3xl md:text-4xl">
               Doctor Visits Shouldn't{" "}
               <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
                 Waste Your Time.
               </span>
             </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-white/60">
+            <p className="mx-auto mb-8 sm:mb-12 max-w-2xl text-sm sm:text-base text-white/60">
               Patients often wait 30–90 minutes with no information. You drive across town, sit in a crowded waiting
               room, and wonder if you should have just stayed home.
             </p>
@@ -474,15 +474,15 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 3 – HOW IT WORKS ── */}
-      <section id="how-it-works" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
+      <section id="how-it-works" className="relative py-16 sm:py-28 md:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/10 to-transparent" />
         <div className="absolute right-0 top-20 h-[300px] w-[300px] rounded-full bg-blue-600/5 blur-[100px]" />
         <div className="absolute left-0 bottom-20 h-[200px] w-[200px] rounded-full bg-cyan-600/5 blur-[80px]" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <Section className="text-center mb-20">
-            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+          <Section className="text-center mb-10 sm:mb-20">
+            <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
               Four Steps to{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Smarter Visits
@@ -533,15 +533,15 @@ export default function LandingPage() {
                         <s.icon className="h-7 w-7 text-cyan-400" />
                         <div className="absolute inset-0 rounded-2xl bg-cyan-500/10 blur-xl" />
                       </div>
-                      <span className="text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">
+                      <span className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">
                         {s.step}
                       </span>
                     </div>
-                    <div className="group relative flex-1 rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-8 backdrop-blur-sm transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5">
+                    <div className="group relative flex-1 rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 sm:p-8 backdrop-blur-sm transition-all duration-500 hover:border-cyan-500/20 hover:shadow-2xl hover:shadow-cyan-500/5">
                       <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                       <div className="relative">
-                        <h3 className="mb-2 text-xl font-bold">{s.title}</h3>
-                        <p className="text-white/50 leading-relaxed max-w-md">{s.desc}</p>
+                        <h3 className="mb-1 sm:mb-2 text-base sm:text-xl font-bold">{s.title}</h3>
+                        <p className="text-xs sm:text-base text-white/50 leading-relaxed max-w-md">{s.desc}</p>
                       </div>
                       <div className="absolute top-0 right-0 h-20 w-20 rounded-tr-3xl bg-gradient-to-bl from-cyan-500/5 to-transparent" />
                     </div>
@@ -554,11 +554,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 4 – WHY DIFFERENT ── */}
-      <section className="relative py-28 sm:py-36">
+      <section className="relative py-16 sm:py-28 md:py-36">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <Section className="text-center mb-20">
-            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+          <Section className="text-center mb-10 sm:mb-20">
+            <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400">Why We're Different</p>
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
               Not Just Notifications.{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Verified Reality.
@@ -568,7 +568,7 @@ export default function LandingPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Section delay={100}>
-              <div className="relative h-full rounded-3xl border border-red-500/10 bg-gradient-to-b from-red-500/[0.04] to-transparent p-8 overflow-hidden">
+              <div className="relative h-full rounded-2xl sm:rounded-3xl border border-red-500/10 bg-gradient-to-b from-red-500/[0.04] to-transparent p-5 sm:p-8 overflow-hidden">
                 <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-red-500/5" />
                 <p className="mb-6 text-sm font-bold uppercase tracking-wider text-red-400/80">Typical Apps</p>
                 <div className="space-y-5">
@@ -592,7 +592,7 @@ export default function LandingPage() {
             </Section>
 
             <Section delay={200}>
-              <div className="relative h-full rounded-3xl border border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-8 overflow-hidden">
+              <div className="relative h-full rounded-2xl sm:rounded-3xl border border-cyan-500/15 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-5 sm:p-8 overflow-hidden">
                 <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-cyan-500/5" />
                 <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[60px]" />
                 <p className="mb-6 text-sm font-bold uppercase tracking-wider text-cyan-400">SeeMyWait</p>
@@ -620,15 +620,15 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 5 – BENEFITS ── */}
-      <section id="benefits" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
+      <section id="benefits" className="relative py-16 sm:py-28 md:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-950/10 to-transparent" />
         <div className="absolute left-1/4 top-0 h-[600px] w-[600px] rounded-full bg-cyan-600/[0.04] blur-[150px]" />
         <div className="absolute right-1/4 bottom-0 h-[400px] w-[400px] rounded-full bg-purple-600/[0.04] blur-[120px]" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <Section className="text-center mb-20">
-            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">Benefits</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+          <Section className="text-center mb-10 sm:mb-20">
+            <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400">Benefits</p>
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
               Built For{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Smarter Visits
@@ -641,10 +641,10 @@ export default function LandingPage() {
 
           {/* Hero stat banner */}
           <Section delay={50} className="mb-8">
-            <div className="relative rounded-3xl border border-cyan-500/10 bg-gradient-to-r from-cyan-500/[0.06] via-blue-600/[0.04] to-purple-500/[0.06] p-8 sm:p-10 overflow-hidden">
+            <div className="relative rounded-2xl sm:rounded-3xl border border-cyan-500/10 bg-gradient-to-r from-cyan-500/[0.06] via-blue-600/[0.04] to-purple-500/[0.06] p-5 sm:p-8 md:p-10 overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(6,182,212,0.08)_0%,_transparent_50%)]" />
               <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
-              <div className="relative flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+              <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-10">
                 <div className="flex items-center gap-5">
                   <div className="relative">
                     <div className="absolute inset-0 rounded-2xl bg-cyan-500/20 blur-md" />
@@ -654,7 +654,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                      <span className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
                         45
                       </span>
                       <span className="text-lg text-white/50 font-medium">min</span>
@@ -664,7 +664,7 @@ export default function LandingPage() {
                 </div>
                 <div className="hidden sm:block h-14 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
                 <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-xl sm:text-2xl font-bold mb-1">Save Real Hours</h3>
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1">Save Real Hours</h3>
                   <p className="text-white/45 text-sm leading-relaxed max-w-md">
                     Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and
                     arrive when it's your turn.
@@ -675,7 +675,7 @@ export default function LandingPage() {
           </Section>
 
           {/* Feature row */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             {[
               {
                 icon: Eye,
@@ -736,12 +736,12 @@ export default function LandingPage() {
               return (
                 <Section key={i} delay={80 + i * 60} className={b.span}>
                   <div
-                    className={`group relative h-full rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}
+                    className={`group relative h-full rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-gradient-to-br ${c.bg} p-4 sm:p-7 transition-all duration-500 ${c.border} hover:shadow-lg hover:-translate-y-1`}
                   >
                     <div
                       className={`absolute -top-6 -right-6 h-24 w-24 rounded-full ${c.glow} blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
                     />
-                    <div className="relative flex items-start gap-5">
+                    <div className="relative flex items-start gap-3 sm:gap-5">
                       <div
                         className={`shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl ${c.glow} border border-white/[0.06]`}
                       >
@@ -761,9 +761,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 6 – PRIVACY ── */}
-      <section className="relative py-28 sm:py-36 overflow-hidden">
+      <section className="relative py-16 sm:py-28 md:py-36 overflow-hidden">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="relative rounded-[2.5rem] border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.04] to-cyan-500/[0.02] p-10 sm:p-16 overflow-hidden">
+          <div className="relative rounded-2xl sm:rounded-[2.5rem] border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.04] to-cyan-500/[0.02] p-5 sm:p-10 md:p-16 overflow-hidden">
             <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-emerald-500/10 blur-[80px]" />
             <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
             <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-emerald-500/20 via-transparent to-transparent" />
@@ -774,7 +774,7 @@ export default function LandingPage() {
                   <ShieldCheck className="h-7 w-7 text-emerald-400" />
                 </div>
                 <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-emerald-400">Privacy & Trust</p>
-                <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+                <h2 className="mb-4 text-2xl font-bold sm:text-3xl md:text-4xl">
                   Built With{" "}
                   <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                     Privacy In Mind.
@@ -798,12 +798,12 @@ export default function LandingPage() {
                   ].map((p, i) => (
                     <div
                       key={i}
-                      className="group flex items-center gap-4 rounded-2xl border border-white/[0.04] bg-white/[0.02] px-5 py-4 transition-all duration-300 hover:border-emerald-500/15 hover:bg-white/[0.04]"
+                      className="group flex items-center gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/[0.04] bg-white/[0.02] px-3 py-3 sm:px-5 sm:py-4 transition-all duration-300 hover:border-emerald-500/15 hover:bg-white/[0.04]"
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/10">
                         <p.icon className="h-4 w-4 text-emerald-400" />
                       </div>
-                      <span className="text-sm text-white/70 group-hover:text-white/90 transition-colors">
+                      <span className="text-xs sm:text-sm text-white/70 group-hover:text-white/90 transition-colors">
                         {p.text}
                       </span>
                     </div>
@@ -816,7 +816,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 7 – CTA ── */}
-      <section className="relative py-32 sm:py-40 overflow-hidden">
+      <section className="relative py-16 sm:py-32 md:py-40 overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-600/15 to-blue-600/15 blur-[150px]" />
         </div>
@@ -834,13 +834,13 @@ export default function LandingPage() {
               <Smartphone className="h-3.5 w-3.5" />
               Coming Soon to Google Play & App Store
             </div>
-            <h2 className="mb-6 text-4xl font-extrabold sm:text-5xl leading-[1.1]">
+            <h2 className="mb-4 sm:mb-6 text-2xl font-extrabold sm:text-4xl md:text-5xl leading-[1.1]">
               Ready to Stop{" "}
               <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Wasting Time?
               </span>
             </h2>
-            <p className="mb-10 text-lg text-white/50 max-w-lg mx-auto">
+            <p className="mb-6 sm:mb-10 text-sm sm:text-lg text-white/50 max-w-lg mx-auto">
               Be among the first to experience smarter healthcare visits. No more guessing. No more waiting blind.
             </p>
             <div className="flex flex-col items-center gap-6">
@@ -855,13 +855,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 8 – FAQ ── */}
-      <section id="faqs" className="py-28 sm:py-36 scroll-mt-20">
+      <section id="faqs" className="py-16 sm:py-28 md:py-36 scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.5fr] lg:items-start">
             <Section>
               <div className="lg:sticky lg:top-28">
                 <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
-                <h2 className="text-3xl font-bold sm:text-4xl mb-4">
+                <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl mb-4">
                   Got{" "}
                   <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                     Questions?
@@ -919,7 +919,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 9 – GET IN TOUCH ── */}
-      <section id="contact" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
+      <section id="contact" className="relative py-16 sm:py-28 md:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/10 to-transparent" />
         <div className="absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-blue-600/5 blur-[120px]" />
         <div className="absolute left-0 bottom-0 h-[300px] w-[300px] rounded-full bg-cyan-600/5 blur-[100px]" />
@@ -927,7 +927,7 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6">
           <Section className="text-center mb-16">
             <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-cyan-400">Contact Us</p>
-            <h2 className="text-3xl font-bold sm:text-4xl mb-4">
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl mb-4">
               Get In{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Touch</span>
             </h2>
@@ -937,7 +937,7 @@ export default function LandingPage() {
           </Section>
 
           <Section delay={100}>
-            <div className="relative rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-8 sm:p-10 backdrop-blur-sm overflow-hidden">
+            <div className="relative rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 sm:p-8 md:p-10 backdrop-blur-sm overflow-hidden">
               <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
               <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-blue-500/10 blur-[60px]" />
 
@@ -1031,7 +1031,7 @@ export default function LandingPage() {
       {/* ── FOOTER ── */}
       <footer className="border-t border-white/5 py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2 mb-4">
