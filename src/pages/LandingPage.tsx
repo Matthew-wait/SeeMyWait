@@ -761,9 +761,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 6 – PRIVACY ── */}
-      <section className="relative py-28 sm:py-36 overflow-hidden">
+      <section className="relative py-16 sm:py-28 md:py-36 overflow-hidden">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="relative rounded-[2.5rem] border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.04] to-cyan-500/[0.02] p-10 sm:p-16 overflow-hidden">
+          <div className="relative rounded-2xl sm:rounded-[2.5rem] border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.04] to-cyan-500/[0.02] p-5 sm:p-10 md:p-16 overflow-hidden">
             <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-emerald-500/10 blur-[80px]" />
             <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
             <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-emerald-500/20 via-transparent to-transparent" />
