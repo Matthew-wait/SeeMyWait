@@ -368,7 +368,7 @@ export default function LandingPage() {
               <span className="hidden sm:inline">Real-Time Wait Updates • Launching Soon</span>
               <span className="sm:hidden">Live Wait Updates • Soon</span>
             </p>
-            <h1 className="mb-4 sm:mb-6 text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
+            <h1 className="mb-3 sm:mb-6 text-2xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
               Stop Waiting.{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Start Saving Time.
