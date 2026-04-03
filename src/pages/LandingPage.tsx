@@ -840,7 +840,7 @@ export default function LandingPage() {
                 Wasting Time?
               </span>
             </h2>
-            <p className="mb-10 text-lg text-white/50 max-w-lg mx-auto">
+            <p className="mb-6 sm:mb-10 text-sm sm:text-lg text-white/50 max-w-lg mx-auto">
               Be among the first to experience smarter healthcare visits. No more guessing. No more waiting blind.
             </p>
             <div className="flex flex-col items-center gap-6">
