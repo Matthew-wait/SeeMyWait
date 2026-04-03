@@ -664,7 +664,7 @@ export default function LandingPage() {
                 </div>
                 <div className="hidden sm:block h-14 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
                 <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-xl sm:text-2xl font-bold mb-1">Save Real Hours</h3>
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1">Save Real Hours</h3>
                   <p className="text-white/45 text-sm leading-relaxed max-w-md">
                     Stop wasting hours in crowded waiting rooms. Know exactly what to expect before you leave home, and
                     arrive when it's your turn.
