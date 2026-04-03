@@ -741,7 +741,7 @@ export default function LandingPage() {
                     <div
                       className={`absolute -top-6 -right-6 h-24 w-24 rounded-full ${c.glow} blur-[40px] opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
                     />
-                    <div className="relative flex items-start gap-5">
+                    <div className="relative flex items-start gap-3 sm:gap-5">
                       <div
                         className={`shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl ${c.glow} border border-white/[0.06]`}
                       >
