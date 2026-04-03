@@ -798,7 +798,7 @@ export default function LandingPage() {
                   ].map((p, i) => (
                     <div
                       key={i}
-                      className="group flex items-center gap-4 rounded-2xl border border-white/[0.04] bg-white/[0.02] px-5 py-4 transition-all duration-300 hover:border-emerald-500/15 hover:bg-white/[0.04]"
+                      className="group flex items-center gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border border-white/[0.04] bg-white/[0.02] px-3 py-3 sm:px-5 sm:py-4 transition-all duration-300 hover:border-emerald-500/15 hover:bg-white/[0.04]"
                     >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/10">
                         <p.icon className="h-4 w-4 text-emerald-400" />
