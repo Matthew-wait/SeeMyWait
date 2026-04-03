@@ -861,7 +861,7 @@ export default function LandingPage() {
             <Section>
               <div className="lg:sticky lg:top-28">
                 <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">FAQ</p>
-                <h2 className="text-3xl font-bold sm:text-4xl mb-4">
+                <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl mb-4">
                   Got{" "}
                   <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                     Questions?
