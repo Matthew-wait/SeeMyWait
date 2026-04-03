@@ -533,7 +533,7 @@ export default function LandingPage() {
                         <s.icon className="h-7 w-7 text-cyan-400" />
                         <div className="absolute inset-0 rounded-2xl bg-cyan-500/10 blur-xl" />
                       </div>
-                      <span className="text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">
+                      <span className="text-3xl sm:text-5xl font-black bg-gradient-to-b from-white/10 to-transparent bg-clip-text text-transparent">
                         {s.step}
                       </span>
                     </div>
