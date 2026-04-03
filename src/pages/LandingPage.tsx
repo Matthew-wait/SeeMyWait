@@ -855,7 +855,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 8 – FAQ ── */}
-      <section id="faqs" className="py-28 sm:py-36 scroll-mt-20">
+      <section id="faqs" className="py-16 sm:py-28 md:py-36 scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-12 lg:grid-cols-[1fr_1.5fr] lg:items-start">
             <Section>
