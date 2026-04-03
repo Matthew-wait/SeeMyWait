@@ -480,9 +480,9 @@ export default function LandingPage() {
         <div className="absolute left-0 bottom-20 h-[200px] w-[200px] rounded-full bg-cyan-600/5 blur-[80px]" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <Section className="text-center mb-20">
-            <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
-            <h2 className="text-3xl font-bold sm:text-4xl">
+          <Section className="text-center mb-10 sm:mb-20">
+            <p className="mb-3 text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
+            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">
               Four Steps to{" "}
               <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                 Smarter Visits
