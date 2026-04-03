@@ -419,7 +419,7 @@ export default function LandingPage() {
                 Waste Your Time.
               </span>
             </h2>
-            <p className="mx-auto mb-12 max-w-2xl text-white/60">
+            <p className="mx-auto mb-8 sm:mb-12 max-w-2xl text-sm sm:text-base text-white/60">
               Patients often wait 30–90 minutes with no information. You drive across town, sit in a crowded waiting
               room, and wonder if you should have just stayed home.
             </p>
