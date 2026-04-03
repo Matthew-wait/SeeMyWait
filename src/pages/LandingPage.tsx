@@ -474,7 +474,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 3 – HOW IT WORKS ── */}
-      <section id="how-it-works" className="relative py-28 sm:py-36 overflow-hidden scroll-mt-20">
+      <section id="how-it-works" className="relative py-16 sm:py-28 md:py-36 overflow-hidden scroll-mt-20">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/10 to-transparent" />
         <div className="absolute right-0 top-20 h-[300px] w-[300px] rounded-full bg-blue-600/5 blur-[100px]" />
         <div className="absolute left-0 bottom-20 h-[200px] w-[200px] rounded-full bg-cyan-600/5 blur-[80px]" />
