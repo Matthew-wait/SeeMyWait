@@ -834,7 +834,7 @@ export default function LandingPage() {
               <Smartphone className="h-3.5 w-3.5" />
               Coming Soon to Google Play & App Store
             </div>
-            <h2 className="mb-6 text-4xl font-extrabold sm:text-5xl leading-[1.1]">
+            <h2 className="mb-4 sm:mb-6 text-2xl font-extrabold sm:text-4xl md:text-5xl leading-[1.1]">
               Ready to Stop{" "}
               <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Wasting Time?
