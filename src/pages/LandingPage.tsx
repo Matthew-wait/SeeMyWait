@@ -816,7 +816,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 7 – CTA ── */}
-      <section className="relative py-32 sm:py-40 overflow-hidden">
+      <section className="relative py-16 sm:py-32 md:py-40 overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute left-1/2 top-1/2 h-[500px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-600/15 to-blue-600/15 blur-[150px]" />
         </div>
