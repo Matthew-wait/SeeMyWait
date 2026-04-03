@@ -211,7 +211,7 @@ const Index = () => {
                 placeholder="Search doctor, clinic, or location…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-0 bg-transparent h-12 text-sm shadow-none focus-visible:ring-0 px-0"
+                className="border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 px-0"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="shrink-0 text-muted-foreground hover:text-foreground">
