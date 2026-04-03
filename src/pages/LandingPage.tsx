@@ -937,7 +937,7 @@ export default function LandingPage() {
           </Section>
 
           <Section delay={100}>
-            <div className="relative rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-8 sm:p-10 backdrop-blur-sm overflow-hidden">
+            <div className="relative rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-5 sm:p-8 md:p-10 backdrop-blur-sm overflow-hidden">
               <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-cyan-500/10 blur-[80px]" />
               <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-blue-500/10 blur-[60px]" />
 
