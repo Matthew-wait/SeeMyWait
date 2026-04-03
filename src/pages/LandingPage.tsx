@@ -409,7 +409,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── SECTION 2 – THE PROBLEM ── */}
-      <section className="relative py-24 sm:py-32">
+      <section className="relative py-16 sm:py-24 md:py-32">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
           <Section>
             <p className="mb-3 text-l font-semibold uppercase tracking-widest text-cyan-400">The Problem</p>
