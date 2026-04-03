@@ -360,7 +360,7 @@ export default function LandingPage() {
           <div className="absolute left-1/2 top-1/2 h-[200px] w-[200px] sm:h-[300px] sm:w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-600/5 blur-[100px]" />
         </div>
 
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-8 sm:gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:items-center py-8 sm:py-0">
+        <div className="relative z-10 mx-auto grid max-w-6xl gap-6 sm:gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center py-6 sm:py-0">
           {/* left */}
           <Section className="text-center lg:text-left">
             <p className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium text-cyan-300">
