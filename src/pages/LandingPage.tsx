@@ -774,7 +774,7 @@ export default function LandingPage() {
                   <ShieldCheck className="h-7 w-7 text-emerald-400" />
                 </div>
                 <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-emerald-400">Privacy & Trust</p>
-                <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+                <h2 className="mb-4 text-2xl font-bold sm:text-3xl md:text-4xl">
                   Built With{" "}
                   <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                     Privacy In Mind.
