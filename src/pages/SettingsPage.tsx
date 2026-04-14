@@ -1,22 +1,74 @@
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
+import { supabase } from "@/integrations/supabase/client";
+import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import {
   Settings, Heart, Moon, Sun, Bell, BellOff,
   Smartphone, Globe, ChevronRight, Sparkles,
-  Shield, MessageSquare,
+  Shield, MessageSquare, Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const [notifications, setNotifications] = useState(true);
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [notifications, setNotifications] = useState(() => localStorage.getItem("settings_notifications") !== "false");
+  const [reducedMotion, setReducedMotion] = useState(() => localStorage.getItem("settings_reduced_motion") === "true");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackEmail, setFeedbackEmail] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    localStorage.setItem("settings_notifications", String(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem("settings_reduced_motion", String(reducedMotion));
+    document.documentElement.classList.toggle("reduce-motion", reducedMotion);
+  }, [reducedMotion]);
+
+  const submitFeedback = async () => {
+    if (!feedbackMessage.trim()) {
+      toast.error("Please write your feedback before sending.");
+      return;
+    }
+
+    setSubmittingFeedback(true);
+    try {
+      const { error } = await supabase.from("feedback_submissions").insert({
+        email: feedbackEmail.trim() || null,
+        message: feedbackMessage.trim(),
+        device_fingerprint: getDeviceFingerprint(),
+        page: "settings",
+      });
+      if (error) throw error;
+      toast.success("Thanks for your feedback!");
+      setFeedbackMessage("");
+      setFeedbackEmail("");
+      setFeedbackOpen(false);
+    } catch (err: any) {
+      const code = err?.code || err?.cause?.code;
+      const message = err?.message || "Failed to send feedback. Please try again.";
+      if (code === "42P01") {
+        toast.error("Feedback storage is not set up yet. Please run the latest Supabase migration.");
+      } else {
+        toast.error(message);
+      }
+      console.error("Feedback submission failed:", err);
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-20">
@@ -125,7 +177,7 @@ export default function SettingsPage() {
           </div>
           <div className="px-4 pb-4 pt-2 space-y-1">
             <button
-              onClick={() => toast.info("Feedback feature coming soon!")}
+              onClick={() => setFeedbackOpen(true)}
               className="flex w-full items-center gap-3 rounded-xl p-3 transition-all hover:bg-muted/20 active:scale-[0.99]"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
@@ -152,6 +204,48 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="mx-3 w-full max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Feedback</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Email (optional)</p>
+              <Input
+                type="email"
+                value={feedbackEmail}
+                onChange={(e) => setFeedbackEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Message</p>
+              <Textarea
+                value={feedbackMessage}
+                onChange={(e) => setFeedbackMessage(e.target.value)}
+                placeholder="Tell us what we should improve..."
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setFeedbackOpen(false)}
+              disabled={submittingFeedback}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={submitFeedback} disabled={submittingFeedback}>
+              {submittingFeedback && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>

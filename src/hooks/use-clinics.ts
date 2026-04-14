@@ -19,9 +19,14 @@ export interface ClinicWithWaitTime extends Clinic {
   distance?: number;
 }
 
-export function useClinics(searchQuery?: string, userLat?: number, userLon?: number) {
+export function useClinics(
+  searchQuery?: string,
+  userLat?: number,
+  userLon?: number,
+  reportExpiryMinutes: number = 180
+) {
   return useQuery({
-    queryKey: ["clinics", searchQuery, userLat, userLon],
+    queryKey: ["clinics", searchQuery, userLat, userLon, reportExpiryMinutes],
     queryFn: async (): Promise<ClinicWithWaitTime[]> => {
       let query = supabase.from("clinics").select("*");
 
@@ -34,12 +39,12 @@ export function useClinics(searchQuery?: string, userLat?: number, userLon?: num
       if (error) throw error;
       if (!clinics) return [];
 
-      // Fetch recent wait time reports for all clinics
-      const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+      // Fetch reports within admin-configured expiry window
+      const cutoffIso = new Date(Date.now() - reportExpiryMinutes * 60 * 1000).toISOString();
       const { data: reports } = await supabase
         .from("wait_time_reports")
         .select("clinic_id, wait_time, reported_at")
-        .gte("reported_at", threeHoursAgo)
+        .gte("reported_at", cutoffIso)
         .eq("is_flagged", false);
 
       const reportsByClinic = (reports || []).reduce<
@@ -60,7 +65,7 @@ export function useClinics(searchQuery?: string, userLat?: number, userLon?: num
 
       let result: ClinicWithWaitTime[] = validClinics.map((c) => ({
         ...c,
-        waitTime: getAverageWaitTime(reportsByClinic[c.id] || []),
+        waitTime: getAverageWaitTime(reportsByClinic[c.id] || [], reportExpiryMinutes),
         distance:
           userLat !== undefined && userLon !== undefined
             ? getDistanceMiles(userLat, userLon, c.latitude, c.longitude)

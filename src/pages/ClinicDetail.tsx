@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/wait-time-utils";
 import { getCurrentPosition, isWithinRadius } from "@/lib/geolocation";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { useAppSettings } from "@/hooks/use-app-settings";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -43,7 +44,7 @@ function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: st
         href={mapsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-card/90 backdrop-blur-md px-3 py-1.5 text-xs font-medium text-foreground shadow-lg border border-border/30 hover:bg-card transition-colors"
+        className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-card/90 backdrop-blur-md px-2.5 py-1.5 text-[11px] font-medium text-foreground shadow-lg border border-border/30 hover:bg-card transition-colors sm:px-3 sm:text-xs"
       >
         <ExternalLink className="h-3 w-3 text-primary" />
         Open in Maps
@@ -59,6 +60,9 @@ export default function ClinicDetail() {
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
   const [locationError, setLocationError] = useState<"gps_off" | "too_far" | "rate_limited" | null>(null);
+  const [locationState, setLocationState] = useState<"checking" | "ready" | "gps_off" | "low_accuracy" | "too_far">("checking");
+  const { data: appSettings } = useAppSettings();
+  const reportWindowMinutes = appSettings?.report_cooldown_minutes ?? 60;
 
   const { data: clinic, isLoading: clinicLoading } = useQuery({
     queryKey: ["clinic", id],
@@ -97,7 +101,48 @@ export default function ClinicDetail() {
     enabled: !!id,
   });
 
-  const waitTime = reports ? getAverageWaitTime(reports) : null;
+  const waitTime = reports ? getAverageWaitTime(reports, reportWindowMinutes) : null;
+  const recentReportCount = useMemo(() => {
+    if (!reports) return 0;
+    const cutoff = Date.now() - reportWindowMinutes * 60 * 1000;
+    return reports.filter((r) => new Date(r.reported_at).getTime() >= cutoff).length;
+  }, [reports, reportWindowMinutes]);
+  const recentReports = useMemo(() => {
+    if (!reports) return [];
+    const threeHoursAgo = Date.now() - reportWindowMinutes * 60 * 1000;
+    return reports
+      .filter((r) => new Date(r.reported_at).getTime() >= threeHoursAgo)
+      .slice(0, 5);
+  }, [reports, reportWindowMinutes]);
+
+  useEffect(() => {
+    if (!clinic) return;
+
+    const validateLocationForReporting = async () => {
+      setLocationState("checking");
+      try {
+        const pos = await getCurrentPosition();
+        if (pos.coords.accuracy > 100) {
+          setLocationState("low_accuracy");
+          return;
+        }
+        const withinRange = isWithinRadius(
+          pos.coords.latitude,
+          pos.coords.longitude,
+          clinic.latitude,
+          clinic.longitude,
+          100
+        );
+        setLocationState(withinRange ? "ready" : "too_far");
+      } catch {
+        setLocationState("gps_off");
+      }
+    };
+
+    validateLocationForReporting();
+  }, [clinic]);
+
+  const reportButtonsDisabled = submitting || checkingLocation || locationState !== "ready";
 
   const handleReport = async (category: WaitTimeCategory) => {
     if (!clinic) return;
@@ -111,7 +156,7 @@ export default function ClinicDetail() {
         pos.coords.longitude,
         clinic.latitude,
         clinic.longitude,
-        150
+        100
       );
 
       if (!withinRange) {
@@ -132,7 +177,7 @@ export default function ClinicDetail() {
 
     try {
       const fingerprint = getDeviceFingerprint();
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const oneHourAgo = new Date(Date.now() - reportWindowMinutes * 60 * 1000).toISOString();
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
@@ -294,15 +339,58 @@ export default function ClinicDetail() {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : waitTime ? (
-              <div className="flex items-center gap-3 rounded-xl bg-muted/10 border border-border/20 p-3">
+              <div className="flex flex-col items-start gap-2 rounded-xl border border-border/20 bg-muted/10 p-3 sm:flex-row sm:items-center sm:gap-3">
                 <WaitTimeBadge category={waitTime.category} showIcon className="text-sm px-4 py-1.5" />
-                <span className="text-xs text-muted-foreground">
-                  Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
-                </span>
+                <div className="space-y-0.5">
+                  <span className="block text-xs text-muted-foreground">
+                    Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
+                  </span>
+                  <span className="block text-[11px] font-medium text-muted-foreground">
+                    {recentReportCount} report{recentReportCount !== 1 ? "s" : ""} in last {reportWindowMinutes} minutes
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
                 <p className="text-sm text-muted-foreground">No recent reports — be the first!</p>
+                <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+                  {recentReportCount} report{recentReportCount !== 1 ? "s" : ""} in last {reportWindowMinutes} minutes
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Reports (last 3 hours) */}
+        <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-transparent px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
+                <Clock className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-card-foreground">Recent Reports</h2>
+                <p className="text-[11px] text-muted-foreground">Last {reportWindowMinutes} minutes</p>
+              </div>
+            </div>
+          </div>
+          <div className="px-4 pb-4 pt-2">
+            {reportsLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            ) : recentReports.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No reports submitted in the last {reportWindowMinutes} minutes.</p>
+            ) : (
+              <div className="space-y-2">
+                {recentReports.map((report, idx) => (
+                  <div key={`${report.reported_at}-${idx}`} className="flex items-center justify-between rounded-xl border border-border/20 bg-muted/10 px-3 py-2">
+                    <WaitTimeBadge category={report.wait_time} />
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(report.reported_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -322,6 +410,26 @@ export default function ClinicDetail() {
             </div>
           </div>
           <div className="px-4 pb-4 pt-2">
+            {locationState === "checking" && (
+              <div className="mb-2 rounded-lg border border-border/30 bg-muted/10 px-3 py-2 text-[11px] text-muted-foreground">
+                Checking location...
+              </div>
+            )}
+            {locationState === "gps_off" && (
+              <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
+                GPS is off or unavailable. Enable location services to report.
+              </div>
+            )}
+            {locationState === "low_accuracy" && (
+              <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
+                Location accuracy is too low. Move to an open area and try again.
+              </div>
+            )}
+            {locationState === "too_far" && (
+              <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
+                You need to be closer to this clinic to submit a report.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2.5">
               {WAIT_OPTIONS.map((opt) => (
                 <button
@@ -330,8 +438,8 @@ export default function ClinicDetail() {
                     selectedOption === opt.value
                       ? "border-primary bg-primary/10 text-primary shadow-md shadow-primary/10"
                       : "border-border/30 bg-card text-card-foreground hover:border-primary/30 hover:bg-primary/5"
-                  } ${submitting || checkingLocation ? "opacity-50 pointer-events-none" : ""}`}
-                  disabled={submitting || checkingLocation}
+                  } ${reportButtonsDisabled ? "opacity-50 pointer-events-none" : ""}`}
+                  disabled={reportButtonsDisabled}
                   onClick={() => handleReport(opt.value)}
                 >
                   {(submitting || checkingLocation) && selectedOption === opt.value ? (

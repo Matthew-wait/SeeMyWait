@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, Loader2, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BottomNav } from "@/components/BottomNav";
 import { useClinics } from "@/hooks/use-clinics";
 import { getCurrentPosition, isWithinRadius, getDistanceMeters } from "@/lib/geolocation";
 import { MapView, SearchArea } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
-import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
 import { ProximityPrompt } from "@/components/map/ProximityPrompt";
 import { SearchCircleOverlay } from "@/components/map/SearchCircleOverlay";
 import { ClinicListPanel } from "@/components/map/ClinicListPanel";
@@ -18,12 +18,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const SEARCH_RADIUS_METERS = 5000;
+const CITY_FILTER_OPTIONS = ["all", "Miami", "Miami Beach", "Hialeah", "Coral Gables", "Doral"] as const;
 
 const Index = () => {
   const [search, setSearch] = useState("");
+  const [cityFilter, setCityFilter] = useState<(typeof CITY_FILTER_OPTIONS)[number]>("all");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(true);
-  const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
   const [nearbyClinic, setNearbyClinic] = useState<ClinicWithWaitTime | null>(null);
   const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
@@ -40,7 +41,8 @@ const Index = () => {
   const { data: clinics, isLoading, refetch } = useClinics(
     undefined,
     userLocation?.lat,
-    userLocation?.lng
+    userLocation?.lng,
+    reportCooldownMinutes
   );
 
   useEffect(() => {
@@ -150,27 +152,45 @@ const Index = () => {
     };
   }, [search, geocode, clinics, userLocation]);
 
-  // Clinics to show on map: DB matches if searching, otherwise all
-  const displayedClinics = useMemo(() => {
+  // Clinics visible to user based on admin nearby radius setting
+  const clinicsWithinNearbyRadius = useMemo(() => {
     if (!clinics) return [];
-    if (search.trim() && dbMatchedClinics.length > 0) return dbMatchedClinics;
-    if (searchArea && clinics) {
-      return clinics.filter((c) => {
+    if (!userLocation) return clinics;
+    return clinics.filter((c) => (c.distance || 999) <= nearbyRadiusMiles);
+  }, [clinics, userLocation, nearbyRadiusMiles]);
+
+  const clinicsWithinRadiusAndCity = useMemo(() => {
+    if (cityFilter === "all") return clinicsWithinNearbyRadius;
+    const cityNeedle = cityFilter.toLowerCase();
+    return clinicsWithinNearbyRadius.filter((c) => c.address.toLowerCase().includes(cityNeedle));
+  }, [cityFilter, clinicsWithinNearbyRadius]);
+
+  // Clinics to show on map: DB matches if searching, otherwise nearby-radius filtered
+  const displayedClinics = useMemo(() => {
+    if (!clinicsWithinRadiusAndCity.length) return [];
+    if (search.trim() && dbMatchedClinics.length > 0) {
+      return dbMatchedClinics.filter(
+        (c) =>
+          (c.distance || 999) <= nearbyRadiusMiles &&
+          (cityFilter === "all" || c.address.toLowerCase().includes(cityFilter.toLowerCase()))
+      );
+    }
+    if (searchArea) {
+      return clinicsWithinRadiusAndCity.filter((c) => {
         const dist = getDistanceMeters(searchArea.lat, searchArea.lng, c.latitude, c.longitude);
         return dist <= searchArea.radiusMeters;
       });
     }
-    return clinics;
-  }, [clinics, search, dbMatchedClinics, searchArea]);
+    return clinicsWithinRadiusAndCity;
+  }, [cityFilter, clinicsWithinRadiusAndCity, nearbyRadiusMiles, search, dbMatchedClinics, searchArea]);
 
   // Nearby clinics for "Explore" list — show all sorted by distance, or all if no location
   const nearbyClinics = useMemo(() => {
-    if (!clinics) return [];
-    if (!userLocation) return clinics;
-    return [...clinics]
-      .filter((c) => (c.distance || 999) <= nearbyRadiusMiles)
+    if (!clinicsWithinRadiusAndCity) return [];
+    if (!userLocation) return clinicsWithinRadiusAndCity;
+    return [...clinicsWithinRadiusAndCity]
       .sort((a, b) => (a.distance || 999) - (b.distance || 999));
-  }, [clinics, userLocation, nearbyRadiusMiles]);
+  }, [clinicsWithinRadiusAndCity, userLocation]);
 
   const handleFindMe = useCallback(() => {
     if (userLocation) {
@@ -179,16 +199,14 @@ const Index = () => {
   }, [userLocation]);
 
   const handleClinicClick = useCallback((clinic: ClinicWithWaitTime) => {
-    setSelectedClinic(clinic);
-    setCenterOn({ lat: clinic.latitude, lng: clinic.longitude, zoom: 16 });
-  }, []);
+    navigate(`/clinic/${clinic.id}`);
+  }, [navigate]);
 
   const handleEmptyClick = useCallback(() => {
-    setSelectedClinic(null);
+    // No-op: detail flow is navigation-based now
   }, []);
 
   const handleReported = useCallback(() => {
-    setSelectedClinic(null);
     setNearbyClinic(null);
     refetch();
   }, [refetch]);
@@ -218,6 +236,21 @@ const Index = () => {
                   <X className="h-4 w-4" />
                 </button>
               )}
+            </div>
+            <div className="border-t border-border/20 px-3 py-2">
+              <Select value={cityFilter} onValueChange={(v) => setCityFilter(v as (typeof CITY_FILTER_OPTIONS)[number])}>
+                <SelectTrigger className="h-8 border-border/40 bg-background/60 text-[11px] sm:text-xs">
+                  <SelectValue placeholder="Filter by city" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cities</SelectItem>
+                  <SelectItem value="Miami">Miami</SelectItem>
+                  <SelectItem value="Miami Beach">Miami Beach</SelectItem>
+                  <SelectItem value="Hialeah">Hialeah</SelectItem>
+                  <SelectItem value="Coral Gables">Coral Gables</SelectItem>
+                  <SelectItem value="Doral">Doral</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {search.trim() && !geocoding && searchArea && (
               <div className="border-t border-border/20 px-4 py-2 flex items-center gap-1.5">
@@ -275,24 +308,15 @@ const Index = () => {
             />
           )}
 
-          {nearbyClinic && !selectedClinic && !searchArea && (
+          {nearbyClinic && !searchArea && (
             <ProximityPrompt
               clinic={nearbyClinic}
+              cooldownMinutes={reportCooldownMinutes}
               onDismiss={() => {
                 setDismissedPrompts((prev) => new Set(prev).add(nearbyClinic.id));
                 setNearbyClinic(null);
               }}
               onReported={handleReported}
-            />
-          )}
-
-          {selectedClinic && (
-            <ClinicBottomSheet
-              clinic={selectedClinic}
-              onClose={() => setSelectedClinic(null)}
-              onReported={handleReported}
-              userLocation={userLocation}
-              cooldownMinutes={reportCooldownMinutes}
             />
           )}
         </div>

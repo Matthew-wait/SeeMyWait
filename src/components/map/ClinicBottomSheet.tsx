@@ -49,7 +49,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
       const pos = await getCurrentPosition();
       const withinRange = isWithinRadius(
         pos.coords.latitude, pos.coords.longitude,
-        clinic.latitude, clinic.longitude, 150
+        clinic.latitude, clinic.longitude, 100
       );
       if (!withinRange) {
         setError("You must be at or near this clinic to report.");
@@ -58,7 +58,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
         return;
       }
 
-      if (pos.coords.accuracy > 300) {
+      if (pos.coords.accuracy > 100) {
         setError("GPS signal too weak. Try stepping outside or near a window.");
         setSubmitting(false);
         setSelectedOption(null);
@@ -70,6 +70,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
+        .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
         .gte("reported_at", cooldownAgo)
         .limit(1);
@@ -121,7 +122,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
           <X className="h-4 w-4" />
         </button>
 
-        <div className="px-5 pb-5 pt-1 space-y-4">
+        <div className="space-y-4 px-3 pb-4 pt-1 sm:px-5 sm:pb-5">
           {/* Header */}
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
@@ -145,8 +146,8 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
           <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
             {clinic.waitTime ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                     <WaitTimeBadge category={clinic.waitTime.category} showIcon />
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
@@ -181,11 +182,11 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
           {/* Report buttons */}
           <div>
             <p className="text-xs font-semibold text-card-foreground mb-2">Report Wait Time</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {WAIT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
-                  className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
+                  className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-[10px] font-semibold transition-all duration-200 active:scale-95 sm:text-[11px] ${
                     selectedOption === opt.value
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/30 bg-card text-card-foreground hover:border-primary/30"

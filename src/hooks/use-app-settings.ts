@@ -31,6 +31,9 @@ export function useAppSettings() {
       });
       return settings;
     },
-    staleTime: 5 * 60 * 1000,
+    // Keep settings fresh so admin changes apply quickly for users
+    staleTime: 0,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 }

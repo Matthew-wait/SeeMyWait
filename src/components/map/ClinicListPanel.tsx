@@ -58,8 +58,8 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
 
   return (
     <div className="bg-background border-t border-border/30 pb-20">
-      <div className="px-3 pt-3 pb-1 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">
+      <div className="flex items-start justify-between gap-2 px-3 pb-1 pt-3">
+        <h3 className="min-w-0 text-sm font-semibold text-foreground">
           {isSearching
             ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
             : `Nearby Clinics (${nearbyClinics.length})`}
@@ -104,11 +104,11 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
                   )}
                 </div>
               </div>
-              <div className="shrink-0">
+              <div className="min-w-[86px] shrink-0">
                 {clinic.waitTime ? (
                   <div className="flex flex-col items-end gap-0.5">
                     <WaitTimeBadge category={clinic.waitTime.category} />
-                    <span className="text-[9px] text-muted-foreground">
+                    <span className="text-right text-[9px] text-muted-foreground">
                       {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
                     </span>
                   </div>

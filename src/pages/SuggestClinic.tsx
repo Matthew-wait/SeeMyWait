@@ -242,10 +242,9 @@ export default function SuggestClinic() {
                 </div>
 
                 {/* Type + Specialty row */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium flex items-center gap-1.5">
-                      <Building2 className="h-3 w-3 text-primary/70" />
+                    <Label className="flex h-4 items-center text-xs font-medium">
                       Type
                     </Label>
                     <Select value={clinicType} onValueChange={setClinicType}>
@@ -260,7 +259,7 @@ export default function SuggestClinic() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="specialty" className="text-xs font-medium">
+                    <Label htmlFor="specialty" className="flex h-4 items-center text-xs font-medium">
                       Specialty
                     </Label>
                     <Input
@@ -285,7 +284,7 @@ export default function SuggestClinic() {
                       placeholder="e.g. 123 Main St, Miami, FL 33101"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/60 h-11 pr-32"
+                      className="rounded-xl border-border/40 bg-background/60 h-11 pr-12 sm:pr-32"
                       required
                     />
                     <button
@@ -330,7 +329,7 @@ export default function SuggestClinic() {
                       ) : (
                         <MapPin className="h-3 w-3" />
                       )}
-                      Use Current Location
+                      <span className="hidden sm:inline">Use Current Location</span>
                     </button>
                   </div>
                 </div>

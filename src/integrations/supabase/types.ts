@@ -128,6 +128,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_submissions: {
+        Row: {
+          created_at: string
+          device_fingerprint: string
+          email: string | null
+          id: string
+          message: string
+          page: string
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint: string
+          email?: string | null
+          id?: string
+          message: string
+          page?: string
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string
+          email?: string | null
+          id?: string
+          message?: string
+          page?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

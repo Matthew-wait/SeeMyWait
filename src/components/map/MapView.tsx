@@ -45,7 +45,7 @@ const PIN_STYLES = `
     box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     border-radius: 12px !important;
     overflow: hidden !important;
-    margin-top: 70px !important;
+    margin-top: 118px !important;
   }
   .leaflet-control-zoom a {
     background: hsl(210 40% 98%) !important;
@@ -59,6 +59,11 @@ const PIN_STYLES = `
   .dark .leaflet-control-zoom a {
     background: hsl(217 32% 17%) !important;
     color: hsl(210 40% 98%) !important;
+  }
+  @media (min-width: 640px) {
+    .leaflet-control-zoom {
+      margin-top: 76px !important;
+    }
   }
   .search-count-tooltip {
     background: hsl(222 47% 11% / 0.9) !important;

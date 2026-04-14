@@ -37,6 +37,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
+import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { toast } from "sonner";
 
 /* ──────────────────── helpers ──────────────────── */
@@ -338,12 +340,30 @@ export default function LandingPage() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactMessage, setContactMessage] = useState("");
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Thanks for reaching out! We'll get back to you soon.");
-    setContactName("");
-    setContactEmail("");
-    setContactMessage("");
+    try {
+      const payload = {
+        email: contactEmail.trim() || null,
+        message: `Name: ${contactName.trim() || "N/A"}\n\n${contactMessage.trim()}`,
+        device_fingerprint: getDeviceFingerprint(),
+        page: "landing_contact",
+      };
+      const { error } = await supabase.from("feedback_submissions").insert(payload);
+      if (error) throw error;
+
+      toast.success("Thanks for reaching out! We'll get back to you soon.");
+      setContactName("");
+      setContactEmail("");
+      setContactMessage("");
+    } catch (err: any) {
+      const code = err?.code || err?.cause?.code;
+      if (code === "42P01") {
+        toast.error("Feedback storage is not set up yet. Please run the latest Supabase migration.");
+      } else {
+        toast.error(err?.message || "Failed to send message. Please try again.");
+      }
+    }
   };
 
   return (
@@ -830,7 +850,7 @@ export default function LandingPage() {
 
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <Section>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1.5 text-sm font-large text-cyan-300">
+            <div className="mb-6 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300 sm:gap-2 sm:px-4 sm:py-1.5 sm:text-sm">
               <Smartphone className="h-3.5 w-3.5" />
               Coming Soon to Google Play & App Store
             </div>
@@ -1031,7 +1051,7 @@ export default function LandingPage() {
       {/* ── FOOTER ── */}
       <footer className="border-t border-white/5 py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-8 grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2 mb-4">

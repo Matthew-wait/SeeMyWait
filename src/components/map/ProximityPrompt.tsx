@@ -18,9 +18,10 @@ interface ProximityPromptProps {
   clinic: ClinicWithWaitTime;
   onDismiss: () => void;
   onReported: () => void;
+  cooldownMinutes?: number;
 }
 
-export function ProximityPrompt({ clinic, onDismiss, onReported }: ProximityPromptProps) {
+export function ProximityPrompt({ clinic, onDismiss, onReported, cooldownMinutes = 60 }: ProximityPromptProps) {
   const [submitting, setSubmitting] = useState(false);
   const [selected, setSelected] = useState<WaitTimeCategory | null>(null);
 
@@ -30,24 +31,31 @@ export function ProximityPrompt({ clinic, onDismiss, onReported }: ProximityProm
 
     try {
       const pos = await getCurrentPosition();
-      if (!isWithinRadius(pos.coords.latitude, pos.coords.longitude, clinic.latitude, clinic.longitude, 150)) {
+      if (!isWithinRadius(pos.coords.latitude, pos.coords.longitude, clinic.latitude, clinic.longitude, 100)) {
         toast.error("You're no longer near this clinic.");
+        setSubmitting(false);
+        setSelected(null);
+        return;
+      }
+      if (pos.coords.accuracy > 100) {
+        toast.error("GPS accuracy is too low. Move closer to an open area and try again.");
         setSubmitting(false);
         setSelected(null);
         return;
       }
 
       const fingerprint = getDeviceFingerprint();
-      const sixtyMinAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const cooldownAgo = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
+        .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
-        .gte("reported_at", sixtyMinAgo)
+        .gte("reported_at", cooldownAgo)
         .limit(1);
 
       if (existing && existing.length > 0) {
-        toast.info("You already reported recently for this clinic.");
+        toast.info(`You already reported recently for this clinic. Try again in ${cooldownMinutes} minutes.`);
         onDismiss();
         return;
       }
@@ -88,11 +96,11 @@ export function ProximityPrompt({ clinic, onDismiss, onReported }: ProximityProm
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
           {QUICK_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              className={`flex flex-col items-center gap-0.5 rounded-xl border px-1.5 py-2 text-[10px] font-semibold transition-all active:scale-95 ${
+              className={`flex flex-col items-center gap-0.5 rounded-xl border px-1.5 py-2 text-[9px] font-semibold transition-all active:scale-95 sm:text-[10px] ${
                 selected === opt.value
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border/30 text-card-foreground hover:border-primary/30"

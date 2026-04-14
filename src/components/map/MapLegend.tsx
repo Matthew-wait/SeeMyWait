@@ -13,7 +13,7 @@ export function MapLegend() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="absolute top-[60px] right-3 z-[50]">
+    <div className="absolute right-3 top-[106px] z-[50] sm:top-[72px]">
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 rounded-xl bg-card/90 backdrop-blur-xl border border-border/30 px-3 py-2 text-[11px] font-semibold text-card-foreground shadow-lg transition-all hover:bg-card"

@@ -14,7 +14,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 bg-card/95 backdrop-blur-2xl safe-area-inset-bottom">
-      <div className="mx-auto flex max-w-2xl items-center justify-around py-1 pb-safe">
+      <div className="mx-auto flex max-w-2xl items-center justify-around gap-1 px-1 py-1 pb-safe">
         {navItems.map((item) => {
           const isActive =
             item.path === "/"
@@ -25,7 +25,7 @@ export function BottomNav() {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "relative flex flex-col items-center gap-0.5 rounded-2xl px-6 py-2 text-[11px] transition-all duration-300",
+                "relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl px-2 py-2 text-[10px] transition-all duration-300 sm:flex-none sm:px-6 sm:text-[11px]",
                 isActive
                   ? "text-primary font-semibold"
                   : "text-muted-foreground hover:text-foreground"
@@ -40,7 +40,7 @@ export function BottomNav() {
               )}>
                 <item.icon className={cn("h-[18px] w-[18px] transition-colors", isActive && "text-primary")} />
               </div>
-              <span className="tracking-wide">{item.label}</span>
+              <span className="max-w-full truncate tracking-wide">{item.label}</span>
             </button>
           );
         })}

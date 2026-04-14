@@ -22,37 +22,23 @@ export const WAIT_TIME_TEXT_COLORS: Record<WaitTimeCategory, string> = {
 };
 
 export function getAverageWaitTime(
-  reports: { wait_time: WaitTimeCategory; reported_at: string }[]
+  reports: { wait_time: WaitTimeCategory; reported_at: string }[],
+  maxAgeMinutes: number = 180
 ): { category: WaitTimeCategory; label: string; lastReported: string } | null {
-  // Only consider reports from the last 3 hours
-  const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-  const recent = reports.filter((r) => r.reported_at > threeHoursAgo);
+  // Only consider reports newer than the configured expiry window
+  const cutoffIso = new Date(Date.now() - maxAgeMinutes * 60 * 1000).toISOString();
+  const recent = reports.filter((r) => r.reported_at > cutoffIso);
 
   if (recent.length === 0) return null;
-
-  const weights: Record<WaitTimeCategory, number> = {
-    on_time: 0,
-    "30_min": 30,
-    "1_hour": 60,
-    "1.5_hours_plus": 90,
-  };
-
-  const avg =
-    recent.reduce((sum, r) => sum + weights[r.wait_time], 0) / recent.length;
-
-  let category: WaitTimeCategory;
-  if (avg <= 10) category = "on_time";
-  else if (avg <= 40) category = "30_min";
-  else if (avg <= 70) category = "1_hour";
-  else category = "1.5_hours_plus";
 
   const sorted = [...recent].sort(
     (a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()
   );
+  const latest = sorted[0];
 
   return {
-    category,
-    label: WAIT_TIME_LABELS[category],
-    lastReported: sorted[0].reported_at,
+    category: latest.wait_time,
+    label: WAIT_TIME_LABELS[latest.wait_time],
+    lastReported: latest.reported_at,
   };
 }

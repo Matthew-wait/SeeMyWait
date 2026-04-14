@@ -24,7 +24,7 @@ import { WaitTimeCategory } from "@/lib/wait-time-utils";
 import {
   LogOut, Loader2, Check, X, Trash2, Search, Download,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
-  Upload, FileSpreadsheet, AlertCircle, Settings,
+  Upload, FileSpreadsheet, AlertCircle, Settings, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -375,6 +375,7 @@ function CsvUploadDialog({
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("clinics");
   const [searchQuery, setSearchQuery] = useState("");
   const [importQuery, setImportQuery] = useState("doctor Miami");
   const [importing, setImporting] = useState(false);
@@ -447,21 +448,22 @@ export default function AdminDashboard() {
     }
   }, [appSettings]);
 
-  const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).getTime();
+  const reportExpiryMinutes = parseInt(cooldownMinutes || "60", 10) || 60;
+  const expiryCutoffTime = new Date(Date.now() - reportExpiryMinutes * 60 * 1000).getTime();
 
   const filteredReports = useMemo(() => {
     if (!recentReports) return [];
     return recentReports.filter((r: any) => {
       const reportTime = new Date(r.reported_at).getTime();
-      const isActive = reportTime > threeHoursAgo;
+      const isActive = reportTime > expiryCutoffTime;
       return showActiveReports ? isActive : !isActive;
     });
-  }, [recentReports, showActiveReports, threeHoursAgo]);
+  }, [recentReports, showActiveReports, expiryCutoffTime]);
 
   const activeReportCount = useMemo(() => {
     if (!recentReports) return 0;
-    return recentReports.filter((r: any) => new Date(r.reported_at).getTime() > threeHoursAgo && !r.is_flagged).length;
-  }, [recentReports, threeHoursAgo]);
+    return recentReports.filter((r: any) => new Date(r.reported_at).getTime() > expiryCutoffTime && !r.is_flagged).length;
+  }, [recentReports, expiryCutoffTime]);
 
   const handleSaveSettings = async () => {
     setSavingSettings(true);
@@ -540,6 +542,26 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to delete clinic."),
   });
 
+  const resetClinicWaitTimes = useMutation({
+    mutationFn: async (clinicId: string) => {
+      const expiryMinutes = parseInt(cooldownMinutes || "60", 10) || 60;
+      const cutoffIso = new Date(Date.now() - expiryMinutes * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from("wait_time_reports")
+        .delete()
+        .eq("clinic_id", clinicId)
+        .gte("reported_at", cutoffIso);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Current wait reports reset.");
+      queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
+      queryClient.invalidateQueries({ queryKey: ["clinics"] });
+      queryClient.invalidateQueries({ queryKey: ["clinic"] });
+    },
+    onError: () => toast.error("Failed to reset wait reports."),
+  });
+
   const approveSuggestion = useMutation({
     mutationFn: async (suggestion: any) => {
       const { error: clinicError } = await supabase.from("clinics").insert({
@@ -569,6 +591,23 @@ export default function AdminDashboard() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Report flagged."); queryClient.invalidateQueries({ queryKey: ["admin-reports"] }); },
+  });
+
+  const unflagReport = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("wait_time_reports").update({ is_flagged: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Report restored."); queryClient.invalidateQueries({ queryKey: ["admin-reports"] }); },
+  });
+
+  const deleteReport = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("wait_time_reports").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Report deleted."); queryClient.invalidateQueries({ queryKey: ["admin-reports"] }); },
+    onError: () => toast.error("Failed to delete report."),
   });
 
   const handleImport = async () => {
@@ -616,9 +655,20 @@ export default function AdminDashboard() {
             </div>
             <h1 className="text-base font-bold text-secondary-foreground truncate sm:text-lg">Admin Dashboard</h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10">
-            <LogOut className="mr-1 h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setActiveTab("settings")}
+              className="sm:hidden h-8 w-8 shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10"
+              title="Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10">
+              <LogOut className="sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -648,10 +698,11 @@ export default function AdminDashboard() {
       </div>
 
       <main className="mx-auto max-w-4xl px-3 pb-8 animate-in fade-in duration-500 sm:px-6">
-        <Tabs defaultValue="clinics">
-          <TabsList className="mb-4 w-full grid grid-cols-4">
-            <TabsTrigger value="clinics" className="text-xs sm:text-sm px-1 sm:px-3">Doctors</TabsTrigger>
-            <TabsTrigger value="suggestions" className="text-xs sm:text-sm px-1 sm:px-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="mb-4">
+            <TabsList className="grid w-full grid-cols-3 gap-1 p-1 sm:grid-cols-4">
+              <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
+              <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <span className="hidden sm:inline">Suggestions</span>
               <span className="sm:hidden">Suggest</span>
               {totalSuggestions > 0 && (
@@ -659,17 +710,18 @@ export default function AdminDashboard() {
                   {totalSuggestions}
                 </Badge>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="text-xs sm:text-sm px-1 sm:px-3">Reports</TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs sm:text-sm px-1 sm:px-3">
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Reports</TabsTrigger>
+              <TabsTrigger value="settings" className="hidden sm:flex w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <Settings className="h-3.5 w-3.5 sm:mr-1" />
               <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -696,9 +748,9 @@ export default function AdminDashboard() {
                   Import from Google Places
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex gap-2">
+              <CardContent className="flex flex-col gap-2 sm:flex-row">
                 <Input placeholder="Search query..." value={importQuery} onChange={(e) => setImportQuery(e.target.value)} />
-                <Button onClick={handleImport} disabled={importing}>
+                <Button onClick={handleImport} disabled={importing} className="sm:w-auto">
                   {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                 </Button>
               </CardContent>
@@ -716,7 +768,7 @@ export default function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead className="hidden sm:table-cell">Specialty</TableHead>
                       <TableHead className="hidden md:table-cell">Address</TableHead>
-                      <TableHead className="w-20 text-right">Actions</TableHead>
+                      <TableHead className="w-28 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -752,6 +804,15 @@ export default function AdminDashboard() {
                               title="Edit"
                             >
                               <Pencil className="h-3.5 w-3.5 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-amber-500/10"
+                              onClick={() => resetClinicWaitTimes.mutate(c.id)}
+                              title="Reset current wait reports"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -816,8 +877,8 @@ export default function AdminDashboard() {
 
           <TabsContent value="reports" className="space-y-4">
             {/* Active/Expired Toggle */}
-            <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 rounded-xl border border-border/40 bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 min-w-0">
                 <Label htmlFor="report-toggle" className="text-sm font-medium">
                   {showActiveReports ? "Active Reports" : "Expired Reports"}
                 </Label>
@@ -842,7 +903,7 @@ export default function AdminDashboard() {
                     <TableHead>Clinic</TableHead>
                     <TableHead>Wait</TableHead>
                     <TableHead className="hidden sm:table-cell">Time</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-20 text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -858,11 +919,38 @@ export default function AdminDashboard() {
                           {new Date(r.reported_at).toLocaleString()}
                         </TableCell>
                         <TableCell>
-                          {!r.is_flagged && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => flagReport.mutate(r.id)}>
-                              <X className="h-4 w-4 text-destructive" />
+                          <div className="flex justify-end gap-1">
+                            {r.is_flagged ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-primary/10"
+                                onClick={() => unflagReport.mutate(r.id)}
+                                title="Unflag"
+                              >
+                                <Check className="h-4 w-4 text-primary" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-destructive/10"
+                                onClick={() => flagReport.mutate(r.id)}
+                                title="Flag"
+                              >
+                                <X className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-destructive/10"
+                              onClick={() => deleteReport.mutate(r.id)}
+                              title="Delete report"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -903,7 +991,7 @@ export default function AdminDashboard() {
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cooldown" className="text-xs">Report Cooldown (minutes)</Label>
+                  <Label htmlFor="cooldown" className="text-xs">Report Expiry & Cooldown (minutes)</Label>
                   <Input
                     id="cooldown"
                     type="number"
@@ -912,13 +1000,21 @@ export default function AdminDashboard() {
                     placeholder="60"
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    How long before a user can report again for any clinic (global cooldown across all clinics).
+                    Reports expire after this many minutes, and users must wait this long before reporting again for the same clinic.
                   </p>
                 </div>
                 <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5">
                   {savingSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Save Settings
                 </Button>
+                <div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+                  <p className="text-xs font-semibold text-foreground">Legal & Operational Checklist</p>
+                  <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-muted-foreground">
+                    <li>NDA signed by all parties before release work starts.</li>
+                    <li>Client-owned Apple/Google developer accounts are active.</li>
+                    <li>Terms and Privacy pages reviewed and published.</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
