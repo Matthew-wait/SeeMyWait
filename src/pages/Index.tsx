@@ -30,6 +30,10 @@ const Index = () => {
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
   const [dbMatchedClinics, setDbMatchedClinics] = useState<ClinicWithWaitTime[]>([]);
+  const [routeDistanceByClinicId, setRouteDistanceByClinicId] = useState<Record<string, number>>({});
+  const [routeDistanceSourceByClinicId, setRouteDistanceSourceByClinicId] = useState<
+    Record<string, "google" | "fallback" | "unavailable">
+  >({});
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
 
@@ -159,6 +163,83 @@ const Index = () => {
     return clinics.filter((c) => (c.distance || 999) <= nearbyRadiusMiles);
   }, [clinics, userLocation, nearbyRadiusMiles]);
 
+  useEffect(() => {
+    const fetchRouteDistances = async () => {
+      if (!userLocation || !clinicsWithinNearbyRadius.length) {
+        setRouteDistanceByClinicId({});
+        setRouteDistanceSourceByClinicId({});
+        return;
+      }
+
+      const chunks: { id: string; lat: number; lng: number }[][] = [];
+      const candidates = clinicsWithinNearbyRadius
+        .slice(0, 50)
+        .map((c) => ({ id: c.id, lat: c.latitude, lng: c.longitude }));
+
+      for (let i = 0; i < candidates.length; i += 25) {
+        chunks.push(candidates.slice(i, i + 25));
+      }
+
+      const nextMap: Record<string, number> = {};
+      const nextSourceMap: Record<string, "google" | "fallback" | "unavailable"> = {};
+      for (const chunk of chunks) {
+        try {
+          const { data, error } = await supabase.functions.invoke("google-places", {
+            body: {
+              action: "distance_matrix",
+              origin: userLocation,
+              destinations: chunk,
+            },
+          });
+
+          if (error) throw error;
+          const rows = Array.isArray(data?.distances) ? data.distances : [];
+          const provider = data?.provider === "google" ? "google" : "fallback";
+          rows.forEach((row: any) => {
+            if (typeof row?.id !== "string") return;
+            if (typeof row?.route_distance_miles === "number") {
+              nextMap[row.id] = row.route_distance_miles;
+              nextSourceMap[row.id] = provider;
+            } else {
+              nextSourceMap[row.id] = "unavailable";
+            }
+          });
+        } catch {
+          // Last-resort fallback: query OSRM directly from client for this chunk.
+          await Promise.all(
+            chunk.map(async (dest) => {
+              try {
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLocation.lng},${userLocation.lat};${dest.lng},${dest.lat}?overview=false`;
+                const response = await fetch(osrmUrl);
+                const payload = await response.json();
+                const meters =
+                  Array.isArray(payload?.routes) && typeof payload.routes[0]?.distance === "number"
+                    ? payload.routes[0].distance
+                    : null;
+                if (meters !== null) {
+                  nextMap[dest.id] = meters / 1609.34;
+                  nextSourceMap[dest.id] = "fallback";
+                } else {
+                  nextSourceMap[dest.id] = "unavailable";
+                }
+              } catch {
+                nextSourceMap[dest.id] = "unavailable";
+              }
+            })
+          );
+        }
+      }
+      setRouteDistanceByClinicId(nextMap);
+      setRouteDistanceSourceByClinicId(nextSourceMap);
+    };
+
+    fetchRouteDistances().catch(() => {
+      // Keep map visible if everything fails; distance shows unavailable.
+      setRouteDistanceByClinicId({});
+      setRouteDistanceSourceByClinicId({});
+    });
+  }, [userLocation, clinicsWithinNearbyRadius]);
+
   const clinicsWithinRadiusAndCity = useMemo(() => {
     if (cityFilter === "all") return clinicsWithinNearbyRadius;
     const cityNeedle = cityFilter.toLowerCase();
@@ -189,8 +270,24 @@ const Index = () => {
     if (!clinicsWithinRadiusAndCity) return [];
     if (!userLocation) return clinicsWithinRadiusAndCity;
     return [...clinicsWithinRadiusAndCity]
-      .sort((a, b) => (a.distance || 999) - (b.distance || 999));
-  }, [clinicsWithinRadiusAndCity, userLocation]);
+      .map((c) => ({
+        ...c,
+        routeDistance: routeDistanceByClinicId[c.id],
+        routeDistanceSource: routeDistanceSourceByClinicId[c.id],
+      }))
+      .sort(
+        (a, b) =>
+          (a.routeDistance ?? a.distance ?? 999) - (b.routeDistance ?? b.distance ?? 999)
+      );
+  }, [clinicsWithinRadiusAndCity, userLocation, routeDistanceByClinicId, routeDistanceSourceByClinicId]);
+
+  const displayedClinicsWithRouteDistance = useMemo(() => {
+    return displayedClinics.map((c) => ({
+      ...c,
+      routeDistance: routeDistanceByClinicId[c.id],
+      routeDistanceSource: routeDistanceSourceByClinicId[c.id],
+    }));
+  }, [displayedClinics, routeDistanceByClinicId, routeDistanceSourceByClinicId]);
 
   const handleFindMe = useCallback(() => {
     if (userLocation) {
@@ -323,7 +420,7 @@ const Index = () => {
 
         {/* Clinic list panel */}
         <ClinicListPanel
-          clinics={displayedClinics}
+          clinics={displayedClinicsWithRouteDistance}
           nearbyClinics={nearbyClinics}
           isSearching={isSearching}
           searchQuery={search.trim()}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,15 +49,147 @@ const CLINIC_TYPES = [
 ];
 
 export default function SuggestClinic() {
+  type AddressSuggestion = {
+    description: string;
+    place_id: string;
+  };
+
   const [doctorName, setDoctorName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [address, setAddress] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressSuggestError, setAddressSuggestError] = useState<string | null>(null);
+  const [selectedAddressPlaceId, setSelectedAddressPlaceId] = useState<string | null>(null);
+  const [selectedLatitude, setSelectedLatitude] = useState<number | null>(null);
+  const [selectedLongitude, setSelectedLongitude] = useState<number | null>(null);
   const [phone, setPhone] = useState("");
   const [clinicType, setClinicType] = useState("doctor");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateFound, setDuplicateFound] = useState<string | null>(null);
   const [locatingAddress, setLocatingAddress] = useState(false);
+
+  const resolveCoordinatesFromAddress = async (
+    rawAddress: string
+  ): Promise<{ lat: number; lng: number; placeId: string | null }> => {
+    const normalized = rawAddress.trim();
+    if (!normalized) {
+      throw new Error("ADDRESS_REQUIRED");
+    }
+
+    const { data: geoData, error: geoError } = await supabase.functions.invoke(
+      "google-places",
+      { body: { action: "geocode", query: normalized } }
+    );
+    if (!geoError) {
+      const first = Array.isArray(geoData?.results) ? geoData.results[0] : null;
+      const lat = first?.geometry?.location?.lat;
+      const lng = first?.geometry?.location?.lng;
+      if (typeof lat === "number" && typeof lng === "number") {
+        return {
+          lat,
+          lng,
+          placeId: typeof first?.place_id === "string" ? first.place_id : null,
+        };
+      }
+    }
+
+    // Final fallback from client side in case edge provider is temporarily unavailable.
+    const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pk&q=${encodeURIComponent(
+      normalized
+    )}`;
+    const osmRes = await fetch(osmUrl);
+    const osmData = await osmRes.json();
+    const firstOsm = Array.isArray(osmData) ? osmData[0] : null;
+    const lat = firstOsm?.lat ? parseFloat(firstOsm.lat) : NaN;
+    const lng = firstOsm?.lon ? parseFloat(firstOsm.lon) : NaN;
+    if (!isNaN(lat) && !isNaN(lng)) {
+      return {
+        lat,
+        lng,
+        placeId: firstOsm?.place_id ? String(firstOsm.place_id) : null,
+      };
+    }
+
+    throw new Error("COORDINATES_NOT_FOUND");
+  };
+
+  useEffect(() => {
+    const query = address.trim();
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setAddressLoading(false);
+      setAddressSuggestError(null);
+      return;
+    }
+
+    setAddressLoading(true);
+    setAddressSuggestError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("google-places", {
+          body: { action: "autocomplete", query },
+        });
+        if (error) throw error;
+        if (data?.status && data.status !== "OK") {
+          const msg =
+            data.status === "REQUEST_DENIED"
+              ? `Google Places autocomplete denied. ${data?.error_message ?? ""}`.trim()
+              : `Google Places autocomplete: ${String(data.status)}${data?.error_message ? ` — ${data.error_message}` : ""}`;
+          setAddressSuggestError(msg);
+          setAddressSuggestions([]);
+          return;
+        }
+        const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+        setAddressSuggestions(
+          predictions
+            .map((p: any) => ({
+              description: String(p?.description ?? ""),
+              place_id: String(p?.place_id ?? ""),
+            }))
+            .filter((p) => p.description && p.place_id)
+            .slice(0, 8)
+        );
+      } catch {
+        setAddressSuggestError("Unable to load address suggestions. Please try again.");
+        setAddressSuggestions([]);
+      } finally {
+        setAddressLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [address]);
+
+  const handleAddressInput = (value: string) => {
+    setAddress(value);
+    setSelectedAddressPlaceId(null);
+    setSelectedLatitude(null);
+    setSelectedLongitude(null);
+    setAddressSuggestError(null);
+  };
+
+  const selectAddressSuggestion = async (suggestion: AddressSuggestion) => {
+    setSelectedAddressPlaceId(suggestion.place_id);
+    setAddressSuggestions([]);
+    setAddress(suggestion.description);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-places", {
+        body: { action: "details", placeId: suggestion.place_id },
+      });
+      if (error) throw error;
+      const lat = data?.result?.geometry?.location?.lat;
+      const lng = data?.result?.geometry?.location?.lng;
+      setSelectedLatitude(typeof lat === "number" ? lat : null);
+      setSelectedLongitude(typeof lng === "number" ? lng : null);
+    } catch {
+      setSelectedAddressPlaceId(null);
+      setSelectedLatitude(null);
+      setSelectedLongitude(null);
+      toast.error("Unable to fetch location details. Please select another suggestion.");
+    }
+  };
 
   const checkDuplicate = async (): Promise<boolean> => {
     const nameTrimmed = doctorName.trim().toLowerCase();
@@ -113,6 +245,24 @@ export default function SuggestClinic() {
     }
     setSubmitting(true);
     try {
+      let latToSave = selectedLatitude;
+      let lngToSave = selectedLongitude;
+      let placeIdToSave = selectedAddressPlaceId;
+
+      // Manual addresses are allowed; geocode them so obvious city-level locations still work.
+      if (latToSave === null || lngToSave === null) {
+        const resolved = await resolveCoordinatesFromAddress(address);
+        latToSave = resolved.lat;
+        lngToSave = resolved.lng;
+        if (!placeIdToSave && resolved.placeId) {
+          placeIdToSave = resolved.placeId;
+        }
+      }
+
+      if (latToSave === null || lngToSave === null) {
+        throw new Error("COORDINATES_NOT_FOUND");
+      }
+
       const isDuplicate = await checkDuplicate();
       if (isDuplicate) {
         setSubmitting(false);
@@ -125,13 +275,20 @@ export default function SuggestClinic() {
         specialty: specialty.trim() || null,
         phone: phone.trim() || null,
         clinic_type: clinicType,
+        latitude: latToSave,
+        longitude: lngToSave,
+        google_place_id: placeIdToSave,
       });
 
       if (error) throw error;
       setSubmitted(true);
       toast.success("Suggestion submitted! We'll review it soon.");
-    } catch {
-      toast.error("Failed to submit. Please try again.");
+    } catch (err) {
+      if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
+        toast.error("Could not locate this address. Please enter a more specific address.");
+      } else {
+        toast.error("Failed to submit. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -143,6 +300,11 @@ export default function SuggestClinic() {
     setDoctorName("");
     setSpecialty("");
     setAddress("");
+    setAddressSuggestions([]);
+    setAddressLoading(false);
+    setSelectedAddressPlaceId(null);
+    setSelectedLatitude(null);
+    setSelectedLongitude(null);
     setPhone("");
     setClinicType("doctor");
   };
@@ -283,10 +445,31 @@ export default function SuggestClinic() {
                       id="address"
                       placeholder="e.g. 123 Main St, Miami, FL 33101"
                       value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                      onChange={(e) => handleAddressInput(e.target.value)}
                       className="rounded-xl border-border/40 bg-background/60 h-11 pr-12 sm:pr-32"
+                      autoComplete="off"
                       required
                     />
+                    {(addressLoading || addressSuggestions.length > 0 || addressSuggestError) && (
+                      <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                        {addressLoading ? (
+                          <p className="px-2 py-2 text-xs text-muted-foreground">Loading suggestions...</p>
+                        ) : addressSuggestError ? (
+                          <p className="px-2 py-2 text-xs text-destructive">{addressSuggestError}</p>
+                        ) : (
+                          addressSuggestions.map((suggestion) => (
+                            <button
+                              type="button"
+                              key={suggestion.place_id}
+                              onClick={() => selectAddressSuggestion(suggestion)}
+                              className="w-full rounded-sm px-2 py-2 text-left text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+                            >
+                              {suggestion.description}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                     <button
                       type="button"
                       disabled={locatingAddress}
@@ -304,7 +487,7 @@ export default function SuggestClinic() {
                               );
                               const data = await res.json();
                               if (data.display_name) {
-                                setAddress(data.display_name);
+                                handleAddressInput(data.display_name);
                                 toast.success("Address captured from your location!");
                               } else {
                                 toast.error("Could not resolve address. Please enter manually.");
@@ -332,6 +515,9 @@ export default function SuggestClinic() {
                       <span className="hidden sm:inline">Use Current Location</span>
                     </button>
                   </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Choose from suggestions for best accuracy, or enter address manually.
+                  </p>
                 </div>
 
                 {duplicateFound && (

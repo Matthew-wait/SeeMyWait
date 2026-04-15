@@ -97,10 +97,29 @@ export function ClinicListPanel({ clinics, nearbyClinics, isSearching, searchQue
                       {clinic.specialty}
                     </Badge>
                   )}
-                  {clinic.distance !== undefined && (
-                    <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
-                      {clinic.distance.toFixed(1)} mi
+                  {clinic.routeDistance !== undefined ? (
+                    <>
+                      <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
+                        Driving {clinic.routeDistance.toFixed(1)} mi
+                      </span>
+                      <Badge variant="outline" className="h-[18px] px-2 text-[9px]">
+                        {clinic.routeDistanceSource === "google" ? "Google route" : "Fallback route"}
+                      </Badge>
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-amber-600 font-medium">
+                      Driving unavailable
                     </span>
+                  )}
+                  {clinic.distance !== undefined && (
+                    <>
+                      <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
+                        Air {clinic.distance.toFixed(1)} mi
+                      </span>
+                      <Badge variant="outline" className="h-[18px] px-2 text-[9px]">
+                        Air distance
+                      </Badge>
+                    </>
                   )}
                 </div>
               </div>

@@ -22,6 +22,11 @@ import { Switch } from "@/components/ui/switch";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
 import {
+  clinicIdentityKey,
+  findDuplicateClinicIdentity,
+  isDuplicateKeyError,
+} from "@/lib/clinic-dedup";
+import {
   LogOut, Loader2, Check, X, Trash2, Search, Download,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
   Upload, FileSpreadsheet, AlertCircle, Settings, RotateCcw,
@@ -49,6 +54,11 @@ type ClinicFormData = {
   longitude: string;
 };
 
+type AddressSuggestion = {
+  description: string;
+  place_id: string;
+};
+
 const emptyForm: ClinicFormData = {
   name: "",
   address: "",
@@ -72,13 +82,102 @@ function ClinicFormDialog({
   isLoading: boolean;
 }) {
   const [form, setForm] = useState<ClinicFormData>(initialData || emptyForm);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressSuggestError, setAddressSuggestError] = useState<string | null>(null);
+  const [selectedAddressPlaceId, setSelectedAddressPlaceId] = useState<string | null>(null);
 
   useEffect(() => {
     setForm(initialData || emptyForm);
+    setAddressSuggestions([]);
+    setAddressLoading(false);
+    setSelectedAddressPlaceId(null);
   }, [initialData, open]);
 
   const set = (field: keyof ClinicFormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const isCreateMode = !initialData;
+
+  useEffect(() => {
+    if (!open || !isCreateMode) return;
+    const query = form.address.trim();
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setAddressLoading(false);
+      setAddressSuggestError(null);
+      return;
+    }
+
+    setAddressLoading(true);
+    setAddressSuggestError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("google-places", {
+          body: { action: "autocomplete", query },
+        });
+        if (error) throw error;
+        if (data?.status && data.status !== "OK") {
+          const msg =
+            data.status === "REQUEST_DENIED"
+              ? `Google Places autocomplete denied. ${data?.error_message ?? ""}`.trim()
+              : `Google Places autocomplete: ${String(data.status)}${data?.error_message ? ` — ${data.error_message}` : ""}`;
+          setAddressSuggestError(msg);
+          setAddressSuggestions([]);
+          return;
+        }
+        const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+        setAddressSuggestions(
+          predictions
+            .map((p: any) => ({
+              description: String(p?.description ?? ""),
+              place_id: String(p?.place_id ?? ""),
+            }))
+            .filter((p) => p.description && p.place_id)
+            .slice(0, 8)
+        );
+      } catch {
+        setAddressSuggestError("Unable to load address suggestions. Please try again.");
+        setAddressSuggestions([]);
+      } finally {
+        setAddressLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [form.address, open, isCreateMode]);
+
+  const handleAddressInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nextAddress = e.target.value;
+    setSelectedAddressPlaceId(null);
+    setAddressSuggestError(null);
+    setForm((f) => ({ ...f, address: nextAddress }));
+  };
+
+  const selectAddressSuggestion = async (suggestion: AddressSuggestion) => {
+    setSelectedAddressPlaceId(suggestion.place_id);
+    setAddressSuggestions([]);
+    setForm((f) => ({ ...f, address: suggestion.description }));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("google-places", {
+        body: { action: "details", placeId: suggestion.place_id },
+      });
+      if (error) throw error;
+
+      const place = data?.result;
+      const lat = place?.geometry?.location?.lat;
+      const lng = place?.geometry?.location?.lng;
+
+      setForm((f) => ({
+        ...f,
+        latitude: typeof lat === "number" ? String(lat) : f.latitude,
+        longitude: typeof lng === "number" ? String(lng) : f.longitude,
+      }));
+    } catch {
+      toast.error("Unable to fetch location details for this address.");
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +215,41 @@ function ClinicFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="address" className="text-xs">Address *</Label>
-            <Input id="address" value={form.address} onChange={set("address")} placeholder="123 Main St, Miami, FL" required />
+            <div className="relative">
+              <Input
+                id="address"
+                value={form.address}
+                onChange={isCreateMode ? handleAddressInput : set("address")}
+                placeholder="Start typing an address..."
+                autoComplete="off"
+                required
+              />
+              {isCreateMode && (addressLoading || addressSuggestions.length > 0 || addressSuggestError) && (
+                <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                  {addressLoading ? (
+                    <p className="px-2 py-2 text-xs text-muted-foreground">Loading suggestions…</p>
+                  ) : addressSuggestError ? (
+                    <p className="px-2 py-2 text-xs text-destructive">{addressSuggestError}</p>
+                  ) : (
+                    addressSuggestions.map((suggestion) => (
+                      <button
+                        type="button"
+                        key={suggestion.place_id}
+                        onClick={() => selectAddressSuggestion(suggestion)}
+                        className="w-full rounded-sm px-2 py-2 text-left text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+                      >
+                        {suggestion.description}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            {isCreateMode && (
+              <p className="text-[11px] text-muted-foreground">
+                Choose from suggestions for best accuracy, or enter address manually.
+              </p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone" className="text-xs">Phone</Label>
@@ -156,6 +289,30 @@ function CsvUploadDialog({
   onClose: () => void;
   onUploadComplete: () => void;
 }) {
+  const resolveCsvCoordinates = async (
+    address: string,
+    latText?: string,
+    lngText?: string
+  ): Promise<{ latitude: number; longitude: number }> => {
+    const parsedLat = latText ? parseFloat(latText) : NaN;
+    const parsedLng = lngText ? parseFloat(lngText) : NaN;
+    if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+      return { latitude: parsedLat, longitude: parsedLng };
+    }
+
+    const { data, error } = await supabase.functions.invoke("google-places", {
+      body: { action: "geocode", query: address },
+    });
+    if (error) throw error;
+    const first = Array.isArray(data?.results) ? data.results[0] : null;
+    const lat = first?.geometry?.location?.lat;
+    const lng = first?.geometry?.location?.lng;
+    if (typeof lat === "number" && typeof lng === "number") {
+      return { latitude: lat, longitude: lng };
+    }
+    throw new Error("COORDINATES_NOT_FOUND");
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
@@ -219,6 +376,14 @@ function CsvUploadDialog({
       const errs: string[] = [];
       let inserted = 0;
 
+      const { data: existingClinics, error: loadErr } = await supabase
+        .from("clinics")
+        .select("id,name,address");
+      if (loadErr) throw loadErr;
+      const seenKeys = new Set(
+        (existingClinics || []).map((c) => clinicIdentityKey(c.name, c.address))
+      );
+
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         const name = r["name"] || r["doctor_name"] || r["clinic_name"] || "";
@@ -227,20 +392,45 @@ function CsvUploadDialog({
           errs.push(`Row ${i + 2}: Missing name or address, skipped.`);
           continue;
         }
-        const lat = parseFloat(r["latitude"] || r["lat"] || "");
-        const lng = parseFloat(r["longitude"] || r["lng"] || r["lon"] || "");
+        const key = clinicIdentityKey(name, address);
+        if (seenKeys.has(key)) {
+          errs.push(
+            `Row ${i + 2}: Duplicate name and address (already in database or earlier in this file), skipped.`
+          );
+          continue;
+        }
+        let coords: { latitude: number; longitude: number };
+        try {
+          coords = await resolveCsvCoordinates(
+            address.trim(),
+            r["latitude"] || r["lat"] || "",
+            r["longitude"] || r["lng"] || r["lon"] || ""
+          );
+        } catch {
+          errs.push(
+            `Row ${i + 2}: Could not resolve coordinates from address; provide valid latitude/longitude or a more specific address.`
+          );
+          continue;
+        }
 
         const { error } = await supabase.from("clinics").insert({
           name: name.trim(),
           address: address.trim(),
           phone: (r["phone"] || "").trim() || null,
           specialty: (r["specialty"] || "").trim() || null,
-          latitude: isNaN(lat) ? 25.7617 : lat,
-          longitude: isNaN(lng) ? -80.1918 : lng,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
         });
         if (error) {
-          errs.push(`Row ${i + 2}: ${error.message}`);
+          if (isDuplicateKeyError(error)) {
+            errs.push(
+              `Row ${i + 2}: Duplicate name and address (already exists), skipped.`
+            );
+          } else {
+            errs.push(`Row ${i + 2}: ${error.message}`);
+          }
         } else {
+          seenKeys.add(key);
           inserted++;
         }
       }
@@ -487,15 +677,52 @@ export default function AdminDashboard() {
   };
 
   // ── CREATE ──
+  const resolveClinicCoordinates = async (
+    address: string,
+    latitudeText?: string,
+    longitudeText?: string
+  ): Promise<{ latitude: number; longitude: number }> => {
+    const parsedLat = latitudeText ? parseFloat(latitudeText) : NaN;
+    const parsedLng = longitudeText ? parseFloat(longitudeText) : NaN;
+    if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+      return { latitude: parsedLat, longitude: parsedLng };
+    }
+
+    const { data, error } = await supabase.functions.invoke("google-places", {
+      body: { action: "geocode", query: address },
+    });
+    if (error) throw error;
+    const first = Array.isArray(data?.results) ? data.results[0] : null;
+    const lat = first?.geometry?.location?.lat;
+    const lng = first?.geometry?.location?.lng;
+    if (typeof lat === "number" && typeof lng === "number") {
+      return { latitude: lat, longitude: lng };
+    }
+
+    throw new Error("COORDINATES_NOT_FOUND");
+  };
+
   const createClinic = useMutation({
     mutationFn: async (form: ClinicFormData) => {
+      const { data: existing, error: loadErr } = await supabase
+        .from("clinics")
+        .select("id,name,address");
+      if (loadErr) throw loadErr;
+      if (findDuplicateClinicIdentity(existing || [], form.name, form.address)) {
+        throw new Error("DUPLICATE_CLINIC");
+      }
+      const coords = await resolveClinicCoordinates(
+        form.address.trim(),
+        form.latitude,
+        form.longitude
+      );
       const { error } = await supabase.from("clinics").insert({
         name: form.name.trim(),
         address: form.address.trim(),
         phone: form.phone.trim() || null,
         specialty: form.specialty.trim() || null,
-        latitude: form.latitude ? parseFloat(form.latitude) : 25.7617,
-        longitude: form.longitude ? parseFloat(form.longitude) : -80.1918,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
       });
       if (error) throw error;
     },
@@ -504,19 +731,39 @@ export default function AdminDashboard() {
       setCreateOpen(false);
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     },
-    onError: () => toast.error("Failed to create clinic."),
+    onError: (err) => {
+      if (isDuplicateKeyError(err) || (err as Error)?.message === "DUPLICATE_CLINIC") {
+        toast.error("A clinic with this name and address already exists.");
+      } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
+        toast.error("Could not locate this address. Pick a suggestion or enter valid coordinates.");
+      } else {
+        toast.error("Failed to create clinic.");
+      }
+    },
   });
 
   // ── UPDATE ──
   const updateClinic = useMutation({
     mutationFn: async ({ id, form }: { id: string; form: ClinicFormData }) => {
+      const { data: existing, error: loadErr } = await supabase
+        .from("clinics")
+        .select("id,name,address");
+      if (loadErr) throw loadErr;
+      if (findDuplicateClinicIdentity(existing || [], form.name, form.address, id)) {
+        throw new Error("DUPLICATE_CLINIC");
+      }
+      const coords = await resolveClinicCoordinates(
+        form.address.trim(),
+        form.latitude,
+        form.longitude
+      );
       const { error } = await supabase.from("clinics").update({
         name: form.name.trim(),
         address: form.address.trim(),
         phone: form.phone.trim() || null,
         specialty: form.specialty.trim() || null,
-        latitude: form.latitude ? parseFloat(form.latitude) : 25.7617,
-        longitude: form.longitude ? parseFloat(form.longitude) : -80.1918,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -525,7 +772,15 @@ export default function AdminDashboard() {
       setEditClinic(null);
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     },
-    onError: () => toast.error("Failed to update clinic."),
+    onError: (err) => {
+      if (isDuplicateKeyError(err) || (err as Error)?.message === "DUPLICATE_CLINIC") {
+        toast.error("Another clinic already uses this name and address.");
+      } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
+        toast.error("Could not locate this address. Pick a suggestion or enter valid coordinates.");
+      } else {
+        toast.error("Failed to update clinic.");
+      }
+    },
   });
 
   // ── DELETE ──
@@ -564,9 +819,25 @@ export default function AdminDashboard() {
 
   const approveSuggestion = useMutation({
     mutationFn: async (suggestion: any) => {
+      const name = String(suggestion.doctor_name ?? "").trim();
+      const address = String(suggestion.address ?? "").trim();
+      const { data: existing, error: loadErr } = await supabase
+        .from("clinics")
+        .select("id,name,address");
+      if (loadErr) throw loadErr;
+      if (findDuplicateClinicIdentity(existing || [], name, address)) {
+        throw new Error("DUPLICATE_CLINIC");
+      }
+      const coords = await resolveClinicCoordinates(
+        address,
+        typeof suggestion.latitude === "number" ? String(suggestion.latitude) : undefined,
+        typeof suggestion.longitude === "number" ? String(suggestion.longitude) : undefined
+      );
       const { error: clinicError } = await supabase.from("clinics").insert({
-        name: suggestion.doctor_name, address: suggestion.address,
-        latitude: suggestion.latitude || 25.7617, longitude: suggestion.longitude || -80.1918,
+        name,
+        address,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
         google_place_id: suggestion.google_place_id,
       });
       if (clinicError) throw clinicError;
@@ -574,7 +845,15 @@ export default function AdminDashboard() {
       if (updateError) throw updateError;
     },
     onSuccess: () => { toast.success("Suggestion approved!"); queryClient.invalidateQueries({ queryKey: ["admin-suggestions"] }); queryClient.invalidateQueries({ queryKey: ["admin-clinics"] }); },
-    onError: () => toast.error("Failed to approve suggestion."),
+    onError: (err) => {
+      if (isDuplicateKeyError(err) || (err as Error)?.message === "DUPLICATE_CLINIC") {
+        toast.error("A clinic with this name and address already exists.");
+      } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
+        toast.error("Suggestion address could not be located. Ask user/admin to provide a more precise address.");
+      } else {
+        toast.error("Failed to approve suggestion.");
+      }
+    },
   });
 
   const rejectSuggestion = useMutation({
@@ -617,7 +896,10 @@ export default function AdminDashboard() {
       if (!session) throw new Error("Not authenticated");
       const { data, error } = await supabase.functions.invoke("google-places", { body: { action: "import", query: importQuery } });
       if (error) throw error;
-      toast.success(`Imported ${data?.imported || 0} clinics!`);
+      const skipped = typeof data?.skippedDuplicates === "number" ? data.skippedDuplicates : 0;
+      toast.success(
+        `Imported ${data?.imported ?? 0} clinic(s).${skipped > 0 ? ` ${skipped} duplicate(s) skipped.` : ""}`
+      );
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     } catch (err: any) {
       toast.error(err.message || "Import failed.");

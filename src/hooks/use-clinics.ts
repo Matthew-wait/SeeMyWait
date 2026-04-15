@@ -17,6 +17,8 @@ export interface Clinic {
 export interface ClinicWithWaitTime extends Clinic {
   waitTime: ReturnType<typeof getAverageWaitTime>;
   distance?: number;
+  routeDistance?: number;
+  routeDistanceSource?: "google" | "fallback" | "unavailable";
 }
 
 export function useClinics(
