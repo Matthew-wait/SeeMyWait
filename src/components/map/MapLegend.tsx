@@ -8,7 +8,6 @@ const items = [
   { color: "#ef4444", label: "1.5+ Hours" },
   { color: "#94a3b8", label: "No Reports" },
 ];
-
 export function MapLegend() {
   const [open, setOpen] = useState(false);
 
