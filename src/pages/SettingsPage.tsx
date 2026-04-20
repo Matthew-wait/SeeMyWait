@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { buildSupportThankYouEmail, buildSupportTicketAdminEmail } from "@/lib/email-templates";
 import {
   Settings, Heart, Moon, Sun, Bell, BellOff,
   Smartphone, Globe, ChevronRight, Sparkles,
@@ -15,6 +16,10 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+// const SUPPORT_EMAIL = "contact@seemywait.com"; // production inbox
+const SUPPORT_EMAIL = "rohansheikh197@gmail.com"; // testing inbox
+const RESEND_TEMPLATE_ID = "welcome-email";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -52,6 +57,83 @@ export default function SettingsPage() {
         page: "settings",
       });
       if (error) throw error;
+
+      // Feedback should remain saved even if outbound email has an issue.
+      await supabase.functions
+        .invoke("send-email", {
+          body: {
+            to: SUPPORT_EMAIL,
+            subject: "New Support Ticket • SeeMyWait",
+            templateId: RESEND_TEMPLATE_ID,
+            variables: {
+              APP_NAME: "SeeMyWait",
+              APP_TAGLINE: "Live Wait Times, Smarter Visits",
+              title: "New Support Ticket",
+              intro: "A new support request was submitted from the app settings page.",
+              year: String(new Date().getFullYear()),
+              contentHtml: `
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-bottom:14px;">
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">
+                      From email
+                    </td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">
+                      ${feedbackEmail.trim() || "Not provided"}
+                    </td>
+                  </tr>
+                </table>
+                <div style="padding:16px; background:#f8fbff; border:1px solid #dbe7f3; border-radius:12px;">
+                  <div style="font-size:13px; color:#64748b; margin-bottom:8px; font-weight:600;">Message</div>
+                  <div style="font-size:15px; color:#0f172a; line-height:1.7;">${feedbackMessage.trim()}</div>
+                </div>
+              `,
+            },
+            html: buildSupportTicketAdminEmail(feedbackEmail.trim(), feedbackMessage.trim()),
+          },
+        })
+        .catch((emailError) => {
+          console.error("Failed to send support ticket email:", emailError);
+        });
+
+      const replyToEmail = feedbackEmail.trim();
+      if (replyToEmail) {
+        await supabase.functions
+          .invoke("send-email", {
+            body: {
+              to: replyToEmail,
+              subject: "We received your message • SeeMyWait",
+              templateId: RESEND_TEMPLATE_ID,
+              variables: {
+                APP_NAME: "SeeMyWait",
+                APP_TAGLINE: "Live Wait Times, Smarter Visits",
+                title: "Thanks for contacting us",
+                intro: "We received your message and our team will review it shortly.",
+                year: String(new Date().getFullYear()),
+                contentHtml: `
+                  <div style="padding:16px; background:#f8fbff; border:1px solid #dbe7f3; border-radius:12px;">
+                    <div style="font-size:13px; color:#64748b; margin-bottom:8px; font-weight:600;">Your message</div>
+                    <div style="font-size:15px; color:#0f172a; line-height:1.7;">${feedbackMessage.trim()}</div>
+                  </div>
+                  <p style="margin:18px 0 0; color:#64748b; font-size:13px; text-align:center;">Thank you for helping us improve SeeMyWait.</p>
+                  <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:18px; margin-left:auto; margin-right:auto;">
+                    <tr>
+                      <td style="border-radius:9999px; background:linear-gradient(135deg,#06b6d4 0%,#2563eb 100%); box-shadow:0 6px 16px rgba(37,99,235,0.25);">
+                        <a href="https://seemywait.com/app" style="display:inline-block; padding:10px 20px; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none;">
+                          Open SeeMyWait
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                `,
+              },
+              html: buildSupportThankYouEmail(feedbackMessage.trim()),
+            },
+          })
+          .catch((emailError) => {
+            console.error("Failed to send feedback thank-you email:", emailError);
+          });
+      }
+
       toast.success("Thanks for your feedback!");
       setFeedbackMessage("");
       setFeedbackEmail("");
@@ -102,7 +184,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="px-4 pb-4 pt-2 space-y-1">
-            <button
+            <div
               onClick={() => setTheme(isDark ? "light" : "dark")}
               className="flex w-full items-center gap-3 rounded-xl p-3 transition-all hover:bg-muted/20 active:scale-[0.99]"
             >
@@ -113,10 +195,14 @@ export default function SettingsPage() {
                 <span className="text-sm font-semibold text-card-foreground">Dark Mode</span>
                 <p className="text-[11px] text-muted-foreground">{isDark ? "Currently using dark theme" : "Currently using light theme"}</p>
               </div>
-              <Switch checked={isDark} onCheckedChange={(v) => setTheme(v ? "dark" : "light")} />
-            </button>
+              <Switch
+                checked={isDark}
+                onCheckedChange={(v) => setTheme(v ? "dark" : "light")}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
 
-            <button
+            <div
               onClick={() => {
                 setReducedMotion(!reducedMotion);
                 toast.success(reducedMotion ? "Animations enabled" : "Animations reduced");
@@ -130,8 +216,12 @@ export default function SettingsPage() {
                 <span className="text-sm font-semibold text-card-foreground">Reduce Motion</span>
                 <p className="text-[11px] text-muted-foreground">Minimize animations & transitions</p>
               </div>
-              <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
-            </button>
+              <Switch
+                checked={reducedMotion}
+                onCheckedChange={setReducedMotion}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           </div>
         </div>
 
@@ -146,7 +236,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="px-4 pb-4 pt-2">
-            <button
+            <div
               onClick={() => {
                 setNotifications(!notifications);
                 toast.success(notifications ? "Notifications disabled" : "Notifications enabled");
@@ -160,8 +250,15 @@ export default function SettingsPage() {
                 <span className="text-sm font-semibold text-card-foreground">Push Notifications</span>
                 <p className="text-[11px] text-muted-foreground">Get alerts for wait time updates</p>
               </div>
-              <Switch checked={notifications} onCheckedChange={(v) => { setNotifications(v); toast.success(v ? "Notifications enabled" : "Notifications disabled"); }} />
-            </button>
+              <Switch
+                checked={notifications}
+                onCheckedChange={(v) => {
+                  setNotifications(v);
+                  toast.success(v ? "Notifications enabled" : "Notifications disabled");
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           </div>
         </div>
 
@@ -209,6 +306,9 @@ export default function SettingsPage() {
         <DialogContent className="mx-3 w-full max-w-md">
           <DialogHeader>
             <DialogTitle>Send Feedback</DialogTitle>
+            <DialogDescription>
+              Submit a support ticket and we will follow up as soon as possible.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">

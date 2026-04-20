@@ -1,9 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
+// Browsers send a preflight OPTIONS request before POST; all responses must include CORS headers
+// or the client shows "blocked by CORS" even when the real failure is 4xx/5xx from the gateway.
+const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, accept, x-supabase-api-version",
+  "Access-Control-Max-Age": "86400",
 };
 
 function normalizeText(value: string): string {
@@ -27,21 +31,22 @@ function scoreAddressMatch(query: string, candidate: string): number {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { status: 200, headers: corsHeaders });
   }
 
   try {
     const { action, query, location, radius, placeId, origin, destinations } = await req.json();
-    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
-
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "Google Maps API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const mapsKey = Deno.env.get("GOOGLE_MAPS_API_KEY") ?? "";
+    const geocodeKey = Deno.env.get("GOOGLE_GEOCODE_API_KEY") || mapsKey;
+    const countryCode = (Deno.env.get("GOOGLE_GEOCODE_COUNTRY") || "us").toLowerCase();
 
     if (action === "search") {
+      if (!mapsKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       // Text search for clinics/doctors
       const searchQuery = query || "doctor clinic";
       const hasLocationBias = typeof location === "string" && location.trim().length > 0;
@@ -50,10 +55,20 @@ Deno.serve(async (req) => {
 
       const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
         searchQuery
-      )}${biasParams}&type=doctor&key=${apiKey}`;
+      )}${biasParams}&type=doctor&key=${mapsKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
+      const googleElements = Array.isArray(data?.rows?.[0]?.elements) ? data.rows[0].elements : [];
+      console.log("[distance_matrix] google response", {
+        status: data?.status ?? null,
+        error_message: data?.error_message ?? null,
+        origin: originsParam,
+        destinations_count: destinationCoords.length,
+        element_status_sample: googleElements
+          .slice(0, 5)
+          .map((el: { status?: string }) => el?.status ?? "unknown"),
+      });
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -61,10 +76,16 @@ Deno.serve(async (req) => {
     }
 
     if (action === "nearby") {
+      if (!mapsKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const loc = location || "25.7617,-80.1918";
       const rad = radius || 8000;
 
-      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${loc}&radius=${rad}&type=doctor&key=${apiKey}`;
+      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${loc}&radius=${rad}&type=doctor&key=${mapsKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -75,6 +96,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "details") {
+      if (!mapsKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       if (!placeId) {
         return new Response(
           JSON.stringify({ error: "placeId is required" }),
@@ -82,7 +109,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry,formatted_phone_number,types&key=${apiKey}`;
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry,formatted_phone_number,types&key=${mapsKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -93,6 +120,15 @@ Deno.serve(async (req) => {
     }
 
     if (action === "geocode") {
+      if (!geocodeKey) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "GOOGLE_GEOCODE_API_KEY or GOOGLE_MAPS_API_KEY not configured (Geocoding API requires at least one)",
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       const searchQuery = String(query || "").trim();
       if (!searchQuery) {
         return new Response(
@@ -101,10 +137,9 @@ Deno.serve(async (req) => {
         );
       }
 
-      const countryCode = "pk";
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         searchQuery
-      )}&components=country:${countryCode}&region=${countryCode}&key=${apiKey}`;
+      )}&components=country:${countryCode}&region=${countryCode}&key=${geocodeKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -170,6 +205,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "autocomplete") {
+      if (!mapsKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       if (!query) {
         return new Response(
           JSON.stringify({ error: "query is required" }),
@@ -179,7 +220,7 @@ Deno.serve(async (req) => {
 
       const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
         query
-      )}&key=${apiKey}`;
+      )}&key=${mapsKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -201,6 +242,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "distance_matrix") {
+      if (!mapsKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       if (
         !origin ||
         typeof origin.lat !== "number" ||
@@ -238,7 +285,7 @@ Deno.serve(async (req) => {
 
       const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(
         originsParam
-      )}&destinations=${encodeURIComponent(destinationsParam)}&mode=driving&units=metric&key=${apiKey}`;
+      )}&destinations=${encodeURIComponent(destinationsParam)}&mode=driving&units=metric&key=${mapsKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -267,6 +314,10 @@ Deno.serve(async (req) => {
       // If Google distance matrix is denied/unavailable, fallback to OSRM route distance.
       if (!distances || data?.status !== "OK") {
         provider = "osrm_fallback";
+        console.warn("[distance_matrix] falling back to OSRM", {
+          reason: !distances ? "missing_google_elements" : `google_status_${String(data?.status)}`,
+          google_error_message: data?.error_message ?? null,
+        });
         const originPart = `${origin.lng},${origin.lat}`;
         const osrmResults = await Promise.all(
           destinationCoords.map(async (d: any) => {
@@ -279,12 +330,23 @@ Deno.serve(async (req) => {
                 typeof osrmData.routes[0]?.distance === "number"
                   ? osrmData.routes[0].distance
                   : null;
+              if (meters === null) {
+                console.warn("[distance_matrix] osrm no route", {
+                  destination_id: d.id,
+                  destination: `${d.lat},${d.lng}`,
+                  osrm_code: osrmData?.code ?? null,
+                });
+              }
               return {
                 id: d.id,
                 route_distance_meters: meters,
                 route_distance_miles: meters !== null ? meters / 1609.34 : null,
               };
             } catch {
+              console.warn("[distance_matrix] osrm request failed", {
+                destination_id: d.id,
+                destination: `${d.lat},${d.lng}`,
+              });
               return {
                 id: d.id,
                 route_distance_meters: null,
@@ -296,12 +358,24 @@ Deno.serve(async (req) => {
         distances = osrmResults;
       }
 
+      console.log("[distance_matrix] final", {
+        provider,
+        available_count: distances.filter((d) => d.route_distance_miles !== null).length,
+        unavailable_count: distances.filter((d) => d.route_distance_miles === null).length,
+      });
+
       return new Response(JSON.stringify({ distances, provider }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "import") {
+      if (!mapsKey) {
+        return new Response(
+          JSON.stringify({ error: "GOOGLE_MAPS_API_KEY not configured" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       // Admin action: import clinics from Google Places into DB
       const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
@@ -326,13 +400,15 @@ Deno.serve(async (req) => {
         );
       }
 
-      const searchQuery = query || "doctor Miami";
-      const loc = location || "25.7617,-80.1918";
+      const searchQuery = query || "doctor clinic";
+      const hasLocationBias = typeof location === "string" && location.trim().length > 0;
+      const loc = hasLocationBias ? location.trim() : "";
       const rad = radius || 16000;
+      const biasParams = hasLocationBias ? `&location=${loc}&radius=${rad}` : "";
 
       const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
         searchQuery
-      )}&location=${loc}&radius=${rad}&type=doctor&key=${apiKey}`;
+      )}${biasParams}&type=doctor&key=${mapsKey}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -389,9 +465,10 @@ Deno.serve(async (req) => {
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

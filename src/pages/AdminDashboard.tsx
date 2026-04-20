@@ -567,7 +567,12 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("clinics");
   const [searchQuery, setSearchQuery] = useState("");
-  const [importQuery, setImportQuery] = useState("doctor Miami");
+  const [importQuery, setImportQuery] = useState("doctor clinic");
+  const [importLocation, setImportLocation] = useState("");
+  const [importLocationSuggestions, setImportLocationSuggestions] = useState<AddressSuggestion[]>([]);
+  const [importLocationLoading, setImportLocationLoading] = useState(false);
+  const [importLocationError, setImportLocationError] = useState<string | null>(null);
+  const [importLocationCoords, setImportLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [importing, setImporting] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
   const [showActiveReports, setShowActiveReports] = useState(true);
@@ -654,6 +659,55 @@ export default function AdminDashboard() {
     if (!recentReports) return 0;
     return recentReports.filter((r: any) => new Date(r.reported_at).getTime() > expiryCutoffTime && !r.is_flagged).length;
   }, [recentReports, expiryCutoffTime]);
+
+  useEffect(() => {
+    const query = importLocation.trim();
+    if (query.length < 3) {
+      setImportLocationSuggestions([]);
+      setImportLocationLoading(false);
+      setImportLocationError(null);
+      return;
+    }
+
+    setImportLocationLoading(true);
+    setImportLocationError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("google-places", {
+          body: { action: "autocomplete", query },
+        });
+        if (error) throw error;
+
+        if (data?.status && data.status !== "OK") {
+          const msg =
+            data.status === "REQUEST_DENIED"
+              ? `Google Places autocomplete denied. ${data?.error_message ?? ""}`.trim()
+              : `Google Places autocomplete: ${String(data.status)}${data?.error_message ? ` — ${data.error_message}` : ""}`;
+          setImportLocationError(msg);
+          setImportLocationSuggestions([]);
+          return;
+        }
+
+        const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+        setImportLocationSuggestions(
+          predictions
+            .map((p: any) => ({
+              description: String(p?.description ?? ""),
+              place_id: String(p?.place_id ?? ""),
+            }))
+            .filter((p) => p.description && p.place_id)
+            .slice(0, 8)
+        );
+      } catch {
+        setImportLocationError("Unable to load location suggestions. Please try again.");
+        setImportLocationSuggestions([]);
+      } finally {
+        setImportLocationLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [importLocation]);
 
   const handleSaveSettings = async () => {
     setSavingSettings(true);
@@ -894,7 +948,14 @@ export default function AdminDashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-      const { data, error } = await supabase.functions.invoke("google-places", { body: { action: "import", query: importQuery } });
+      const body: { action: string; query: string; location?: string } = {
+        action: "import",
+        query: importQuery.trim() || "doctor clinic",
+      };
+      if (importLocationCoords) {
+        body.location = `${importLocationCoords.lat},${importLocationCoords.lng}`;
+      }
+      const { data, error } = await supabase.functions.invoke("google-places", { body });
       if (error) throw error;
       const skipped = typeof data?.skippedDuplicates === "number" ? data.skippedDuplicates : 0;
       toast.success(
@@ -905,6 +966,35 @@ export default function AdminDashboard() {
       toast.error(err.message || "Import failed.");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleImportLocationInput = (value: string) => {
+    setImportLocation(value);
+    setImportLocationCoords(null);
+    setImportLocationError(null);
+  };
+
+  const selectImportLocation = async (suggestion: AddressSuggestion) => {
+    setImportLocation(suggestion.description);
+    setImportLocationSuggestions([]);
+    setImportLocationError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-places", {
+        body: { action: "details", placeId: suggestion.place_id },
+      });
+      if (error) throw error;
+      const lat = data?.result?.geometry?.location?.lat;
+      const lng = data?.result?.geometry?.location?.lng;
+      if (typeof lat === "number" && typeof lng === "number") {
+        setImportLocationCoords({ lat, lng });
+      } else {
+        setImportLocationCoords(null);
+        setImportLocationError("Selected location has no coordinates.");
+      }
+    } catch {
+      setImportLocationCoords(null);
+      setImportLocationError("Unable to fetch location details.");
     }
   };
 
@@ -1030,11 +1120,50 @@ export default function AdminDashboard() {
                   Import from Google Places
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-2 sm:flex-row">
-                <Input placeholder="Search query..." value={importQuery} onChange={(e) => setImportQuery(e.target.value)} />
-                <Button onClick={handleImport} disabled={importing} className="sm:w-auto">
+              <CardContent className="flex flex-col gap-2">
+                <Input
+                  placeholder="Search query (e.g. dentist, dermatologist, pediatric clinic)"
+                  value={importQuery}
+                  onChange={(e) => setImportQuery(e.target.value)}
+                />
+                <div className="relative">
+                  <Input
+                    placeholder="Location (optional, any city/country)"
+                    value={importLocation}
+                    onChange={(e) => handleImportLocationInput(e.target.value)}
+                    autoComplete="off"
+                  />
+                  {(importLocationLoading || importLocationSuggestions.length > 0 || importLocationError) && (
+                    <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                      {importLocationLoading ? (
+                        <p className="px-2 py-2 text-xs text-muted-foreground">Loading suggestions…</p>
+                      ) : importLocationError ? (
+                        <p className="px-2 py-2 text-xs text-destructive">{importLocationError}</p>
+                      ) : (
+                        importLocationSuggestions.map((suggestion) => (
+                          <button
+                            type="button"
+                            key={suggestion.place_id}
+                            onClick={() => selectImportLocation(suggestion)}
+                            className="w-full rounded-sm px-2 py-2 text-left text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground"
+                          >
+                            {suggestion.description}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {importLocationCoords
+                      ? `Using location bias: ${importLocation}`
+                      : "No location selected: import uses global text search."}
+                  </p>
+                  <Button onClick={handleImport} disabled={importing} className="sm:w-auto">
                   {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                </Button>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

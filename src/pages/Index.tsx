@@ -16,6 +16,7 @@ import { useGeocode } from "@/hooks/use-geocode";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const SEARCH_RADIUS_METERS = 5000;
 const CITY_FILTER_OPTIONS = ["all", "Miami", "Miami Beach", "Hialeah", "Coral Gables", "Doral"] as const;
@@ -204,7 +205,11 @@ const Index = () => {
               nextSourceMap[row.id] = "unavailable";
             }
           });
-        } catch {
+        } catch (err) {
+          console.warn("[distance_matrix] edge invoke failed; using client OSRM fallback", {
+            error: err instanceof Error ? err.message : String(err),
+            chunkSize: chunk.length,
+          });
           // Last-resort fallback: query OSRM directly from client for this chunk.
           await Promise.all(
             chunk.map(async (dest) => {
@@ -220,9 +225,11 @@ const Index = () => {
                   nextMap[dest.id] = meters / 1609.34;
                   nextSourceMap[dest.id] = "fallback";
                 } else {
+                  console.warn("[distance_matrix] client OSRM no route", { destinationId: dest.id });
                   nextSourceMap[dest.id] = "unavailable";
                 }
               } catch {
+                console.warn("[distance_matrix] client OSRM request failed", { destinationId: dest.id });
                 nextSourceMap[dest.id] = "unavailable";
               }
             })

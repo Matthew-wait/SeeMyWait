@@ -19,6 +19,8 @@ import {
   MapPin, Phone, Stethoscope, Building2, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { GEOCODE_COUNTRY } from "@/lib/geocode-region";
+import { buildClinicSuggestionAdminEmail } from "@/lib/email-templates";
 
 const STEPS = [
   {
@@ -47,6 +49,9 @@ const CLINIC_TYPES = [
   { value: "hospital", label: "Hospital" },
   { value: "urgent_care", label: "Urgent Care" },
 ];
+// const ADMIN_ALERT_EMAIL = "contact@seemywait.com"; // production inbox
+const ADMIN_ALERT_EMAIL = "rohansheikh197@gmail.com"; // testing inbox
+const RESEND_TEMPLATE_ID = "welcome-email";
 
 export default function SuggestClinic() {
   type AddressSuggestion = {
@@ -96,7 +101,7 @@ export default function SuggestClinic() {
     }
 
     // Final fallback from client side in case edge provider is temporarily unavailable.
-    const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pk&q=${encodeURIComponent(
+    const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=${GEOCODE_COUNTRY}&q=${encodeURIComponent(
       normalized
     )}`;
     const osmRes = await fetch(osmUrl);
@@ -281,6 +286,68 @@ export default function SuggestClinic() {
       });
 
       if (error) throw error;
+
+      // Keep user flow successful even if email notification fails.
+      await supabase.functions
+        .invoke("send-email", {
+          body: {
+            to: ADMIN_ALERT_EMAIL,
+            subject: "New Clinic Suggestion • SeeMyWait",
+            templateId: RESEND_TEMPLATE_ID,
+            variables: {
+              APP_NAME: "SeeMyWait",
+              APP_TAGLINE: "Live Wait Times, Smarter Visits",
+              title: "New Clinic Suggestion",
+              intro: "A user submitted a new doctor/clinic request.",
+              year: String(new Date().getFullYear()),
+              contentHtml: `
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Name</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${doctorName.trim()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Address</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${address.trim()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Type</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${clinicType}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Specialty</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${specialty.trim() || "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Phone</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${phone.trim() || "N/A"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Latitude</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${String(latToSave)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Longitude</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${String(lngToSave)}</td>
+                  </tr>
+                </table>
+              `,
+            },
+            html: buildClinicSuggestionAdminEmail({
+              name: doctorName.trim(),
+              address: address.trim(),
+              type: clinicType,
+              specialty: specialty.trim() || "N/A",
+              phone: phone.trim() || "N/A",
+              latitude: String(latToSave),
+              longitude: String(lngToSave),
+            }),
+          },
+        })
+        .catch((emailError) => {
+          console.error("Failed to send admin clinic suggestion email:", emailError);
+        });
+
       setSubmitted(true);
       toast.success("Suggestion submitted! We'll review it soon.");
     } catch (err) {

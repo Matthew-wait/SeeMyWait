@@ -24,6 +24,8 @@ const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] 
   { value: "1_hour", label: "1 Hour", emoji: "🟠" },
   { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
 ];
+const REPORTING_RADIUS_METERS = 1000; // ~0.62 miles
+const MAX_LOCATION_ACCURACY_METERS = 500;
 
 function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: string }) {
   const query = encodeURIComponent(`${name}`);
@@ -122,7 +124,7 @@ export default function ClinicDetail() {
       setLocationState("checking");
       try {
         const pos = await getCurrentPosition();
-        if (pos.coords.accuracy > 100) {
+        if (pos.coords.accuracy > MAX_LOCATION_ACCURACY_METERS) {
           setLocationState("low_accuracy");
           return;
         }
@@ -131,7 +133,7 @@ export default function ClinicDetail() {
           pos.coords.longitude,
           clinic.latitude,
           clinic.longitude,
-          100
+          REPORTING_RADIUS_METERS
         );
         setLocationState(withinRange ? "ready" : "too_far");
       } catch {
@@ -156,7 +158,7 @@ export default function ClinicDetail() {
         pos.coords.longitude,
         clinic.latitude,
         clinic.longitude,
-        100
+        REPORTING_RADIUS_METERS
       );
 
       if (!withinRange) {
@@ -427,7 +429,7 @@ export default function ClinicDetail() {
             )}
             {locationState === "too_far" && (
               <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
-                You need to be closer to this clinic to submit a report.
+                You need to be within about 0.6 miles of this clinic to submit a report.
               </div>
             )}
             <div className="grid grid-cols-2 gap-2.5">
