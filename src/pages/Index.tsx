@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const SEARCH_RADIUS_METERS = 5000;
 const CITY_FILTER_OPTIONS = ["all", "Miami", "Miami Beach", "Hialeah", "Coral Gables", "Doral"] as const;
+const INITIAL_LIST_COUNT = 5;
 
 const Index = () => {
   const [search, setSearch] = useState("");
@@ -31,6 +32,7 @@ const Index = () => {
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
   const [dbMatchedClinics, setDbMatchedClinics] = useState<ClinicWithWaitTime[]>([]);
+  const [listExpanded, setListExpanded] = useState(false);
   const [routeDistanceByClinicId, setRouteDistanceByClinicId] = useState<Record<string, number>>({});
   const [routeDistanceSourceByClinicId, setRouteDistanceSourceByClinicId] = useState<
     Record<string, "google" | "fallback" | "unavailable">
@@ -336,9 +338,11 @@ const Index = () => {
   }, [refetch]);
 
   const isSearching = Boolean(search.trim());
+  const currentListCount = isSearching ? displayedClinicsWithRouteDistance.length : nearbyClinics.length;
+  const canExpandList = currentListCount > INITIAL_LIST_COUNT;
 
   return (
-    <div className="relative flex h-screen flex-col bg-background overflow-hidden">
+    <div className="relative flex h-screen flex-col bg-background overflow-hidden pb-28 sm:pb-0">
       {/* Search bar overlay */}
       <div className="absolute top-0 left-0 right-0 z-[50] px-2 sm:px-3 pt-2 sm:pt-3 pb-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-lg">
@@ -406,7 +410,7 @@ const Index = () => {
       {/* Map + List layout */}
       <div className="flex-1 flex flex-col min-h-0">
         {/* Map area */}
-        <div className="relative flex-1 min-h-[45vh]">
+        <div className="relative flex-1 min-h-[36vh] sm:min-h-[45vh]">
           {!isLoading && (
             <MapView
               clinics={displayedClinics}
@@ -451,8 +455,24 @@ const Index = () => {
           nearbyClinics={nearbyClinics}
           isSearching={isSearching}
           searchQuery={search.trim()}
+          expanded={listExpanded}
           onClinicClick={handleClinicClick}
         />
+      </div>
+
+      <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom))] left-0 right-0 z-[60] h-10 border-t border-border/20 bg-background/95 backdrop-blur px-3 sm:bottom-[calc(56px+env(safe-area-inset-bottom))]">
+        <button
+          type="button"
+          onClick={() => canExpandList && setListExpanded((prev) => !prev)}
+          disabled={!canExpandList}
+          className="h-full w-full text-center text-xs font-semibold text-primary disabled:text-muted-foreground disabled:cursor-not-allowed"
+        >
+          {canExpandList
+            ? listExpanded
+              ? "Show Less"
+              : `Explore More (${currentListCount - INITIAL_LIST_COUNT} more)`
+            : "Explore More"}
+        </button>
       </div>
 
       <BottomNav />

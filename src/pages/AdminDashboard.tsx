@@ -68,6 +68,25 @@ const emptyForm: ClinicFormData = {
   longitude: "",
 };
 
+const getAutocompleteErrorMessage = (status?: string, errorMessage?: string) => {
+  if (status === "ZERO_RESULTS") {
+    return "No matching locations found. Try a more specific address (street, area, city).";
+  }
+  if (status === "REQUEST_DENIED") {
+    return "Address suggestions are temporarily unavailable. You can still enter the full address manually.";
+  }
+  if (status === "INVALID_REQUEST") {
+    return "Please type at least 3 characters to search for an address.";
+  }
+  if (status === "OVER_QUERY_LIMIT") {
+    return "Too many address lookups right now. Please wait a moment and try again.";
+  }
+  if (status) {
+    return `We could not load address suggestions.${errorMessage ? ` ${errorMessage}` : ""}`;
+  }
+  return "Unable to load address suggestions. Please try again.";
+};
+
 function ClinicFormDialog({
   open,
   onClose,
@@ -118,11 +137,7 @@ function ClinicFormDialog({
         });
         if (error) throw error;
         if (data?.status && data.status !== "OK") {
-          const msg =
-            data.status === "REQUEST_DENIED"
-              ? `Google Places autocomplete denied. ${data?.error_message ?? ""}`.trim()
-              : `Google Places autocomplete: ${String(data.status)}${data?.error_message ? ` — ${data.error_message}` : ""}`;
-          setAddressSuggestError(msg);
+          setAddressSuggestError(getAutocompleteErrorMessage(data.status, data?.error_message));
           setAddressSuggestions([]);
           return;
         }
@@ -679,11 +694,7 @@ export default function AdminDashboard() {
         if (error) throw error;
 
         if (data?.status && data.status !== "OK") {
-          const msg =
-            data.status === "REQUEST_DENIED"
-              ? `Google Places autocomplete denied. ${data?.error_message ?? ""}`.trim()
-              : `Google Places autocomplete: ${String(data.status)}${data?.error_message ? ` — ${data.error_message}` : ""}`;
-          setImportLocationError(msg);
+          setImportLocationError(getAutocompleteErrorMessage(data.status, data?.error_message));
           setImportLocationSuggestions([]);
           return;
         }
@@ -1037,7 +1048,12 @@ export default function AdminDashboard() {
             >
               <Settings className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10 hover:text-secondary-foreground"
+            >
               <LogOut className="sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
@@ -1155,7 +1171,14 @@ export default function AdminDashboard() {
                   )}
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-muted-foreground">
+                  <p
+                    className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+                    title={
+                      importLocationCoords
+                        ? `Using location bias: ${importLocation}`
+                        : "No location selected: import uses global text search."
+                    }
+                  >
                     {importLocationCoords
                       ? `Using location bias: ${importLocation}`
                       : "No location selected: import uses global text search."}

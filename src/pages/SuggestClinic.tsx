@@ -74,6 +74,24 @@ export default function SuggestClinic() {
   const [submitted, setSubmitted] = useState(false);
   const [duplicateFound, setDuplicateFound] = useState<string | null>(null);
   const [locatingAddress, setLocatingAddress] = useState(false);
+  const getAutocompleteErrorMessage = (status?: string, errorMessage?: string) => {
+    if (status === "ZERO_RESULTS") {
+      return "No matching locations found. Try a more specific address (street, area, city).";
+    }
+    if (status === "REQUEST_DENIED") {
+      return "Address suggestions are temporarily unavailable. You can still enter the full address manually.";
+    }
+    if (status === "INVALID_REQUEST") {
+      return "Please type at least 3 characters to search for an address.";
+    }
+    if (status === "OVER_QUERY_LIMIT") {
+      return "Too many address lookups right now. Please wait a moment and try again.";
+    }
+    if (status) {
+      return `We could not load address suggestions.${errorMessage ? ` ${errorMessage}` : ""}`;
+    }
+    return "Unable to load address suggestions. Please try again.";
+  };
 
   const resolveCoordinatesFromAddress = async (
     rawAddress: string
@@ -138,11 +156,7 @@ export default function SuggestClinic() {
         });
         if (error) throw error;
         if (data?.status && data.status !== "OK") {
-          const msg =
-            data.status === "REQUEST_DENIED"
-              ? `Google Places autocomplete denied. ${data?.error_message ?? ""}`.trim()
-              : `Google Places autocomplete: ${String(data.status)}${data?.error_message ? ` — ${data.error_message}` : ""}`;
-          setAddressSuggestError(msg);
+          setAddressSuggestError(getAutocompleteErrorMessage(data.status, data?.error_message));
           setAddressSuggestions([]);
           return;
         }
@@ -513,7 +527,7 @@ export default function SuggestClinic() {
                       placeholder="e.g. 123 Main St, Miami, FL 33101"
                       value={address}
                       onChange={(e) => handleAddressInput(e.target.value)}
-                      className="rounded-xl border-border/40 bg-background/60 h-11 pr-12 sm:pr-32"
+                      className="rounded-xl border-border/40 bg-background/60 h-11 pr-12 sm:pr-52"
                       autoComplete="off"
                       required
                     />
@@ -572,14 +586,16 @@ export default function SuggestClinic() {
                           { enableHighAccuracy: true }
                         );
                       }}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 sm:w-44"
                     >
                       {locatingAddress ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
                         <MapPin className="h-3 w-3" />
                       )}
-                      <span className="hidden sm:inline">Use Current Location</span>
+                      <span className="hidden sm:inline min-w-0 truncate" title="Use Current Location">
+                        Use Current Location
+                      </span>
                     </button>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
