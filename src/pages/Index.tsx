@@ -247,6 +247,18 @@ const Index = () => {
     });
   }, [userLocation, clinicsWithinNearbyRadius]);
 
+  const isWithinConfiguredRadius = useCallback(
+    (clinic: ClinicWithWaitTime) => {
+      if (!userLocation) return true;
+      const routeDistance = routeDistanceByClinicId[clinic.id];
+      if (typeof routeDistance === "number") {
+        return routeDistance <= nearbyRadiusMiles;
+      }
+      return (clinic.distance ?? 999) <= nearbyRadiusMiles;
+    },
+    [userLocation, routeDistanceByClinicId, nearbyRadiusMiles]
+  );
+
   const clinicsWithinRadiusAndCity = useMemo(() => {
     if (cityFilter === "all") return clinicsWithinNearbyRadius;
     const cityNeedle = cityFilter.toLowerCase();
@@ -259,24 +271,26 @@ const Index = () => {
     if (search.trim() && dbMatchedClinics.length > 0) {
       return dbMatchedClinics.filter(
         (c) =>
-          (c.distance || 999) <= nearbyRadiusMiles &&
+          isWithinConfiguredRadius(c) &&
           (cityFilter === "all" || c.address.toLowerCase().includes(cityFilter.toLowerCase()))
       );
     }
     if (searchArea) {
       return clinicsWithinRadiusAndCity.filter((c) => {
+        if (!isWithinConfiguredRadius(c)) return false;
         const dist = getDistanceMeters(searchArea.lat, searchArea.lng, c.latitude, c.longitude);
         return dist <= searchArea.radiusMeters;
       });
     }
-    return clinicsWithinRadiusAndCity;
-  }, [cityFilter, clinicsWithinRadiusAndCity, nearbyRadiusMiles, search, dbMatchedClinics, searchArea]);
+    return clinicsWithinRadiusAndCity.filter((c) => isWithinConfiguredRadius(c));
+  }, [cityFilter, clinicsWithinRadiusAndCity, search, dbMatchedClinics, searchArea, isWithinConfiguredRadius]);
 
   // Nearby clinics for "Explore" list — show all sorted by distance, or all if no location
   const nearbyClinics = useMemo(() => {
     if (!clinicsWithinRadiusAndCity) return [];
     if (!userLocation) return clinicsWithinRadiusAndCity;
-    return [...clinicsWithinRadiusAndCity]
+    return clinicsWithinRadiusAndCity
+      .filter((c) => isWithinConfiguredRadius(c))
       .map((c) => ({
         ...c,
         routeDistance: routeDistanceByClinicId[c.id],
@@ -286,7 +300,13 @@ const Index = () => {
         (a, b) =>
           (a.routeDistance ?? a.distance ?? 999) - (b.routeDistance ?? b.distance ?? 999)
       );
-  }, [clinicsWithinRadiusAndCity, userLocation, routeDistanceByClinicId, routeDistanceSourceByClinicId]);
+  }, [
+    clinicsWithinRadiusAndCity,
+    userLocation,
+    routeDistanceByClinicId,
+    routeDistanceSourceByClinicId,
+    isWithinConfiguredRadius,
+  ]);
 
   const displayedClinicsWithRouteDistance = useMemo(() => {
     return displayedClinics.map((c) => ({
