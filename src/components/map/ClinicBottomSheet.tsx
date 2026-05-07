@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MapPin, Clock, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
@@ -10,35 +10,77 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  REPORT_WAIT_GEOFENCE_METERS,
+  REPORT_MAX_GPS_ACCURACY_METERS,
+} from "@/lib/report-geofence";
 
 const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] = [
-  { value: "on_time", label: "On Time", emoji: "✅" },
-  { value: "30_min", label: "30 Min", emoji: "🟡" },
-  { value: "1_hour", label: "1 Hour", emoji: "🟠" },
-  { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
+  { value: "on_time", label: "On Time", emoji: "🟢" },
+  { value: "30_min", label: "30 min", emoji: "🟡" },
+  { value: "1_hour", label: "60 min", emoji: "🟠" },
+  { value: "1.5_hours_plus", label: "90+ min", emoji: "🔴" },
 ];
+
+type ReportEligibility =
+  | "loading"
+  | "ready"
+  | "too_far"
+  | "low_accuracy"
+  | "gps_off";
 
 interface ClinicBottomSheetProps {
   clinic: ClinicWithWaitTime;
   onClose: () => void;
   onReported: () => void;
-  userLocation: { lat: number; lng: number } | null;
   cooldownMinutes?: number;
 }
 
-export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, cooldownMinutes = 60 }: ClinicBottomSheetProps) {
+export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes = 60 }: ClinicBottomSheetProps) {
   const [submitting, setSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [eligibility, setEligibility] = useState<ReportEligibility>("loading");
+  const queryClient = useQueryClient();
 
-  const isNearby = userLocation
-    ? isWithinRadius(userLocation.lat, userLocation.lng, clinic.latitude, clinic.longitude, 150)
-    : false;
+  useEffect(() => {
+    let cancelled = false;
 
-  // Check if the wait time is about to expire (older than 2.5 hours)
-  const isExpiringSoon = clinic.waitTime
-    ? (Date.now() - new Date(clinic.waitTime.lastReported).getTime()) > 2.5 * 60 * 60 * 1000
-    : false;
+    const checkEligibility = async () => {
+      setEligibility("loading");
+      try {
+        const pos = await getCurrentPosition();
+        if (cancelled) return;
+
+        if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
+          setEligibility("low_accuracy");
+          return;
+        }
+
+        const withinRange = isWithinRadius(
+          pos.coords.latitude,
+          pos.coords.longitude,
+          clinic.latitude,
+          clinic.longitude,
+          REPORT_WAIT_GEOFENCE_METERS
+        );
+        setEligibility(withinRange ? "ready" : "too_far");
+      } catch {
+        if (!cancelled) setEligibility("gps_off");
+      }
+    };
+
+    checkEligibility();
+    return () => {
+      cancelled = true;
+    };
+  }, [clinic.id, clinic.latitude, clinic.longitude]);
+
+  const isExpiringSoon =
+    clinic.waitTime && clinic.waitTime.lastReported && !clinic.waitTime.isDefault
+      ? Date.now() - new Date(clinic.waitTime.lastReported).getTime() > 2.5 * 60 * 60 * 1000
+      : false;
 
   const handleReport = async (category: WaitTimeCategory) => {
     setSelectedOption(category);
@@ -48,20 +90,25 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
     try {
       const pos = await getCurrentPosition();
       const withinRange = isWithinRadius(
-        pos.coords.latitude, pos.coords.longitude,
-        clinic.latitude, clinic.longitude, 100
+        pos.coords.latitude,
+        pos.coords.longitude,
+        clinic.latitude,
+        clinic.longitude,
+        REPORT_WAIT_GEOFENCE_METERS
       );
       if (!withinRange) {
-        setError("You must be at or near this clinic to report.");
+        setError("You must be within range of this doctor office to report.");
         setSubmitting(false);
         setSelectedOption(null);
+        setEligibility("too_far");
         return;
       }
 
-      if (pos.coords.accuracy > 100) {
+      if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
         setError("GPS signal too weak. Try stepping outside or near a window.");
         setSubmitting(false);
         setSelectedOption(null);
+        setEligibility("low_accuracy");
         return;
       }
 
@@ -89,9 +136,13 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
       });
 
       if (insertError) throw insertError;
+
+      await queryClient.invalidateQueries({ queryKey: ["clinics"] });
+      await queryClient.invalidateQueries({ queryKey: ["reports", clinic.id] });
+
       toast.success("Thank you! Your report has been submitted.");
       onReported();
-    } catch (e) {
+    } catch {
       if (!error) toast.error("Failed to submit report.");
     } finally {
       setSubmitting(false);
@@ -104,18 +155,30 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
     window.open(url, "_blank");
   };
 
+  const eligibilityMessage = (): string => {
+    switch (eligibility) {
+      case "too_far":
+        return "You are not close enough to submit a wait report for this doctor office right now.";
+      case "low_accuracy":
+        return "Your GPS accuracy is too low to report right now. Move outdoors or closer to an entrance and try again.";
+      case "gps_off":
+        return "Location is required to verify reporting. Enable GPS and try again.";
+      default:
+        return "";
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] flex items-end justify-center animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-background/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-lg mx-2 mb-[72px] animate-in slide-in-from-bottom-8 duration-400 rounded-2xl border border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
-        {/* Handle bar */}
+      <div className="relative z-10 w-full max-w-lg mx-2 mb-[calc(110px+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom-8 duration-400 rounded-2xl border border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
         <div className="flex justify-center pt-3 pb-1">
           <div className="h-1 w-10 rounded-full bg-muted-foreground/20" />
         </div>
 
-        {/* Close */}
         <button
+          type="button"
           onClick={onClose}
           className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-xl bg-muted/20 text-muted-foreground hover:bg-muted/40 transition-colors"
         >
@@ -123,12 +186,11 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
         </button>
 
         <div className="space-y-4 px-3 pb-4 pt-1 sm:px-5 sm:pb-5">
-          {/* Header */}
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
               <Stethoscope className="h-5 w-5 text-primary" />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 pr-8">
               <h3 className="text-base font-bold text-card-foreground truncate">{clinic.name}</h3>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -142,16 +204,17 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
             </div>
           </div>
 
-          {/* Wait status */}
           <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
-            {clinic.waitTime ? (
+            {clinic.waitTime && (
               <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
                     <WaitTimeBadge category={clinic.waitTime.category} showIcon />
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
-                    </span>
+                    {clinic.waitTime.lastReported && !clinic.waitTime.isDefault && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {isExpiringSoon && (
@@ -163,15 +226,9 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">No recent reports — be the first!</p>
-              </div>
             )}
           </div>
 
-          {/* Error */}
           {error && (
             <div className="flex items-start gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
@@ -179,34 +236,50 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, userLocation, c
             </div>
           )}
 
-          {/* Report buttons */}
-          <div>
+          <div className="rounded-xl border border-border/30 bg-muted/5 p-3">
             <p className="text-xs font-semibold text-card-foreground mb-2">Report Wait Time</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {WAIT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-[10px] font-semibold transition-all duration-200 active:scale-95 sm:text-[11px] ${
-                    selectedOption === opt.value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border/30 bg-card text-card-foreground hover:border-primary/30"
-                  } ${submitting ? "opacity-50 pointer-events-none" : ""}`}
-                  disabled={submitting}
-                  onClick={() => handleReport(opt.value)}
-                >
-                  {submitting && selectedOption === opt.value ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <span className="text-lg">{opt.emoji}</span>
-                  )}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+
+            {eligibility === "loading" && (
+              <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-xs">Checking location…</span>
+              </div>
+            )}
+
+            {eligibility === "ready" && (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {WAIT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`flex flex-col items-center gap-1 rounded-xl border-2 px-2 py-2.5 text-[10px] font-semibold transition-all duration-200 active:scale-95 sm:text-[11px] ${
+                      selectedOption === opt.value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border/30 bg-card text-card-foreground hover:border-primary/30"
+                    } ${submitting ? "opacity-50 pointer-events-none" : ""}`}
+                    disabled={submitting}
+                    onClick={() => handleReport(opt.value)}
+                  >
+                    {submitting && selectedOption === opt.value ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span className="text-lg">{opt.emoji}</span>
+                    )}
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {eligibility !== "loading" && eligibility !== "ready" && (
+              <div className="flex gap-2 rounded-lg bg-muted/30 px-3 py-2.5">
+                <Info className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
+                <p className="text-[11px] leading-relaxed text-muted-foreground">{eligibilityMessage()}</p>
+              </div>
+            )}
           </div>
 
-          {/* Directions button */}
-          <Button onClick={openDirections} variant="outline" className="w-full gap-2 rounded-xl">
+          <Button type="button" onClick={openDirections} variant="outline" className="w-full gap-2 rounded-xl">
             <Navigation className="h-4 w-4" />
             Get Directions
           </Button>

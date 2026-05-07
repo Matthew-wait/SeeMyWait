@@ -400,7 +400,7 @@ export default function LandingPage() {
             <p className="mb-3 sm:mb-6 text-xs sm:text-sm font-medium text-cyan-300/80 italic">Right data. Right spot. Right time.</p>
             <ul className="mb-4 sm:mb-8 space-y-1.5 sm:space-y-3 text-xs sm:text-sm text-white/80 text-left mx-auto lg:mx-0 max-w-sm lg:max-w-none">
               {[
-                "Verified by real patients physically at the clinic",
+                "Verified by real patients physically at the doctor office",
                 "Live updates that refresh every few minutes",
                 "Anonymous & privacy-first reporting",
                 "Designed to actually save you hours",
@@ -519,7 +519,7 @@ export default function LandingPage() {
                   icon: Search,
                   step: "01",
                   title: "Search",
-                  desc: "Find a doctor or clinic near you using our smart search.",
+                  desc: "Find a doctor office near you using our smart search.",
                   visual: "search",
                 },
                 {
@@ -621,7 +621,7 @@ export default function LandingPage() {
                     { label: "Real-time updates", detail: "Live data from patients right now" },
                     { label: "Verified location data", detail: "GPS-confirmed within 50-100m" },
                     { label: "Anti-spam & geofencing", detail: "Device + location verification" },
-                    { label: "Real patient reports", detail: "From people actually in the clinic" },
+                    { label: "Real patient reports", detail: "From people actually in the doctor office" },
                     { label: "Anonymous & private", detail: "Zero personal data collected" },
                   ].map((row, i) => (
                     <div key={i} className="flex items-start gap-3 group">
@@ -714,7 +714,7 @@ export default function LandingPage() {
               {
                 icon: Users,
                 title: "Avoid Crowds",
-                desc: "See which clinics are packed and which have shorter waits right now.",
+                desc: "See which doctor offices are packed and which have shorter waits right now.",
                 color: "amber",
                 span: "lg:col-span-2",
               },
@@ -898,11 +898,11 @@ export default function LandingPage() {
                 {[
                   {
                     q: "How do you verify wait times?",
-                    a: "Users can only submit wait time reports when physically present at a clinic, verified through GPS geofencing within 50–100 meters. Combined with device-based rate limiting, this ensures authentic reports.",
+                    a: "Users can only submit wait time reports when physically present at a doctor office, verified through GPS geofencing within 50–100 meters. Combined with device-based rate limiting, this ensures authentic reports.",
                   },
                   {
                     q: "Is my location tracked?",
-                    a: "No. Your location is only checked momentarily to verify you're at the clinic. We don't store location history or track your movements.",
+                    a: "No. Your location is only checked momentarily to verify you're at the doctor office. We don't store location history or track your movements.",
                   },
                   {
                     q: "Do I need to create an account?",
@@ -914,7 +914,7 @@ export default function LandingPage() {
                   },
                   {
                     q: "What if someone submits fake data?",
-                    a: "Our system uses GPS geofencing to ensure reporters are physically at the clinic, plus device-based rate limiting to prevent spam. Anomalous reports are automatically flagged.",
+                    a: "Our system uses GPS geofencing to ensure reporters are physically at the doctor office, plus device-based rate limiting to prevent spam. Anomalous reports are automatically flagged.",
                   },
                   {
                     q: "When is the app launching?",
@@ -970,7 +970,7 @@ export default function LandingPage() {
                   <div>
                     <h3 className="text-xl font-bold mb-2">Let's Connect</h3>
                     <p className="text-white/50 text-sm leading-relaxed">
-                      Whether you're a clinic looking to partner, a patient with feedback, or just curious — drop us a
+                      Whether you're a doctor office looking to partner, a patient with feedback, or just curious — drop us a
                       message.
                     </p>
                   </div>

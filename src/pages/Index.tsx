@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, Loader2, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// City filter dropdown is temporarily disabled — re-enable along with the JSX below.
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BottomNav } from "@/components/BottomNav";
 import { useClinics } from "@/hooks/use-clinics";
-import { getCurrentPosition, isWithinRadius, getDistanceMeters } from "@/lib/geolocation";
+import { getCurrentPosition, getDistanceMeters } from "@/lib/geolocation";
 import { MapView, SearchArea } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
-import { ProximityPrompt } from "@/components/map/ProximityPrompt";
+import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
 import { SearchCircleOverlay } from "@/components/map/SearchCircleOverlay";
 import { ClinicListPanel } from "@/components/map/ClinicListPanel";
 import { FindMeButton } from "@/components/map/FindMeButton";
@@ -19,20 +20,18 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const SEARCH_RADIUS_METERS = 5000;
-const CITY_FILTER_OPTIONS = ["all", "Miami", "Miami Beach", "Hialeah", "Coral Gables", "Doral"] as const;
-const INITIAL_LIST_COUNT = 5;
+// const CITY_FILTER_OPTIONS = ["all", "Miami", "Miami Beach", "Hialeah", "Coral Gables", "Doral"] as const;
 
 const Index = () => {
   const [search, setSearch] = useState("");
-  const [cityFilter, setCityFilter] = useState<(typeof CITY_FILTER_OPTIONS)[number]>("all");
+  // const [cityFilter, setCityFilter] = useState<(typeof CITY_FILTER_OPTIONS)[number]>("all");
+  const cityFilter: "all" = "all";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(true);
-  const [nearbyClinic, setNearbyClinic] = useState<ClinicWithWaitTime | null>(null);
-  const [dismissedPrompts, setDismissedPrompts] = useState<Set<string>>(new Set());
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
   const [dbMatchedClinics, setDbMatchedClinics] = useState<ClinicWithWaitTime[]>([]);
-  const [listExpanded, setListExpanded] = useState(false);
+  const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
   const [routeDistanceByClinicId, setRouteDistanceByClinicId] = useState<Record<string, number>>({});
   const [routeDistanceSourceByClinicId, setRouteDistanceSourceByClinicId] = useState<
     Record<string, "google" | "fallback" | "unavailable">
@@ -60,7 +59,7 @@ const Index = () => {
         setUserLocation(loc);
         setCenterOn({ ...loc, zoom: 14 });
       } catch {
-        toast("Location access helps find nearby clinics.", {
+        toast("Location access helps find nearby doctor offices.", {
           description: "Enable GPS for the best experience.",
           icon: "📍",
         });
@@ -69,16 +68,6 @@ const Index = () => {
       }
     })();
   }, []);
-
-  useEffect(() => {
-    if (!userLocation || !clinics) return;
-    const nearby = clinics.find(
-      (c) =>
-        isWithinRadius(userLocation.lat, userLocation.lng, c.latitude, c.longitude, 100) &&
-        !dismissedPrompts.has(c.id)
-    );
-    setNearbyClinic(nearby || null);
-  }, [userLocation, clinics, dismissedPrompts]);
 
   // Search logic: DB-first, then geocode fallback
   useEffect(() => {
@@ -166,16 +155,34 @@ const Index = () => {
     return clinics.filter((c) => (c.distance || 999) <= nearbyRadiusMiles);
   }, [clinics, userLocation, nearbyRadiusMiles]);
 
+  // Hold the latest clinic list in a ref so the effect below can read it
+  // without depending on the array reference itself (which gets a new
+  // identity every minute when `useClinics` refetches, even when the data
+  // hasn't actually changed). The effect only re-fires when the *set* of
+  // clinic IDs really changes.
+  const clinicsWithinNearbyRadiusRef = useRef(clinicsWithinNearbyRadius);
+  clinicsWithinNearbyRadiusRef.current = clinicsWithinNearbyRadius;
+
+  const clinicsWithinNearbyRadiusKey = useMemo(
+    () =>
+      clinicsWithinNearbyRadius
+        .map((c) => c.id)
+        .sort()
+        .join(","),
+    [clinicsWithinNearbyRadius],
+  );
+
   useEffect(() => {
     const fetchRouteDistances = async () => {
-      if (!userLocation || !clinicsWithinNearbyRadius.length) {
+      const list = clinicsWithinNearbyRadiusRef.current;
+      if (!userLocation || !list.length) {
         setRouteDistanceByClinicId({});
         setRouteDistanceSourceByClinicId({});
         return;
       }
 
       const chunks: { id: string; lat: number; lng: number }[][] = [];
-      const candidates = clinicsWithinNearbyRadius
+      const candidates = list
         .slice(0, 50)
         .map((c) => ({ id: c.id, lat: c.latitude, lng: c.longitude }));
 
@@ -247,7 +254,7 @@ const Index = () => {
       setRouteDistanceByClinicId({});
       setRouteDistanceSourceByClinicId({});
     });
-  }, [userLocation, clinicsWithinNearbyRadius]);
+  }, [userLocation, clinicsWithinNearbyRadiusKey]);
 
   const isWithinConfiguredRadius = useCallback(
     (clinic: ClinicWithWaitTime) => {
@@ -325,24 +332,22 @@ const Index = () => {
   }, [userLocation]);
 
   const handleClinicClick = useCallback((clinic: ClinicWithWaitTime) => {
-    navigate(`/clinic/${clinic.id}`);
-  }, [navigate]);
+    setSelectedClinic(clinic);
+  }, []);
 
   const handleEmptyClick = useCallback(() => {
     // No-op: detail flow is navigation-based now
   }, []);
 
   const handleReported = useCallback(() => {
-    setNearbyClinic(null);
+    setSelectedClinic(null);
     refetch();
   }, [refetch]);
 
   const isSearching = Boolean(search.trim());
-  const currentListCount = isSearching ? displayedClinicsWithRouteDistance.length : nearbyClinics.length;
-  const canExpandList = currentListCount > INITIAL_LIST_COUNT;
 
   return (
-    <div className="relative flex h-screen flex-col bg-background overflow-hidden pb-28 sm:pb-0">
+    <div className="relative flex h-screen flex-col bg-background overflow-hidden pb-20 sm:pb-0">
       {/* Search bar overlay */}
       <div className="absolute top-0 left-0 right-0 z-[50] px-2 sm:px-3 pt-2 sm:pt-3 pb-2 pointer-events-none">
         <div className="pointer-events-auto mx-auto max-w-lg">
@@ -354,7 +359,7 @@ const Index = () => {
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               )}
               <Input
-                placeholder="Search doctor, clinic, or location…"
+                placeholder="Search doctor office or location…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 px-0"
@@ -365,6 +370,9 @@ const Index = () => {
                 </button>
               )}
             </div>
+            {/*
+              City filter dropdown — temporarily disabled.
+              Restore this block (and the imports/state above) to bring it back.
             <div className="border-t border-border/20 px-3 py-2">
               <Select value={cityFilter} onValueChange={(v) => setCityFilter(v as (typeof CITY_FILTER_OPTIONS)[number])}>
                 <SelectTrigger className="h-8 border-border/40 bg-background/60 text-[11px] sm:text-xs">
@@ -380,11 +388,12 @@ const Index = () => {
                 </SelectContent>
               </Select>
             </div>
+            */}
             {search.trim() && !geocoding && searchArea && (
               <div className="border-t border-border/20 px-4 py-2 flex items-center gap-1.5">
                 <MapPin className="h-3 w-3 text-primary shrink-0" />
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {displayedClinics.length} clinic{displayedClinics.length !== 1 ? "s" : ""} found
+                  {displayedClinics.length} doctor office{displayedClinics.length !== 1 ? "s" : ""} found
                   {dbMatchedClinics.length > 0 ? " matching your search" : " near this location"}
                 </p>
               </div>
@@ -401,7 +410,7 @@ const Index = () => {
               <div className="h-12 w-12 rounded-full border-[3px] border-muted animate-spin border-t-primary" />
             </div>
             <p className="text-sm text-muted-foreground animate-pulse">
-              {locating ? "Finding your location…" : "Loading clinics…"}
+              {locating ? "Finding your location…" : "Loading doctor offices…"}
             </p>
           </div>
         </div>
@@ -411,22 +420,36 @@ const Index = () => {
       <div className="flex-1 flex flex-col min-h-0">
         {/* Map area */}
         <div className="relative flex-1 min-h-[36vh] sm:min-h-[45vh]">
-          {!isLoading && (
-            <MapView
-              clinics={displayedClinics}
-              userLocation={userLocation}
-              onClinicClick={handleClinicClick}
-              onEmptyClick={handleEmptyClick}
-              centerOn={centerOn}
-              searchArea={searchArea}
-              clinicsInSearchArea={displayedClinics.length}
-              nearbyRadiusMiles={nearbyRadiusMiles}
-            />
-          )}
+          {/*
+            Always keep MapView mounted. Unmounting it when isLoading flips
+            (for example when the useClinics queryKey changes mid-session)
+            tears down Leaflet, re-fetches tiles, and re-runs the pin-drop
+            animation — that's what looked like "the map glitching".
+            The loading overlay above already covers the initial-fetch UX.
+          */}
+          <MapView
+            clinics={displayedClinics}
+            userLocation={userLocation}
+            onClinicClick={handleClinicClick}
+            onEmptyClick={handleEmptyClick}
+            centerOn={centerOn}
+            searchArea={searchArea}
+            clinicsInSearchArea={displayedClinics.length}
+            nearbyRadiusMiles={nearbyRadiusMiles}
+          />
 
           <FindMeButton onClick={handleFindMe} visible={!!userLocation} />
 
           <MapLegend />
+
+          {selectedClinic && (
+            <ClinicBottomSheet
+              clinic={selectedClinic}
+              cooldownMinutes={reportCooldownMinutes}
+              onClose={() => setSelectedClinic(null)}
+              onReported={handleReported}
+            />
+          )}
 
           {searchArea && !geocoding && displayedClinics.length === 0 && (
             <SearchCircleOverlay
@@ -436,17 +459,6 @@ const Index = () => {
             />
           )}
 
-          {nearbyClinic && !searchArea && (
-            <ProximityPrompt
-              clinic={nearbyClinic}
-              cooldownMinutes={reportCooldownMinutes}
-              onDismiss={() => {
-                setDismissedPrompts((prev) => new Set(prev).add(nearbyClinic.id));
-                setNearbyClinic(null);
-              }}
-              onReported={handleReported}
-            />
-          )}
         </div>
 
         {/* Clinic list panel */}
@@ -455,24 +467,8 @@ const Index = () => {
           nearbyClinics={nearbyClinics}
           isSearching={isSearching}
           searchQuery={search.trim()}
-          expanded={listExpanded}
           onClinicClick={handleClinicClick}
         />
-      </div>
-
-      <div className="fixed bottom-[calc(56px+env(safe-area-inset-bottom))] left-0 right-0 z-[60] h-10 border-t border-border/20 bg-background/95 backdrop-blur px-3 sm:bottom-[calc(56px+env(safe-area-inset-bottom))]">
-        <button
-          type="button"
-          onClick={() => canExpandList && setListExpanded((prev) => !prev)}
-          disabled={!canExpandList}
-          className="h-full w-full text-center text-xs font-semibold text-primary disabled:text-muted-foreground disabled:cursor-not-allowed"
-        >
-          {canExpandList
-            ? listExpanded
-              ? "Show Less"
-              : `Explore More (${currentListCount - INITIAL_LIST_COUNT} more)`
-            : "Explore More"}
-        </button>
       </div>
 
       <BottomNav />

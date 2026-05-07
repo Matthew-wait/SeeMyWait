@@ -35,13 +35,13 @@ const TermsPage = () => {
           </Section>
 
           <Section title="2. Description of Service">
-            SeeMyWait provides real-time, crowd-sourced wait time information for healthcare clinics. Users can view estimated wait times and submit wait time reports based on their in-person experiences. The Service uses location verification to ensure the accuracy of reports.
+            SeeMyWait provides real-time, crowd-sourced wait time information for healthcare doctor offices. Users can view estimated wait times and submit wait time reports based on their in-person experiences. The Service uses location verification to ensure the accuracy of reports.
           </Section>
 
           <Section title="3. User Conduct">
             You agree to:
             <ul className="list-disc pl-6 mt-2 space-y-1 text-white/50">
-              <li>Provide accurate and truthful wait time reports only when physically present at a clinic.</li>
+              <li>Provide accurate and truthful wait time reports only when physically present at a doctor office.</li>
               <li>Not attempt to manipulate, spam, or submit fraudulent reports.</li>
               <li>Not interfere with or disrupt the Service or its infrastructure.</li>
               <li>Not use the Service for any unlawful purpose.</li>
@@ -49,7 +49,7 @@ const TermsPage = () => {
           </Section>
 
           <Section title="4. Location Data">
-            The Service requires access to your device's location to verify proximity to clinics. Location data is used solely for report verification and is not stored beyond the scope of the reporting process. You may deny location access, but this will limit your ability to submit reports.
+            The Service requires access to your device's location to verify proximity to doctor offices. Location data is used solely for report verification and is not stored beyond the scope of the reporting process. You may deny location access, but this will limit your ability to submit reports.
           </Section>
 
           <Section title="5. Accuracy Disclaimer">

@@ -102,7 +102,7 @@ export function SplashScreen({ onComplete, duration = 2500 }: SplashScreenProps)
           className="max-w-xs text-center text-xs sm:text-sm"
           style={{ color: "hsl(215 20% 65%)" }}
         >
-          Real-time wait times. Verified at the clinic.
+          Real-time wait times. Verified at the doctor office.
         </p>
 
         {/* Loading indicator */}

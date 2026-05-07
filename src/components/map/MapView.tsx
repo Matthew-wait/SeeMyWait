@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
+import { MapZoomControls } from "@/components/map/MapZoomControls";
 
 const WAIT_COLORS: Record<WaitTimeCategory, string> = {
   on_time: "#22c55e",
@@ -40,31 +41,6 @@ const PIN_STYLES = `
   .leaflet-pane { z-index: 0 !important; }
   .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
   .leaflet-control-attribution { display: none !important; }
-  .leaflet-control-zoom {
-    border: none !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    margin-top: 118px !important;
-  }
-  .leaflet-control-zoom a {
-    background: hsl(210 40% 98%) !important;
-    color: hsl(222 47% 11%) !important;
-    border: none !important;
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-    font-size: 18px !important;
-  }
-  .dark .leaflet-control-zoom a {
-    background: hsl(217 32% 17%) !important;
-    color: hsl(210 40% 98%) !important;
-  }
-  @media (min-width: 640px) {
-    .leaflet-control-zoom {
-      margin-top: 76px !important;
-    }
-  }
   .search-count-tooltip {
     background: hsl(222 47% 11% / 0.9) !important;
     border: 1px solid hsl(200 98% 39% / 0.4) !important;
@@ -122,7 +98,9 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
     const map = L.map(mapContainerRef.current, {
       center: defaultCenter,
       zoom: defaultZoom,
-      zoomControl: true,
+      // Leaflet's built-in zoom control is disabled; we render our own
+      // <MapZoomControls> in the bottom-left next to <FindMeButton>.
+      zoomControl: false,
       attributionControl: false,
     });
 
@@ -212,8 +190,8 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
 
     // Tooltip with count on hover
     const countLabel = clinicsInSearchArea === 0
-      ? "No clinics found"
-      : `${clinicsInSearchArea} clinic${clinicsInSearchArea !== 1 ? "s" : ""} in this area`;
+      ? "No doctor offices found"
+      : `${clinicsInSearchArea} doctor office${clinicsInSearchArea !== 1 ? "s" : ""} in this area`;
     circle.bindTooltip(countLabel, {
       permanent: false,
       direction: "top",
@@ -327,10 +305,19 @@ function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, cent
     mapRef.current.setView([centerOn.lat, centerOn.lng], centerOn.zoom || mapRef.current.getZoom(), { animate: false });
   }, [centerOn, searchArea]);
 
+  const handleZoomIn = useCallback(() => {
+    mapRef.current?.zoomIn();
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    mapRef.current?.zoomOut();
+  }, []);
+
   return (
     <div className="absolute inset-0">
       <style>{PIN_STYLES}</style>
       <div ref={mapContainerRef} className="h-full w-full" />
+      <MapZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
     </div>
   );
 }

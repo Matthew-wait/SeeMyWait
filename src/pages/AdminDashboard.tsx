@@ -216,12 +216,12 @@ function ClinicFormDialog({
       <DialogContent className="max-w-md w-full mx-3">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {initialData ? "Edit Doctor / Clinic" : "Add Doctor / Clinic"}
+            {initialData ? "Edit Doctor Office" : "Add Doctor Office"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3 pt-1">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs">Doctor / Clinic Name *</Label>
+            <Label htmlFor="name" className="text-xs">Doctor Office Name *</Label>
             <Input id="name" value={form.name} onChange={set("name")} placeholder="Dr. Maria Santos" required />
           </div>
           <div className="space-y-1.5">
@@ -285,7 +285,7 @@ function ClinicFormDialog({
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (initialData ? "Save Changes" : "Add Clinic")}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (initialData ? "Save Changes" : "Add Doctor Office")}
             </Button>
           </DialogFooter>
         </form>
@@ -792,17 +792,17 @@ export default function AdminDashboard() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Doctor/Clinic created!");
+      toast.success("Doctor Office created!");
       setCreateOpen(false);
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     },
     onError: (err) => {
       if (isDuplicateKeyError(err) || (err as Error)?.message === "DUPLICATE_CLINIC") {
-        toast.error("A clinic with this name and address already exists.");
+        toast.error("A doctor office with this name and address already exists.");
       } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
         toast.error("Could not locate this address. Pick a suggestion or enter valid coordinates.");
       } else {
-        toast.error("Failed to create clinic.");
+        toast.error("Failed to create doctor office.");
       }
     },
   });
@@ -833,17 +833,17 @@ export default function AdminDashboard() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Doctor/Clinic updated!");
+      toast.success("Doctor Office updated!");
       setEditClinic(null);
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     },
     onError: (err) => {
       if (isDuplicateKeyError(err) || (err as Error)?.message === "DUPLICATE_CLINIC") {
-        toast.error("Another clinic already uses this name and address.");
+        toast.error("Another doctor office already uses this name and address.");
       } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
         toast.error("Could not locate this address. Pick a suggestion or enter valid coordinates.");
       } else {
-        toast.error("Failed to update clinic.");
+        toast.error("Failed to update doctor office.");
       }
     },
   });
@@ -855,11 +855,11 @@ export default function AdminDashboard() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Clinic deleted.");
+      toast.success("Doctor Office deleted.");
       setDeleteId(null);
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     },
-    onError: () => toast.error("Failed to delete clinic."),
+    onError: () => toast.error("Failed to delete doctor office."),
   });
 
   const resetClinicWaitTimes = useMutation({
@@ -912,7 +912,7 @@ export default function AdminDashboard() {
     onSuccess: () => { toast.success("Suggestion approved!"); queryClient.invalidateQueries({ queryKey: ["admin-suggestions"] }); queryClient.invalidateQueries({ queryKey: ["admin-clinics"] }); },
     onError: (err) => {
       if (isDuplicateKeyError(err) || (err as Error)?.message === "DUPLICATE_CLINIC") {
-        toast.error("A clinic with this name and address already exists.");
+        toast.error("A doctor office with this name and address already exists.");
       } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
         toast.error("Suggestion address could not be located. Ask user/admin to provide a more precise address.");
       } else {
@@ -970,7 +970,7 @@ export default function AdminDashboard() {
       if (error) throw error;
       const skipped = typeof data?.skippedDuplicates === "number" ? data.skippedDuplicates : 0;
       toast.success(
-        `Imported ${data?.imported ?? 0} clinic(s).${skipped > 0 ? ` ${skipped} duplicate(s) skipped.` : ""}`
+        `Imported ${data?.imported ?? 0} doctor office(s).${skipped > 0 ? ` ${skipped} duplicate(s) skipped.` : ""}`
       );
       queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     } catch (err: any) {
@@ -1066,7 +1066,7 @@ export default function AdminDashboard() {
           <CardContent className="p-2 text-center sm:p-3">
             <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
             <p className="text-xl font-bold text-foreground sm:text-2xl">{totalClinics}</p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Clinics</p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Doctor Offices</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -1138,7 +1138,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
                 <Input
-                  placeholder="Search query (e.g. dentist, dermatologist, pediatric clinic)"
+                  placeholder="Search query (e.g. dentist, dermatologist, pediatric office)"
                   value={importQuery}
                   onChange={(e) => setImportQuery(e.target.value)}
                 />
@@ -1334,7 +1334,7 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Clinic</TableHead>
+                    <TableHead>Doctor Office</TableHead>
                     <TableHead>Wait</TableHead>
                     <TableHead className="hidden sm:table-cell">Time</TableHead>
                     <TableHead className="w-20 text-right">Actions</TableHead>
@@ -1421,7 +1421,7 @@ export default function AdminDashboard() {
                     placeholder="100"
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Users will see clinics within this radius on the map. A circle will be shown around their location.
+                    Users will see doctor offices within this radius on the map. A circle will be shown around their location.
                   </p>
                 </div>
                 <div className="space-y-1.5">
@@ -1434,7 +1434,7 @@ export default function AdminDashboard() {
                     placeholder="60"
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Reports expire after this many minutes, and users must wait this long before reporting again for the same clinic.
+                    Reports expire after this many minutes, and users must wait this long before reporting again for the same doctor office.
                   </p>
                 </div>
                 <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5">
@@ -1476,10 +1476,10 @@ export default function AdminDashboard() {
       <Dialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
         <DialogContent className="max-w-sm mx-3">
           <DialogHeader>
-            <DialogTitle className="text-base">Delete Doctor / Clinic?</DialogTitle>
+            <DialogTitle className="text-base">Delete Doctor Office?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This will permanently delete the clinic and all its wait time reports. This action cannot be undone.
+            This will permanently delete the doctor office and all its wait time reports. This action cannot be undone.
           </p>
           <DialogFooter className="gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={() => setDeleteId(null)} disabled={deleteClinic.isPending}>

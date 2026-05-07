@@ -14,7 +14,8 @@ interface ClinicCardProps {
   waitTime?: {
     category: WaitTimeCategory;
     label: string;
-    lastReported: string;
+    lastReported: string | null;
+    isDefault?: boolean;
   } | null;
 }
 
@@ -64,17 +65,17 @@ export function ClinicCard({
 
         {/* Wait + Arrow */}
         <div className="shrink-0 flex items-center gap-2">
-          {waitTime ? (
+          {waitTime && (
             <div className="flex flex-col items-end gap-1">
               <WaitTimeBadge category={waitTime.category} />
-              <span className="text-[9px] text-muted-foreground whitespace-nowrap">
-                {formatDistanceToNow(new Date(waitTime.lastReported), {
-                  addSuffix: true,
-                })}
-              </span>
+              {waitTime.lastReported && !waitTime.isDefault && (
+                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                  {formatDistanceToNow(new Date(waitTime.lastReported), {
+                    addSuffix: true,
+                  })}
+                </span>
+              )}
             </div>
-          ) : (
-            <span className="text-[10px] text-muted-foreground whitespace-nowrap italic">No reports</span>
           )}
           <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary/60 group-hover:translate-x-0.5 transition-all" />
         </div>

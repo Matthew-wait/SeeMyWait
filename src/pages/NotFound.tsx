@@ -17,7 +17,7 @@ const NotFound = () => {
         </div>
         <h1 className="text-5xl font-extrabold text-foreground tracking-tight">404</h1>
         <p className="text-base text-muted-foreground max-w-xs">
-          This page doesn't exist. Maybe the clinic moved?
+          This page doesn't exist. Maybe the doctor office moved?
         </p>
         <a
           href="/"

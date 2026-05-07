@@ -7,6 +7,14 @@ export const WAIT_TIME_LABELS: Record<WaitTimeCategory, string> = {
   "1.5_hours_plus": "1.5+ Hours",
 };
 
+/** Short minutes-style label for history rows, e.g. "30 min", "60 min", "90+ min". */
+export const WAIT_TIME_MINUTES_LABEL: Record<WaitTimeCategory, string> = {
+  on_time: "On time",
+  "30_min": "30 min",
+  "1_hour": "60 min",
+  "1.5_hours_plus": "90+ min",
+};
+
 export const WAIT_TIME_COLORS: Record<WaitTimeCategory, string> = {
   on_time: "bg-green-500",
   "30_min": "bg-yellow-500",
@@ -21,15 +29,28 @@ export const WAIT_TIME_TEXT_COLORS: Record<WaitTimeCategory, string> = {
   "1.5_hours_plus": "text-destructive",
 };
 
+export interface WaitTimeSummary {
+  category: WaitTimeCategory;
+  label: string;
+  lastReported: string | null;
+  isDefault: boolean;
+}
+
 export function getAverageWaitTime(
   reports: { wait_time: WaitTimeCategory; reported_at: string }[],
   maxAgeMinutes: number = 180
-): { category: WaitTimeCategory; label: string; lastReported: string } | null {
-  // Only consider reports newer than the configured expiry window
+): WaitTimeSummary {
   const cutoffIso = new Date(Date.now() - maxAgeMinutes * 60 * 1000).toISOString();
   const recent = reports.filter((r) => r.reported_at > cutoffIso);
 
-  if (recent.length === 0) return null;
+  if (recent.length === 0) {
+    return {
+      category: "on_time",
+      label: WAIT_TIME_LABELS.on_time,
+      lastReported: null,
+      isDefault: true,
+    };
+  }
 
   const sorted = [...recent].sort(
     (a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()
@@ -40,5 +61,6 @@ export function getAverageWaitTime(
     category: latest.wait_time,
     label: WAIT_TIME_LABELS[latest.wait_time],
     lastReported: latest.reported_at,
+    isDefault: false,
   };
 }

@@ -6,9 +6,10 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { supabase } from "@/integrations/supabase/client";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const QUICK_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] = [
-  { value: "on_time", label: "On Time", emoji: "✅" },
+  { value: "on_time", label: "On Time", emoji: "🟢" },
   { value: "30_min", label: "30 Min", emoji: "🟡" },
   { value: "1_hour", label: "1 Hour", emoji: "🟠" },
   { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
@@ -24,6 +25,7 @@ interface ProximityPromptProps {
 export function ProximityPrompt({ clinic, onDismiss, onReported, cooldownMinutes = 60 }: ProximityPromptProps) {
   const [submitting, setSubmitting] = useState(false);
   const [selected, setSelected] = useState<WaitTimeCategory | null>(null);
+  const queryClient = useQueryClient();
 
   const handleQuickReport = async (category: WaitTimeCategory) => {
     setSelected(category);
@@ -32,7 +34,7 @@ export function ProximityPrompt({ clinic, onDismiss, onReported, cooldownMinutes
     try {
       const pos = await getCurrentPosition();
       if (!isWithinRadius(pos.coords.latitude, pos.coords.longitude, clinic.latitude, clinic.longitude, 100)) {
-        toast.error("You're no longer near this clinic.");
+        toast.error("You're no longer near this doctor office.");
         setSubmitting(false);
         setSelected(null);
         return;
@@ -55,7 +57,7 @@ export function ProximityPrompt({ clinic, onDismiss, onReported, cooldownMinutes
         .limit(1);
 
       if (existing && existing.length > 0) {
-        toast.info(`You already reported recently for this clinic. Try again in ${cooldownMinutes} minutes.`);
+        toast.info(`You already reported recently for this doctor office. Try again in ${cooldownMinutes} minutes.`);
         onDismiss();
         return;
       }
@@ -65,6 +67,10 @@ export function ProximityPrompt({ clinic, onDismiss, onReported, cooldownMinutes
         wait_time: category,
         device_fingerprint: fingerprint,
       });
+
+      // Force the map / list to re-pull so the pin recolors immediately.
+      await queryClient.invalidateQueries({ queryKey: ["clinics"] });
+      await queryClient.invalidateQueries({ queryKey: ["reports", clinic.id] });
 
       toast.success("Thank you! Report submitted.");
       onReported();

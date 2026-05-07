@@ -34,15 +34,15 @@ const PrivacyPage = () => {
             <p className="mb-3">We collect the following types of information:</p>
             <ul className="list-disc pl-6 space-y-1 text-white/50">
               <li><strong className="text-white/70">Device Fingerprint:</strong> A unique identifier generated from your device to prevent duplicate or fraudulent reports. This is not linked to your personal identity.</li>
-              <li><strong className="text-white/70">Location Data:</strong> Temporary geolocation data used solely to verify your proximity to a clinic when submitting a wait time report.</li>
-              <li><strong className="text-white/70">Wait Time Reports:</strong> The wait time category you select and the clinic associated with your report.</li>
+              <li><strong className="text-white/70">Location Data:</strong> Temporary geolocation data used solely to verify your proximity to a doctor office when submitting a wait time report.</li>
+              <li><strong className="text-white/70">Wait Time Reports:</strong> The wait time category you select and the doctor office associated with your report.</li>
             </ul>
           </Section>
 
           <Section title="2. How We Use Your Information">
             <ul className="list-disc pl-6 space-y-1 text-white/50">
-              <li>To display real-time, crowd-sourced wait time estimates for clinics.</li>
-              <li>To verify that reports are submitted from valid locations near clinics.</li>
+              <li>To display real-time, crowd-sourced wait time estimates for doctor offices.</li>
+              <li>To verify that reports are submitted from valid locations near doctor offices.</li>
               <li>To prevent abuse, spam, and fraudulent reporting.</li>
               <li>To improve the accuracy and reliability of the Service.</li>
             </ul>

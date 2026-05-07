@@ -11,7 +11,7 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { buildSupportThankYouEmail, buildSupportTicketAdminEmail } from "@/lib/email-templates";
 import {
   Settings, Heart, Moon, Sun, Bell, BellOff,
-  Smartphone, Globe, ChevronRight, Sparkles,
+  Globe, ChevronRight, Sparkles,
   Shield, MessageSquare, Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -25,7 +25,6 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(() => localStorage.getItem("settings_notifications") !== "false");
-  const [reducedMotion, setReducedMotion] = useState(() => localStorage.getItem("settings_reduced_motion") === "true");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackEmail, setFeedbackEmail] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -38,9 +37,9 @@ export default function SettingsPage() {
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem("settings_reduced_motion", String(reducedMotion));
-    document.documentElement.classList.toggle("reduce-motion", reducedMotion);
-  }, [reducedMotion]);
+    localStorage.removeItem("settings_reduced_motion");
+    document.documentElement.classList.remove("reduce-motion");
+  }, []);
 
   const submitFeedback = async () => {
     if (!feedbackMessage.trim()) {
@@ -201,27 +200,6 @@ export default function SettingsPage() {
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-
-            <div
-              onClick={() => {
-                setReducedMotion(!reducedMotion);
-                toast.success(reducedMotion ? "Animations enabled" : "Animations reduced");
-              }}
-              className="flex w-full items-center gap-3 rounded-xl p-3 transition-all hover:bg-muted/20 active:scale-[0.99]"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
-                <Smartphone className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <span className="text-sm font-semibold text-card-foreground">Reduce Motion</span>
-                <p className="text-[11px] text-muted-foreground">Minimize animations & transitions</p>
-              </div>
-              <Switch
-                checked={reducedMotion}
-                onCheckedChange={setReducedMotion}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
           </div>
         </div>
 
@@ -269,7 +247,7 @@ export default function SettingsPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/10">
                 <Globe className="h-4 w-4 text-primary" />
               </div>
-              <h3 className="text-sm font-semibold text-card-foreground">More</h3>
+              <h3 className="text-sm font-semibold text-card-foreground">Contact</h3>
             </div>
           </div>
           <div className="px-4 pb-4 pt-2 space-y-1">

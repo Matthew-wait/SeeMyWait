@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope, ExternalLink, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,10 @@ import {
   WaitTimeCategory,
   getAverageWaitTime,
 } from "@/lib/wait-time-utils";
+import {
+  REPORT_WAIT_GEOFENCE_METERS,
+  REPORT_MAX_GPS_ACCURACY_METERS,
+} from "@/lib/report-geofence";
 import { getCurrentPosition, isWithinRadius } from "@/lib/geolocation";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { useAppSettings } from "@/hooks/use-app-settings";
@@ -19,13 +23,11 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] = [
-  { value: "on_time", label: "On Time", emoji: "✅" },
+  { value: "on_time", label: "On Time", emoji: "🟢" },
   { value: "30_min", label: "30 Min", emoji: "🟡" },
   { value: "1_hour", label: "1 Hour", emoji: "🟠" },
   { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
 ];
-const REPORTING_RADIUS_METERS = 1000; // ~0.62 miles
-const MAX_LOCATION_ACCURACY_METERS = 500;
 
 function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: string }) {
   const query = encodeURIComponent(`${name}`);
@@ -58,6 +60,7 @@ function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: st
 export default function ClinicDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
@@ -103,7 +106,7 @@ export default function ClinicDetail() {
     enabled: !!id,
   });
 
-  const waitTime = reports ? getAverageWaitTime(reports, reportWindowMinutes) : null;
+  const waitTime = getAverageWaitTime(reports || [], reportWindowMinutes);
   const recentReportCount = useMemo(() => {
     if (!reports) return 0;
     const cutoff = Date.now() - reportWindowMinutes * 60 * 1000;
@@ -124,7 +127,7 @@ export default function ClinicDetail() {
       setLocationState("checking");
       try {
         const pos = await getCurrentPosition();
-        if (pos.coords.accuracy > MAX_LOCATION_ACCURACY_METERS) {
+        if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
           setLocationState("low_accuracy");
           return;
         }
@@ -133,7 +136,7 @@ export default function ClinicDetail() {
           pos.coords.longitude,
           clinic.latitude,
           clinic.longitude,
-          REPORTING_RADIUS_METERS
+          REPORT_WAIT_GEOFENCE_METERS
         );
         setLocationState(withinRange ? "ready" : "too_far");
       } catch {
@@ -158,7 +161,7 @@ export default function ClinicDetail() {
         pos.coords.longitude,
         clinic.latitude,
         clinic.longitude,
-        REPORTING_RADIUS_METERS
+        REPORT_WAIT_GEOFENCE_METERS
       );
 
       if (!withinRange) {
@@ -202,6 +205,11 @@ export default function ClinicDetail() {
       });
 
       if (error) throw error;
+
+      // Make sure when the user navigates back to the map the pin reflects
+      // the new wait time, and stays that color until the report expires.
+      await queryClient.invalidateQueries({ queryKey: ["clinics"] });
+
       toast.success("Thank you! Your report has been submitted.");
       refetchReports();
     } catch {
@@ -290,7 +298,7 @@ export default function ClinicDetail() {
             <div className="flex items-start gap-3">
               <Stethoscope className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Doctor / Clinic</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Doctor Office</p>
                 <p className="text-sm font-semibold text-card-foreground break-words">{clinic.name}</p>
               </div>
             </div>
@@ -340,24 +348,19 @@ export default function ClinicDetail() {
               <div className="flex justify-center py-4">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : waitTime ? (
+            ) : (
               <div className="flex flex-col items-start gap-2 rounded-xl border border-border/20 bg-muted/10 p-3 sm:flex-row sm:items-center sm:gap-3">
                 <WaitTimeBadge category={waitTime.category} showIcon className="text-sm px-4 py-1.5" />
                 <div className="space-y-0.5">
-                  <span className="block text-xs text-muted-foreground">
-                    Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
-                  </span>
+                  {waitTime.lastReported && !waitTime.isDefault && (
+                    <span className="block text-xs text-muted-foreground">
+                      Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
+                    </span>
+                  )}
                   <span className="block text-[11px] font-medium text-muted-foreground">
                     {recentReportCount} report{recentReportCount !== 1 ? "s" : ""} in last {reportWindowMinutes} minutes
                   </span>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
-                <p className="text-sm text-muted-foreground">No recent reports — be the first!</p>
-                <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                  {recentReportCount} report{recentReportCount !== 1 ? "s" : ""} in last {reportWindowMinutes} minutes
-                </p>
               </div>
             )}
           </div>
@@ -407,7 +410,7 @@ export default function ClinicDetail() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-card-foreground">Report Wait Time</h2>
-                <p className="text-[11px] text-muted-foreground">You must be at the clinic to report</p>
+                <p className="text-[11px] text-muted-foreground">You must be at the doctor office to report</p>
               </div>
             </div>
           </div>
@@ -429,7 +432,7 @@ export default function ClinicDetail() {
             )}
             {locationState === "too_far" && (
               <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
-                You need to be within about 0.6 miles of this clinic to submit a report.
+                You need to be within about 0.6 miles of this doctor office to submit a report.
               </div>
             )}
             <div className="grid grid-cols-2 gap-2.5">

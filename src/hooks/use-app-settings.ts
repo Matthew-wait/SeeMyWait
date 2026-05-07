@@ -31,9 +31,12 @@ export function useAppSettings() {
       });
       return settings;
     },
-    // Keep settings fresh so admin changes apply quickly for users
-    staleTime: 0,
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
+    // Settings change rarely; refetching every 30s caused needless tree
+    // re-renders that contributed to the map feeling glitchy. Five minutes
+    // is plenty for admin-side tweaks to propagate, and structural sharing
+    // dedupes identical values so this is mostly free.
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }

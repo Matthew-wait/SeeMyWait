@@ -121,8 +121,8 @@ export function buildClinicSuggestionAdminEmail(payload: {
   longitude: string;
 }): string {
   return baseTemplate(
-    "New Clinic Suggestion",
-    "A user submitted a new doctor/clinic request.",
+    "New Doctor Office Suggestion",
+    "A user submitted a new doctor office request.",
     `
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
         ${row("Name", payload.name)}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,12 +21,18 @@ import {
 import { toast } from "sonner";
 import { GEOCODE_COUNTRY } from "@/lib/geocode-region";
 import { buildClinicSuggestionAdminEmail } from "@/lib/email-templates";
+import {
+  PhoneInput,
+  buildE164,
+  isPhoneDigitsValid,
+} from "@/components/ui/phone-input";
+import { DEFAULT_COUNTRY_ISO } from "@/lib/country-codes";
 
 const STEPS = [
   {
     icon: ClipboardList,
     title: "You Report",
-    description: "Submit clinic details — name, address, and type.",
+    description: "Submit doctor office details — name, address, and type.",
     emoji: "📋",
   },
   {
@@ -45,7 +51,7 @@ const STEPS = [
 
 const CLINIC_TYPES = [
   { value: "doctor", label: "Doctor" },
-  { value: "clinic", label: "Clinic" },
+  { value: "clinic", label: "Doctor Office" },
   { value: "hospital", label: "Hospital" },
   { value: "urgent_care", label: "Urgent Care" },
 ];
@@ -68,12 +74,29 @@ export default function SuggestClinic() {
   const [selectedAddressPlaceId, setSelectedAddressPlaceId] = useState<string | null>(null);
   const [selectedLatitude, setSelectedLatitude] = useState<number | null>(null);
   const [selectedLongitude, setSelectedLongitude] = useState<number | null>(null);
-  const [phone, setPhone] = useState("");
+  const [phoneCountryIso, setPhoneCountryIso] = useState(DEFAULT_COUNTRY_ISO);
+  const [phoneDigits, setPhoneDigits] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [clinicType, setClinicType] = useState("doctor");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [duplicateFound, setDuplicateFound] = useState<string | null>(null);
   const [locatingAddress, setLocatingAddress] = useState(false);
+  // Set to `true` right before we fill `address` from GPS, so the autocomplete
+  // effect skips one tick and doesn't pop suggestions over a captured location.
+  const skipNextAutocompleteRef = useRef(false);
+
+  const phoneValueToSave = buildE164(phoneCountryIso, phoneDigits);
+
+  // Submit stays disabled until every field has a value AND the phone passes
+  // the 7–15 digit check.
+  const allFieldsFilled =
+    doctorName.trim() !== "" &&
+    specialty.trim() !== "" &&
+    address.trim() !== "" &&
+    clinicType !== "" &&
+    isPhoneDigitsValid(phoneDigits);
+  const submitDisabled = submitting || !allFieldsFilled;
   const getAutocompleteErrorMessage = (status?: string, errorMessage?: string) => {
     if (status === "ZERO_RESULTS") {
       return "No matching locations found. Try a more specific address (street, area, city).";
@@ -139,6 +162,14 @@ export default function SuggestClinic() {
   };
 
   useEffect(() => {
+    if (skipNextAutocompleteRef.current) {
+      skipNextAutocompleteRef.current = false;
+      setAddressSuggestions([]);
+      setAddressLoading(false);
+      setAddressSuggestError(null);
+      return;
+    }
+
     const query = address.trim();
     if (query.length < 3) {
       setAddressSuggestions([]);
@@ -258,10 +289,26 @@ export default function SuggestClinic() {
     e.preventDefault();
     setDuplicateFound(null);
 
-    if (!doctorName.trim() || !address.trim()) {
-      toast.error("Please fill in all required fields.");
+    if (
+      !doctorName.trim() ||
+      !specialty.trim() ||
+      !address.trim() ||
+      !clinicType
+    ) {
+      toast.error("Please fill in all fields.");
       return;
     }
+
+    if (!isPhoneDigitsValid(phoneDigits)) {
+      setPhoneTouched(true);
+      toast.error(
+        phoneDigits.length === 0
+          ? "Please enter a phone number."
+          : "Phone number is incomplete.",
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       let latToSave = selectedLatitude;
@@ -292,7 +339,7 @@ export default function SuggestClinic() {
         doctor_name: doctorName.trim(),
         address: address.trim(),
         specialty: specialty.trim() || null,
-        phone: phone.trim() || null,
+        phone: phoneValueToSave || null,
         clinic_type: clinicType,
         latitude: latToSave,
         longitude: lngToSave,
@@ -306,13 +353,13 @@ export default function SuggestClinic() {
         .invoke("send-email", {
           body: {
             to: ADMIN_ALERT_EMAIL,
-            subject: "New Clinic Suggestion • SeeMyWait",
+            subject: "New Doctor Office Suggestion • SeeMyWait",
             templateId: RESEND_TEMPLATE_ID,
             variables: {
               APP_NAME: "SeeMyWait",
               APP_TAGLINE: "Live Wait Times, Smarter Visits",
-              title: "New Clinic Suggestion",
-              intro: "A user submitted a new doctor/clinic request.",
+              title: "New Doctor Office Suggestion",
+              intro: "A user submitted a new doctor office request.",
               year: String(new Date().getFullYear()),
               contentHtml: `
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
@@ -334,7 +381,7 @@ export default function SuggestClinic() {
                   </tr>
                   <tr>
                     <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Phone</td>
-                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${phone.trim() || "N/A"}</td>
+                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">${phoneValueToSave || "N/A"}</td>
                   </tr>
                   <tr>
                     <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">Latitude</td>
@@ -352,7 +399,7 @@ export default function SuggestClinic() {
               address: address.trim(),
               type: clinicType,
               specialty: specialty.trim() || "N/A",
-              phone: phone.trim() || "N/A",
+              phone: phoneValueToSave || "N/A",
               latitude: String(latToSave),
               longitude: String(lngToSave),
             }),
@@ -386,7 +433,9 @@ export default function SuggestClinic() {
     setSelectedAddressPlaceId(null);
     setSelectedLatitude(null);
     setSelectedLongitude(null);
-    setPhone("");
+    setPhoneCountryIso(DEFAULT_COUNTRY_ISO);
+    setPhoneDigits("");
+    setPhoneTouched(false);
     setClinicType("doctor");
   };
 
@@ -403,7 +452,7 @@ export default function SuggestClinic() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary-foreground tracking-tight sm:text-2xl">
-                Can't Find Your Clinic?
+                Can't Find Your Doctor Office?
               </h1>
               <p className="text-[11px] text-primary-foreground/60 font-medium">
                 Report it here — we'll review and add it soon
@@ -472,7 +521,7 @@ export default function SuggestClinic() {
                 <div className="space-y-1.5">
                   <Label htmlFor="doctorName" className="text-xs font-medium flex items-center gap-1.5">
                     <Stethoscope className="h-3 w-3 text-primary/70" />
-                    Doctor / Clinic Name <span className="text-destructive">*</span>
+                    Doctor Office Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="doctorName"
@@ -503,7 +552,7 @@ export default function SuggestClinic() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="specialty" className="flex h-4 items-center text-xs font-medium">
-                      Specialty
+                      Specialty <span className="text-destructive ml-0.5">*</span>
                     </Label>
                     <Input
                       id="specialty"
@@ -511,6 +560,7 @@ export default function SuggestClinic() {
                       value={specialty}
                       onChange={(e) => setSpecialty(e.target.value)}
                       className="rounded-xl border-border/40 bg-background/60 h-11"
+                      required
                     />
                   </div>
                 </div>
@@ -562,22 +612,42 @@ export default function SuggestClinic() {
                         setLocatingAddress(true);
                         navigator.geolocation.getCurrentPosition(
                           async (pos) => {
+                            const { latitude, longitude } = pos.coords;
+                            // Trust the browser's GPS reading. We only use the
+                            // reverse-geocode lookup for a human-readable
+                            // label; the saved coordinates always come from
+                            // the GPS sensor so submit never needs to
+                            // forward-geocode a verbose OSM string.
+                            let label = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+                            let resolved = false;
                             try {
                               const res = await fetch(
-                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`
+                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
                               );
                               const data = await res.json();
-                              if (data.display_name) {
-                                handleAddressInput(data.display_name);
-                                toast.success("Address captured from your location!");
-                              } else {
-                                toast.error("Could not resolve address. Please enter manually.");
+                              if (data?.display_name) {
+                                label = String(data.display_name);
+                                resolved = true;
                               }
                             } catch {
-                              toast.error("Failed to get address. Please enter manually.");
-                            } finally {
-                              setLocatingAddress(false);
+                              // Network/OSM hiccup — we'll just use the
+                              // numeric label below.
                             }
+
+                            skipNextAutocompleteRef.current = true;
+                            setAddress(label);
+                            setSelectedAddressPlaceId(null);
+                            setSelectedLatitude(latitude);
+                            setSelectedLongitude(longitude);
+                            setAddressSuggestError(null);
+                            setAddressSuggestions([]);
+                            setLocatingAddress(false);
+
+                            toast.success(
+                              resolved
+                                ? "Address captured from your location!"
+                                : "Location captured. You can edit the address text if needed."
+                            );
                           },
                           () => {
                             toast.error("Unable to get location. Please enter manually.");
@@ -603,6 +673,26 @@ export default function SuggestClinic() {
                   </p>
                 </div>
 
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-xs font-medium flex items-center gap-1.5">
+                    <Phone className="h-3 w-3 text-primary/70" />
+                    Phone <span className="text-destructive">*</span>
+                  </Label>
+                  <PhoneInput
+                    id="phone"
+                    countryIso={phoneCountryIso}
+                    digits={phoneDigits}
+                    onCountryIsoChange={setPhoneCountryIso}
+                    onDigitsChange={(d) => {
+                      setPhoneDigits(d);
+                      if (!phoneTouched) setPhoneTouched(true);
+                    }}
+                    showError={phoneTouched}
+                    placeholder="e.g. 3055550199"
+                  />
+                </div>
+
                 {duplicateFound && (
                   <Alert variant="destructive" className="rounded-xl border-destructive/30 bg-destructive/5 animate-in fade-in slide-in-from-top-2 duration-300">
                     <AlertTriangle className="h-4 w-4" />
@@ -613,7 +703,11 @@ export default function SuggestClinic() {
                   </Alert>
                 )}
 
-                <Button type="submit" className="w-full rounded-xl h-12 text-sm font-semibold" disabled={submitting}>
+                <Button
+                  type="submit"
+                  className="w-full rounded-xl h-12 text-sm font-semibold"
+                  disabled={submitDisabled}
+                >
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Submit Suggestion
                 </Button>

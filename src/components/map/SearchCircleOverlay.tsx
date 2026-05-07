@@ -17,9 +17,9 @@ export function SearchCircleOverlay({ clinicCount, searchName, onSuggestClinic }
             <MapPin className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-card-foreground">No clinics found</p>
+            <p className="text-sm font-semibold text-card-foreground">No doctor offices found</p>
             <p className="text-xs text-muted-foreground truncate">
-              No registered clinics near "{searchName}"
+              No registered doctor offices near "{searchName}"
             </p>
           </div>
         </div>
@@ -28,7 +28,7 @@ export function SearchCircleOverlay({ clinicCount, searchName, onSuggestClinic }
           className="w-full flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
-          Suggest a Clinic Here
+          Suggest a Doctor Office Here
         </button>
       </div>
     </div>
