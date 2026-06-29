@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# SeeMyWait – Real-Time Doctor Wait Times
 
-## Project info
+SeeMyWait is a modern web application that allows patients to see real-time, location-verified wait times at doctor's offices before they leave home. 
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 🛠️ Tech Stack
 
-There are several ways of editing your application.
+This project is built using:
+- **Frontend Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **Database & Auth**: [Supabase](https://supabase.com/)
+- **Maps & Geocoding**: [Google Maps Platform](https://developers.google.com/maps)
+- **Testing**: [Vitest](https://vitest.dev/)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## ⚙️ Local Development Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
+Ensure you have [Node.js (v20+)](https://nodejs.org/) installed.
 
-**Use your preferred IDE**
+### 1. Clone & Install
+```bash
+# Clone the repository
+git clone https://github.com/Matthew-wait/SeeMyWait.git
+cd SeeMyWait
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Install dependencies
+npm install
 ```
 
-**Edit a file directly in GitHub**
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory and add the following keys (see `.env.example` for details):
+```env
+VITE_SUPABASE_PROJECT_ID="your_project_id"
+VITE_SUPABASE_PUBLISHABLE_KEY="your_publishable_key"
+VITE_SUPABASE_URL="your_supabase_url"
+GOOGLE_MAPS_API_KEY="your_google_maps_key"
+GOOGLE_GEOCODE_API_KEY="your_google_geocode_key"
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Start Development Server
+```bash
+npm run dev
+```
+The app will run locally at `http://localhost:8080` (or `http://localhost:5173`).
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🧪 Production Build & Testing
 
-## What technologies are used for this project?
+### Run Tests
+```bash
+npm run test
+```
 
-This project is built with:
+### Compile Production Build
+```bash
+npm run build
+```
+This generates compiled static assets in the `dist/` directory.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🚀 Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The project is configured for automated deployments to **Vercel** with client-side SPA routing supported via `vercel.json`. Whenever changes are pushed to the `main` branch, Vercel will automatically build and deploy the update live to [seemywait.com](https://seemywait.com).
