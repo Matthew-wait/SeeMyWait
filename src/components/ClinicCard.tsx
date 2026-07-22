@@ -11,11 +11,11 @@ interface ClinicCardProps {
   address: string;
   specialty?: string | null;
   distance?: number;
+  /** `null`/omitted means no active report — rendered as the green "On Time" default. */
   waitTime?: {
     category: WaitTimeCategory;
     label: string;
     lastReported: string | null;
-    isDefault?: boolean;
   } | null;
 }
 
@@ -65,18 +65,16 @@ export function ClinicCard({
 
         {/* Wait + Arrow */}
         <div className="shrink-0 flex items-center gap-2">
-          {waitTime && (
-            <div className="flex flex-col items-end gap-1">
-              <WaitTimeBadge category={waitTime.category} />
-              {waitTime.lastReported && !waitTime.isDefault && (
-                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
-                  {formatDistanceToNow(new Date(waitTime.lastReported), {
-                    addSuffix: true,
-                  })}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            <WaitTimeBadge category={waitTime?.category ?? null} />
+            {waitTime?.lastReported && (
+              <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                {formatDistanceToNow(new Date(waitTime.lastReported), {
+                  addSuffix: true,
+                })}
+              </span>
+            )}
+          </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary/60 group-hover:translate-x-0.5 transition-all" />
         </div>
       </div>

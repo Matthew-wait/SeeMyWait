@@ -16,7 +16,7 @@ import {
   REPORT_WAIT_GEOFENCE_METERS,
   REPORT_MAX_GPS_ACCURACY_METERS,
 } from "@/lib/report-geofence";
-import { getCurrentPosition, isWithinRadius } from "@/lib/geolocation";
+import { getCurrentPosition, getFreshPosition, isWithinRadius } from "@/lib/geolocation";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import { formatDistanceToNow } from "date-fns";
@@ -64,7 +64,9 @@ export default function ClinicDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
-  const [locationError, setLocationError] = useState<"gps_off" | "too_far" | "rate_limited" | null>(null);
+  const [locationError, setLocationError] = useState<
+    "gps_off" | "too_far" | "low_accuracy" | "rate_limited" | null
+  >(null);
   const [locationState, setLocationState] = useState<"checking" | "ready" | "gps_off" | "low_accuracy" | "too_far">("checking");
   const { data: appSettings } = useAppSettings();
   const reportWindowMinutes = appSettings?.report_cooldown_minutes ?? 60;
@@ -155,7 +157,8 @@ export default function ClinicDetail() {
     setCheckingLocation(true);
 
     try {
-      const pos = await getCurrentPosition();
+      // Fresh (uncached) fix: the eligibility check on mount may be minutes old.
+      const pos = await getFreshPosition();
       const withinRange = isWithinRadius(
         pos.coords.latitude,
         pos.coords.longitude,
@@ -168,6 +171,13 @@ export default function ClinicDetail() {
         setCheckingLocation(false);
         setSelectedOption(null);
         setLocationError("too_far");
+        return;
+      }
+
+      if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
+        setCheckingLocation(false);
+        setSelectedOption(null);
+        setLocationError("low_accuracy");
         return;
       }
     } catch {
@@ -350,9 +360,13 @@ export default function ClinicDetail() {
               </div>
             ) : (
               <div className="flex flex-col items-start gap-2 rounded-xl border border-border/20 bg-muted/10 p-3 sm:flex-row sm:items-center sm:gap-3">
-                <WaitTimeBadge category={waitTime.category} showIcon className="text-sm px-4 py-1.5" />
+                <WaitTimeBadge
+                  category={waitTime?.category ?? null}
+                  showIcon
+                  className="text-sm px-4 py-1.5"
+                />
                 <div className="space-y-0.5">
-                  {waitTime.lastReported && !waitTime.isDefault && (
+                  {waitTime?.lastReported && (
                     <span className="block text-xs text-muted-foreground">
                       Last report {formatDistanceToNow(new Date(waitTime.lastReported), { addSuffix: true })}
                     </span>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +19,11 @@ import {
   MapPin, Phone, Stethoscope, Building2, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 import { GEOCODE_COUNTRY } from "@/lib/geocode-region";
+import { isGooglePlaceId } from "@/lib/medical-search";
+import { autocompletePlaces, reverseGeocode, getPlaceDetails } from "@/lib/google-places-client";
+import { AddDoctorPrefill } from "@/lib/add-doctor-prefill";
 import { buildClinicSuggestionAdminEmail } from "@/lib/email-templates";
 import {
   PhoneInput,
@@ -72,8 +76,14 @@ export default function SuggestClinic() {
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressSuggestError, setAddressSuggestError] = useState<string | null>(null);
   const [selectedAddressPlaceId, setSelectedAddressPlaceId] = useState<string | null>(null);
-  const [selectedLatitude, setSelectedLatitude] = useState<number | null>(null);
-  const [selectedLongitude, setSelectedLongitude] = useState<number | null>(null);
+  // Editable Latitude / Longitude fields. Auto-filled when the user picks a
+  // suggestion, uses current location, or arrives via a map-tap prefill — and
+  // can be pasted by hand from Google Maps for a custom spot. Kept as strings
+  // so partial/invalid input can be shown and validated.
+  const [latInput, setLatInput] = useState("");
+  const [lngInput, setLngInput] = useState("");
+  // User's position, used only to bias autocomplete toward nearby results.
+  const [biasLocation, setBiasLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [phoneCountryIso, setPhoneCountryIso] = useState(DEFAULT_COUNTRY_ISO);
   const [phoneDigits, setPhoneDigits] = useState("");
   const [phoneTouched, setPhoneTouched] = useState(false);
@@ -82,39 +92,40 @@ export default function SuggestClinic() {
   const [submitted, setSubmitted] = useState(false);
   const [duplicateFound, setDuplicateFound] = useState<string | null>(null);
   const [locatingAddress, setLocatingAddress] = useState(false);
+  const routerLocation = useLocation();
   // Set to `true` right before we fill `address` from GPS, so the autocomplete
   // effect skips one tick and doesn't pop suggestions over a captured location.
   const skipNextAutocompleteRef = useRef(false);
 
   const phoneValueToSave = buildE164(phoneCountryIso, phoneDigits);
 
-  // Submit stays disabled until every field has a value AND the phone passes
-  // the 7–15 digit check.
+  // Parsed, range-checked manual coordinates (null if empty or invalid).
+  const parsedManualCoords = useMemo(() => {
+    const lat = parseFloat(latInput.trim());
+    const lng = parseFloat(lngInput.trim());
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return { lat, lng };
+  }, [latInput, lngInput]);
+
+  const coordsTouched = latInput.trim() !== "" || lngInput.trim() !== "";
+  const coordsInvalid = coordsTouched && parsedManualCoords === null;
+
+  /** Fill both coordinate inputs from a resolved point. */
+  const setCoordInputs = (lat: number, lng: number) => {
+    setLatInput(lat.toFixed(6));
+    setLngInput(lng.toFixed(6));
+  };
+
+  // Required: name, address, type. Specialty and phone are optional; a partial
+  // phone is the only thing that can invalidate the form.
+  const phoneValid = phoneDigits.length === 0 || isPhoneDigitsValid(phoneDigits);
   const allFieldsFilled =
     doctorName.trim() !== "" &&
-    specialty.trim() !== "" &&
     address.trim() !== "" &&
     clinicType !== "" &&
-    isPhoneDigitsValid(phoneDigits);
+    phoneValid;
   const submitDisabled = submitting || !allFieldsFilled;
-  const getAutocompleteErrorMessage = (status?: string, errorMessage?: string) => {
-    if (status === "ZERO_RESULTS") {
-      return "No matching locations found. Try a more specific address (street, area, city).";
-    }
-    if (status === "REQUEST_DENIED") {
-      return "Address suggestions are temporarily unavailable. You can still enter the full address manually.";
-    }
-    if (status === "INVALID_REQUEST") {
-      return "Please type at least 3 characters to search for an address.";
-    }
-    if (status === "OVER_QUERY_LIMIT") {
-      return "Too many address lookups right now. Please wait a moment and try again.";
-    }
-    if (status) {
-      return `We could not load address suggestions.${errorMessage ? ` ${errorMessage}` : ""}`;
-    }
-    return "Unable to load address suggestions. Please try again.";
-  };
 
   const resolveCoordinatesFromAddress = async (
     rawAddress: string
@@ -151,15 +162,44 @@ export default function SuggestClinic() {
     const lat = firstOsm?.lat ? parseFloat(firstOsm.lat) : NaN;
     const lng = firstOsm?.lon ? parseFloat(firstOsm.lon) : NaN;
     if (!isNaN(lat) && !isNaN(lng)) {
-      return {
-        lat,
-        lng,
-        placeId: firstOsm?.place_id ? String(firstOsm.place_id) : null,
-      };
+      // Deliberately null: Nominatim's `place_id` is an internal OSM integer,
+      // not a Google place id. Storing it in `google_place_id` would poison the
+      // dedup index and break "View on Google Maps" links.
+      return { lat, lng, placeId: null };
     }
 
     throw new Error("COORDINATES_NOT_FOUND");
   };
+
+  // Hydrate from a tap-to-add prefill (POI tap / "Add here"), once on mount.
+  useEffect(() => {
+    const prefill = (routerLocation.state as { prefill?: AddDoctorPrefill } | null)?.prefill;
+    if (!prefill) return;
+
+    if (prefill.name) setDoctorName(prefill.name);
+    if (prefill.specialty) setSpecialty(prefill.specialty);
+    if (prefill.type) setClinicType(prefill.type);
+    if (prefill.address) setAddress(prefill.address);
+    if (prefill.place_id) setSelectedAddressPlaceId(prefill.place_id);
+
+    if (typeof prefill.lat === "number" && typeof prefill.lng === "number") {
+      // A map tap / POI gives an exact point — fill the coordinate fields.
+      setCoordInputs(prefill.lat, prefill.lng);
+      // Skip the autocomplete pass that the address setState would trigger.
+      skipNextAutocompleteRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Capture the user's position once, only to bias address suggestions nearby.
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setBiasLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+    );
+  }, []);
 
   useEffect(() => {
     if (skipNextAutocompleteRef.current) {
@@ -182,25 +222,18 @@ export default function SuggestClinic() {
     setAddressSuggestError(null);
     const timer = setTimeout(async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("google-places", {
-          body: { action: "autocomplete", query },
-        });
-        if (error) throw error;
-        if (data?.status && data.status !== "OK") {
-          setAddressSuggestError(getAutocompleteErrorMessage(data.status, data?.error_message));
-          setAddressSuggestions([]);
-          return;
-        }
-        const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
+        // Client-side Places, biased to the user's location. The shared edge
+        // `autocomplete` action can't bias (backend is frozen), which is what
+        // made typed suggestions wander to unrelated areas.
+        const predictions = await autocompletePlaces(query, biasLocation);
         setAddressSuggestions(
-          predictions
-            .map((p: any) => ({
-              description: String(p?.description ?? ""),
-              place_id: String(p?.place_id ?? ""),
-            }))
-            .filter((p) => p.description && p.place_id)
-            .slice(0, 8)
+          predictions.filter((p) => p.description && p.place_id).slice(0, 8)
         );
+        if (predictions.length === 0) {
+          setAddressSuggestError(
+            "No matching locations found. Try a more specific address, or drop a pin on the map."
+          );
+        }
       } catch {
         setAddressSuggestError("Unable to load address suggestions. Please try again.");
         setAddressSuggestions([]);
@@ -210,13 +243,14 @@ export default function SuggestClinic() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [address]);
+  }, [address, biasLocation]);
 
   const handleAddressInput = (value: string) => {
     setAddress(value);
+    // Editing the address invalidates a previously-selected place id (it no
+    // longer matches). Any coordinates the user typed are left intact — manual
+    // coordinates are authoritative and win on submit.
     setSelectedAddressPlaceId(null);
-    setSelectedLatitude(null);
-    setSelectedLongitude(null);
     setAddressSuggestError(null);
   };
 
@@ -224,19 +258,11 @@ export default function SuggestClinic() {
     setSelectedAddressPlaceId(suggestion.place_id);
     setAddressSuggestions([]);
     setAddress(suggestion.description);
-    try {
-      const { data, error } = await supabase.functions.invoke("google-places", {
-        body: { action: "details", placeId: suggestion.place_id },
-      });
-      if (error) throw error;
-      const lat = data?.result?.geometry?.location?.lat;
-      const lng = data?.result?.geometry?.location?.lng;
-      setSelectedLatitude(typeof lat === "number" ? lat : null);
-      setSelectedLongitude(typeof lng === "number" ? lng : null);
-    } catch {
+    const details = await getPlaceDetails(suggestion.place_id);
+    if (details && details.latitude !== null && details.longitude !== null) {
+      setCoordInputs(details.latitude, details.longitude);
+    } else {
       setSelectedAddressPlaceId(null);
-      setSelectedLatitude(null);
-      setSelectedLongitude(null);
       toast.error("Unable to fetch location details. Please select another suggestion.");
     }
   };
@@ -289,42 +315,57 @@ export default function SuggestClinic() {
     e.preventDefault();
     setDuplicateFound(null);
 
-    if (
-      !doctorName.trim() ||
-      !specialty.trim() ||
-      !address.trim() ||
-      !clinicType
-    ) {
-      toast.error("Please fill in all fields.");
+    // Only name, address, and type are required now. Specialty and phone are
+    // optional; coordinates are enforced further down (a place needs a location).
+    if (!doctorName.trim() || !address.trim() || !clinicType) {
+      toast.error("Please add a name, address, and type.");
       return;
     }
 
-    if (!isPhoneDigitsValid(phoneDigits)) {
+    // Phone is optional, but if partially entered it must be valid.
+    if (phoneDigits.length > 0 && !isPhoneDigitsValid(phoneDigits)) {
       setPhoneTouched(true);
-      toast.error(
-        phoneDigits.length === 0
-          ? "Please enter a phone number."
-          : "Phone number is incomplete.",
-      );
+      toast.error("Phone number is incomplete.");
+      return;
+    }
+
+    // Coordinates, if typed, must be a valid lat/lng pair.
+    if (coordsInvalid) {
+      toast.error("Coordinates look invalid. Latitude must be -90…90 and longitude -180…180.");
       return;
     }
 
     setSubmitting(true);
     try {
-      let latToSave = selectedLatitude;
-      let lngToSave = selectedLongitude;
+      let latToSave: number | null;
+      let lngToSave: number | null;
       let placeIdToSave = selectedAddressPlaceId;
 
-      // Manual addresses are allowed; geocode them so obvious city-level locations still work.
-      if (latToSave === null || lngToSave === null) {
+      if (parsedManualCoords) {
+        // Manual coordinates win — whether auto-filled from a pick/GPS/tap or
+        // pasted from Google Maps, they are exact. A custom point is defined by
+        // its coordinates; a place id is kept only if we already have a real one.
+        latToSave = parsedManualCoords.lat;
+        lngToSave = parsedManualCoords.lng;
+        placeIdToSave = isGooglePlaceId(placeIdToSave) ? placeIdToSave : null;
+      } else {
+        // No coordinates: geocode the typed address. Require BOTH coordinates
+        // and a real place id so we never save fuzzy, un-dedupable junk (this is
+        // what pollutes the directory).
         const resolved = await resolveCoordinatesFromAddress(address);
         latToSave = resolved.lat;
         lngToSave = resolved.lng;
-        if (!placeIdToSave && resolved.placeId) {
-          placeIdToSave = resolved.placeId;
+        placeIdToSave = isGooglePlaceId(resolved.placeId) ? resolved.placeId : null;
+
+        if (latToSave === null || lngToSave === null) {
+          throw new Error("COORDINATES_NOT_FOUND");
+        }
+        if (!isGooglePlaceId(placeIdToSave)) {
+          throw new Error("PLACE_ID_REQUIRED");
         }
       }
 
+      // Absolute guard: coordinates are mandatory for every saved place.
       if (latToSave === null || lngToSave === null) {
         throw new Error("COORDINATES_NOT_FOUND");
       }
@@ -343,7 +384,8 @@ export default function SuggestClinic() {
         clinic_type: clinicType,
         latitude: latToSave,
         longitude: lngToSave,
-        google_place_id: placeIdToSave,
+        // Never persist a non-Google id (e.g. an OSM integer).
+        google_place_id: isGooglePlaceId(placeIdToSave) ? placeIdToSave : null,
       });
 
       if (error) throw error;
@@ -414,6 +456,8 @@ export default function SuggestClinic() {
     } catch (err) {
       if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
         toast.error("Could not locate this address. Please enter a more specific address.");
+      } else if ((err as Error)?.message === "PLACE_ID_REQUIRED") {
+        toast.error("Please pick the address from the dropdown suggestions so we can locate it exactly.");
       } else {
         toast.error("Failed to submit. Please try again.");
       }
@@ -431,8 +475,8 @@ export default function SuggestClinic() {
     setAddressSuggestions([]);
     setAddressLoading(false);
     setSelectedAddressPlaceId(null);
-    setSelectedLatitude(null);
-    setSelectedLongitude(null);
+    setLatInput("");
+    setLngInput("");
     setPhoneCountryIso(DEFAULT_COUNTRY_ISO);
     setPhoneDigits("");
     setPhoneTouched(false);
@@ -552,7 +596,7 @@ export default function SuggestClinic() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="specialty" className="flex h-4 items-center text-xs font-medium">
-                      Specialty <span className="text-destructive ml-0.5">*</span>
+                      Specialty <span className="text-muted-foreground ml-0.5">(optional)</span>
                     </Label>
                     <Input
                       id="specialty"
@@ -560,7 +604,6 @@ export default function SuggestClinic() {
                       value={specialty}
                       onChange={(e) => setSpecialty(e.target.value)}
                       className="rounded-xl border-border/40 bg-background/60 h-11"
-                      required
                     />
                   </div>
                 </div>
@@ -613,32 +656,21 @@ export default function SuggestClinic() {
                         navigator.geolocation.getCurrentPosition(
                           async (pos) => {
                             const { latitude, longitude } = pos.coords;
-                            // Trust the browser's GPS reading. We only use the
-                            // reverse-geocode lookup for a human-readable
-                            // label; the saved coordinates always come from
-                            // the GPS sensor so submit never needs to
-                            // forward-geocode a verbose OSM string.
+                            // The GPS sensor coordinates are authoritative. The
+                            // reverse-geocode only supplies a human-readable
+                            // address and a real Google place id for the point.
                             let label = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
                             let resolved = false;
-                            try {
-                              const res = await fetch(
-                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-                              );
-                              const data = await res.json();
-                              if (data?.display_name) {
-                                label = String(data.display_name);
-                                resolved = true;
-                              }
-                            } catch {
-                              // Network/OSM hiccup — we'll just use the
-                              // numeric label below.
+                            const geo = await reverseGeocode(latitude, longitude);
+                            if (geo?.address) {
+                              label = geo.address;
+                              resolved = true;
                             }
 
                             skipNextAutocompleteRef.current = true;
                             setAddress(label);
-                            setSelectedAddressPlaceId(null);
-                            setSelectedLatitude(latitude);
-                            setSelectedLongitude(longitude);
+                            setSelectedAddressPlaceId(geo?.placeId ?? null);
+                            setCoordInputs(latitude, longitude);
                             setAddressSuggestError(null);
                             setAddressSuggestions([]);
                             setLocatingAddress(false);
@@ -669,15 +701,74 @@ export default function SuggestClinic() {
                     </button>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    Choose from suggestions for best accuracy, or enter address manually.
+                    Pick a suggestion or use your current location to fill these automatically. For a
+                    custom spot, paste exact coordinates from Google Maps (long-press a point, then
+                    tap the lat, long to copy).
                   </p>
                 </div>
+
+                {/* Latitude / Longitude */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="latitude" className="flex h-4 items-center text-xs font-medium">
+                      Latitude <span className="text-muted-foreground ml-0.5">(optional)</span>
+                    </Label>
+                    <Input
+                      id="latitude"
+                      inputMode="decimal"
+                      placeholder="e.g. 25.761681"
+                      value={latInput}
+                      onChange={(e) => setLatInput(e.target.value)}
+                      className={`rounded-xl bg-background/60 h-11 tabular-nums ${
+                        coordsInvalid ? "border-destructive" : "border-border/40"
+                      }`}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="longitude" className="flex h-4 items-center text-xs font-medium">
+                      Longitude <span className="text-muted-foreground ml-0.5">(optional)</span>
+                    </Label>
+                    <Input
+                      id="longitude"
+                      inputMode="decimal"
+                      placeholder="e.g. -80.191788"
+                      value={lngInput}
+                      onChange={(e) => setLngInput(e.target.value)}
+                      className={`rounded-xl bg-background/60 h-11 tabular-nums ${
+                        coordsInvalid ? "border-destructive" : "border-border/40"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {coordsInvalid ? (
+                  <div className="flex items-center gap-1.5 rounded-lg bg-destructive/10 border border-destructive/20 px-2.5 py-1.5">
+                    <AlertTriangle className="h-3 w-3 shrink-0 text-destructive" />
+                    <span className="text-[11px] font-medium text-destructive">
+                      Invalid coordinates — latitude must be -90…90 and longitude -180…180.
+                    </span>
+                  </div>
+                ) : parsedManualCoords ? (
+                  <div className="flex items-center gap-1.5 rounded-lg bg-green-500/10 border border-green-500/20 px-2.5 py-1.5">
+                    <MapPin className="h-3 w-3 shrink-0 text-green-600" />
+                    <span className="text-[11px] font-medium text-green-700 dark:text-green-400">
+                      Exact location set — these coordinates will be used.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5">
+                    <AlertTriangle className="h-3 w-3 shrink-0 text-amber-600" />
+                    <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                      No coordinates yet — the address will be geocoded on submit.
+                    </span>
+                  </div>
+                )}
 
                 {/* Phone */}
                 <div className="space-y-1.5">
                   <Label htmlFor="phone" className="text-xs font-medium flex items-center gap-1.5">
                     <Phone className="h-3 w-3 text-primary/70" />
-                    Phone <span className="text-destructive">*</span>
+                    Phone <span className="text-muted-foreground">(optional)</span>
                   </Label>
                   <PhoneInput
                     id="phone"

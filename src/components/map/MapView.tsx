@@ -1,9 +1,10 @@
-import { useEffect, useRef, useCallback, memo } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
+import { hasValidCoords } from "@/lib/geolocation";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
+import { loadGoogleMaps, MEDICAL_ONLY_MAP_STYLE, hasMapsJsKey } from "@/lib/google-maps";
 import { MapZoomControls } from "@/components/map/MapZoomControls";
+import { MapPin } from "lucide-react";
 
 const WAIT_COLORS: Record<WaitTimeCategory, string> = {
   on_time: "#22c55e",
@@ -11,56 +12,34 @@ const WAIT_COLORS: Record<WaitTimeCategory, string> = {
   "1_hour": "#f97316",
   "1.5_hours_plus": "#ef4444",
 };
-const NEUTRAL_COLOR = "#94a3b8";
+/** Unsaved Google candidate awaiting verification — deliberately distinct from wait colours. */
+const CANDIDATE_COLOR = "#2563eb";
+const DEFAULT_CENTER = { lat: 25.7617, lng: -80.1918 };
 
-function createPinHtml(color: string): string {
-  return `
-    <div style="position:relative;width:36px;height:36px;animation:pinDrop 0.4s ease-out;">
-      <div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-        <svg style="transform:rotate(45deg);width:16px;height:16px;fill:white;" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-      </div>
-    </div>
-  `;
+/** Teardrop pin as an SVG data-URI, coloured per wait tier. */
+function pinIcon(color: string): google.maps.Icon {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 24 32">` +
+    `<path fill="${color}" stroke="white" stroke-width="1.5" d="M12 .5C5.9.5 1 5.4 1 11.5c0 8 11 19.5 11 19.5s11-11.5 11-19.5C23 5.4 18.1.5 12 .5z"/>` +
+    `<circle cx="12" cy="11.5" r="4.3" fill="white"/></svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(36, 48),
+    anchor: new google.maps.Point(18, 48),
+  };
 }
 
-const PIN_STYLES = `
-  @keyframes pinDrop {
-    0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
-    60% { transform: translateY(2px) scale(1.05); }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-  @keyframes userPulse {
-    0%, 100% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(2.5); opacity: 0; }
-  }
-  @keyframes searchPulse {
-    0%, 100% { opacity: 0.15; }
-    50% { opacity: 0.25; }
-  }
-  .leaflet-container { background: #f2f2f2 !important; z-index: 0 !important; }
-  .leaflet-pane { z-index: 0 !important; }
-  .leaflet-top, .leaflet-bottom { z-index: 10 !important; }
-  .leaflet-control-attribution { display: none !important; }
-  .search-count-tooltip {
-    background: hsl(222 47% 11% / 0.9) !important;
-    border: 1px solid hsl(200 98% 39% / 0.4) !important;
-    border-radius: 12px !important;
-    padding: 6px 12px !important;
-    color: white !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-    white-space: nowrap !important;
-  }
-  .search-count-tooltip::before { display: none !important; }
-  .leaflet-tooltip-top.search-count-tooltip::before { display: none !important; }
-`;
+export interface CandidatePlace {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
 
-export interface SearchArea {
+/** A medical POI the user tapped on the map (item 7a). */
+export interface PoiTap {
+  placeId: string;
   lat: number;
   lng: number;
-  radiusMeters: number;
-  name: string;
 }
 
 interface MapViewProps {
@@ -69,255 +48,226 @@ interface MapViewProps {
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
   onEmptyClick: () => void;
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
-  searchArea?: SearchArea | null;
-  clinicsInSearchArea?: number;
   nearbyRadiusMiles?: number;
+  candidate?: CandidatePlace | null;
+  /** Tapping a medical POI (has a place id). */
+  onPoiClick?: (poi: PoiTap) => void;
+  /** Tapping an empty (non-POI) map point. */
+  onMapPointClick?: (point: { lat: number; lng: number }) => void;
 }
 
-function MapViewInner({ clinics, userLocation, onClinicClick, onEmptyClick, centerOn, searchArea, clinicsInSearchArea = 0, nearbyRadiusMiles = 100 }: MapViewProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
-  const userMarkerRef = useRef<L.LayerGroup | null>(null);
-  const searchLayerRef = useRef<L.LayerGroup | null>(null);
-  const onEmptyClickRef = useRef(onEmptyClick);
-  const markerClickedRef = useRef(false);
+function MapViewInner({
+  clinics,
+  userLocation,
+  onClinicClick,
+  onEmptyClick,
+  centerOn,
+  nearbyRadiusMiles = 100,
+  candidate = null,
+  onPoiClick,
+  onMapPointClick,
+}: MapViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const clinicMarkersRef = useRef<google.maps.Marker[]>([]);
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
+  const userCircleRef = useRef<google.maps.Circle | null>(null);
+  const candidateMarkerRef = useRef<google.maps.Marker | null>(null);
+  const prevClinicKeyRef = useRef("");
+
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  // Keep the latest callbacks reachable from stable map listeners.
   const onClinicClickRef = useRef(onClinicClick);
-  onEmptyClickRef.current = onEmptyClick;
+  const onEmptyClickRef = useRef(onEmptyClick);
+  const onPoiClickRef = useRef(onPoiClick);
+  const onMapPointClickRef = useRef(onMapPointClick);
   onClinicClickRef.current = onClinicClick;
+  onEmptyClickRef.current = onEmptyClick;
+  onPoiClickRef.current = onPoiClick;
+  onMapPointClickRef.current = onMapPointClick;
 
-  // Initialize map
+  // Initialise the map once, after the API loads.
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    let cancelled = false;
+    if (!hasMapsJsKey) {
+      setStatus("error");
+      return;
+    }
 
-    const defaultCenter: [number, number] = userLocation
-      ? [userLocation.lat, userLocation.lng]
-      : [25.7617, -80.1918];
-    const defaultZoom = userLocation ? 14 : 12;
+    loadGoogleMaps()
+      .then((google) => {
+        if (cancelled || !containerRef.current || mapRef.current) return;
 
-    const map = L.map(mapContainerRef.current, {
-      center: defaultCenter,
-      zoom: defaultZoom,
-      // Leaflet's built-in zoom control is disabled; we render our own
-      // <MapZoomControls> in the bottom-left next to <FindMeButton>.
-      zoomControl: false,
-      attributionControl: false,
-    });
+        const map = new google.maps.Map(containerRef.current, {
+          center: userLocation ?? DEFAULT_CENTER,
+          zoom: userLocation ? 14 : 12,
+          styles: MEDICAL_ONLY_MAP_STYLE,
+          gestureHandling: "greedy", // pinch/scroll zoom without a modifier key
+          clickableIcons: true, // required so POI taps fire
+          disableDefaultUI: true,
+          zoomControl: false,
+        });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19,
-    }).addTo(map);
+        map.addListener("click", (e: google.maps.MapMouseEvent) => {
+          const iconEvent = e as google.maps.IconMouseEvent;
+          if (iconEvent.placeId) {
+            // A medical POI — suppress the default info window and hand it up.
+            iconEvent.stop();
+            if (e.latLng) {
+              onPoiClickRef.current?.({
+                placeId: iconEvent.placeId,
+                lat: e.latLng.lat(),
+                lng: e.latLng.lng(),
+              });
+            }
+            return;
+          }
+          if (e.latLng && onMapPointClickRef.current) {
+            onMapPointClickRef.current({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+          } else {
+            onEmptyClickRef.current();
+          }
+        });
 
-    mapRef.current = map;
-    markersRef.current = L.layerGroup().addTo(map);
-    userMarkerRef.current = L.layerGroup().addTo(map);
-    searchLayerRef.current = L.layerGroup().addTo(map);
-
-    map.on("click", () => {
-      setTimeout(() => {
-        if (!markerClickedRef.current) {
-          onEmptyClickRef.current();
-        }
-        markerClickedRef.current = false;
-      }, 50);
-    });
-
-    // Observe container resizes to fix tile gaps
-    const ro = new ResizeObserver(() => {
-      map.invalidateSize({ animate: false });
-    });
-    ro.observe(mapContainerRef.current);
+        mapRef.current = map;
+        setStatus("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
 
     return () => {
-      ro.disconnect();
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Update user location marker + nearby radius
-  useEffect(() => {
-    if (!mapRef.current || !userMarkerRef.current) return;
-    userMarkerRef.current.clearLayers();
-
-    if (userLocation) {
-      // Nearby radius circle (miles to meters)
-      const radiusMeters = nearbyRadiusMiles * 1609.34;
-      L.circle([userLocation.lat, userLocation.lng], {
-        radius: radiusMeters,
-        color: "hsl(200 98% 39%)",
-        fillColor: "hsl(200 98% 39%)",
-        fillOpacity: 0.04,
-        weight: 1.5,
-        opacity: 0.2,
-        dashArray: "6 4",
-      }).addTo(userMarkerRef.current);
-
-      const userIcon = L.divIcon({
-        className: "user-location-pin",
-        html: `
-          <div style="position:relative;width:20px;height:20px;">
-            <div style="position:absolute;inset:0;border-radius:50%;background:hsl(200 98% 39%);opacity:0.3;animation:userPulse 2s ease-in-out infinite;"></div>
-            <div style="position:absolute;inset:3px;border-radius:50%;background:hsl(200 98% 39%);border:3px solid white;box-shadow:0 0 8px hsl(200 98% 39%/0.5);"></div>
-          </div>
-        `,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-      });
-      L.marker([userLocation.lat, userLocation.lng], { icon: userIcon, interactive: false }).addTo(userMarkerRef.current);
-    }
-  }, [userLocation, nearbyRadiusMiles]);
-
-  // Update search area overlay
-  useEffect(() => {
-    if (!mapRef.current || !searchLayerRef.current) return;
-    searchLayerRef.current.clearLayers();
-
-    if (!searchArea) return;
-
-    // Search area circle
-    const circle = L.circle([searchArea.lat, searchArea.lng], {
-      radius: searchArea.radiusMeters,
-      color: "hsl(200 98% 39%)",
-      fillColor: "hsl(200 98% 39%)",
-      fillOpacity: 0.08,
-      weight: 2,
-      opacity: 0.5,
-      dashArray: "8 6",
-      className: "search-area-circle",
-    });
-    circle.addTo(searchLayerRef.current);
-
-    // Tooltip with count on hover
-    const countLabel = clinicsInSearchArea === 0
-      ? "No doctor offices found"
-      : `${clinicsInSearchArea} doctor office${clinicsInSearchArea !== 1 ? "s" : ""} in this area`;
-    circle.bindTooltip(countLabel, {
-      permanent: false,
-      direction: "top",
-      className: "search-count-tooltip",
-    });
-
-    // Search destination marker
-    const searchIcon = L.divIcon({
-      className: "search-destination-pin",
-      html: `
-        <div style="position:relative;width:28px;height:28px;">
-          <div style="position:absolute;inset:0;border-radius:50%;background:hsl(200 98% 39%);opacity:0.2;animation:searchPulse 2s ease-in-out infinite;"></div>
-          <div style="position:absolute;inset:4px;border-radius:50%;background:hsl(200 98% 39%);border:3px solid white;box-shadow:0 2px 10px hsl(200 98% 39%/0.5);"></div>
-        </div>
-      `,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
-    });
-    L.marker([searchArea.lat, searchArea.lng], { icon: searchIcon, interactive: false }).addTo(searchLayerRef.current);
-
-    // Dashed line from user to search area (only if within 100km)
-    if (userLocation) {
-      const distToSearch = L.latLng(userLocation.lat, userLocation.lng)
-        .distanceTo(L.latLng(searchArea.lat, searchArea.lng));
-      
-      if (distToSearch < 100000) {
-        L.polyline(
-          [[userLocation.lat, userLocation.lng], [searchArea.lat, searchArea.lng]],
-          { color: "hsl(200 98% 39%)", weight: 2, opacity: 0.35, dashArray: "6 8" }
-        ).addTo(searchLayerRef.current);
-      }
-    }
-
-    // Invalidate size first so Leaflet recalculates container dimensions
-    mapRef.current.invalidateSize({ animate: false });
-
-    // Fit bounds: instant setView for performance
-    if (userLocation) {
-      const distToSearch = L.latLng(userLocation.lat, userLocation.lng)
-        .distanceTo(L.latLng(searchArea.lat, searchArea.lng));
-      
-      if (distToSearch < 100000) {
-        const bounds = L.latLngBounds(
-          [userLocation.lat, userLocation.lng],
-          [searchArea.lat, searchArea.lng]
-        ).pad(0.3);
-        mapRef.current.fitBounds(bounds, { maxZoom: 14, animate: false });
-      } else {
-        mapRef.current.setView([searchArea.lat, searchArea.lng], 13, { animate: false });
-      }
-    } else {
-      mapRef.current.setView([searchArea.lat, searchArea.lng], 13, { animate: false });
-    }
-
-    // Force tile reload after repositioning
-    setTimeout(() => {
-      mapRef.current?.invalidateSize({ animate: false });
-    }, 200);
-  }, [searchArea, clinicsInSearchArea, userLocation]);
-
-  // Track previous clinic IDs to avoid unnecessary marker rebuilds
-  const prevClinicIdsRef = useRef<string>("");
-
-  // Update clinic markers — only when the set of clinics actually changes
-  useEffect(() => {
-    if (!mapRef.current || !markersRef.current) return;
-
-    const newIds = clinics.map((c) => c.id).sort().join(",");
-    // Also include wait time categories so pins update color on new reports
-    const newKey = clinics.map((c) => `${c.id}:${c.waitTime?.category || "none"}`).sort().join(",");
-    if (newKey === prevClinicIdsRef.current) return;
-    prevClinicIdsRef.current = newKey;
-
-    markersRef.current.clearLayers();
-
-    clinics.forEach((clinic) => {
-      const color = clinic.waitTime ? WAIT_COLORS[clinic.waitTime.category] : NEUTRAL_COLOR;
-
-      const icon = L.divIcon({
-        className: "custom-pin",
-        html: createPinHtml(color),
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-      });
-
-      const marker = L.marker([clinic.latitude, clinic.longitude], { icon });
-      marker.on("click", () => {
-        markerClickedRef.current = true;
-        onClinicClickRef.current(clinic);
-      });
-      marker.addTo(markersRef.current!);
-
-      if (clinic.waitTime) {
-        L.circle([clinic.latitude, clinic.longitude], {
-          radius: 100,
-          color: WAIT_COLORS[clinic.waitTime.category],
-          fillColor: WAIT_COLORS[clinic.waitTime.category],
-          fillOpacity: 0.06,
-          weight: 1,
-          opacity: 0.2,
-          dashArray: "4 6",
-        }).addTo(markersRef.current!);
-      }
-    });
-  }, [clinics]);
-
-  // Center on changes (only when no search area — search area handles its own centering)
-  useEffect(() => {
-    if (!mapRef.current || !centerOn || searchArea) return;
-    mapRef.current.invalidateSize({ animate: false });
-    mapRef.current.setView([centerOn.lat, centerOn.lng], centerOn.zoom || mapRef.current.getZoom(), { animate: false });
-  }, [centerOn, searchArea]);
-
-  const handleZoomIn = useCallback(() => {
-    mapRef.current?.zoomIn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Clinic markers — rebuilt only when the set or their wait colours change.
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current) return;
+    const map = mapRef.current;
+
+    const key = clinics
+      .map((c) => `${c.id}:${c.waitTime?.category || "on_time"}`)
+      .sort()
+      .join(",");
+    if (key === prevClinicKeyRef.current) return;
+    prevClinicKeyRef.current = key;
+
+    clinicMarkersRef.current.forEach((m) => m.setMap(null));
+    clinicMarkersRef.current = [];
+
+    clinics.forEach((clinic) => {
+      if (!hasValidCoords(clinic.latitude, clinic.longitude)) return;
+      const color = WAIT_COLORS[clinic.waitTime?.category ?? "on_time"];
+      const marker = new google.maps.Marker({
+        position: { lat: clinic.latitude, lng: clinic.longitude },
+        map,
+        icon: pinIcon(color),
+        title: clinic.name,
+      });
+      marker.addListener("click", () => onClinicClickRef.current(clinic));
+      clinicMarkersRef.current.push(marker);
+    });
+  }, [clinics, status]);
+
+  // User location dot + nearby-radius circle.
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current) return;
+    const map = mapRef.current;
+
+    userMarkerRef.current?.setMap(null);
+    userCircleRef.current?.setMap(null);
+    userMarkerRef.current = null;
+    userCircleRef.current = null;
+
+    if (!userLocation || !hasValidCoords(userLocation.lat, userLocation.lng)) return;
+
+    userCircleRef.current = new google.maps.Circle({
+      map,
+      center: userLocation,
+      radius: nearbyRadiusMiles * 1609.34,
+      strokeColor: "#0284c7",
+      strokeOpacity: 0.25,
+      strokeWeight: 1.5,
+      fillColor: "#0284c7",
+      fillOpacity: 0.04,
+      clickable: false,
+    });
+    userMarkerRef.current = new google.maps.Marker({
+      map,
+      position: userLocation,
+      clickable: false,
+      zIndex: 5,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 7,
+        fillColor: "#0284c7",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 3,
+      },
+    });
+  }, [userLocation, nearbyRadiusMiles, status]);
+
+  // Candidate pin (verify-before-save) — distinct blue, above everything.
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current) return;
+    const map = mapRef.current;
+
+    candidateMarkerRef.current?.setMap(null);
+    candidateMarkerRef.current = null;
+
+    if (!candidate || !hasValidCoords(candidate.latitude, candidate.longitude)) return;
+
+    candidateMarkerRef.current = new google.maps.Marker({
+      map,
+      position: { lat: candidate.latitude, lng: candidate.longitude },
+      icon: pinIcon(CANDIDATE_COLOR),
+      title: candidate.name,
+      zIndex: 1000,
+    });
+    map.setCenter({ lat: candidate.latitude, lng: candidate.longitude });
+    map.setZoom(16);
+  }, [candidate, status]);
+
+  // Imperative recenter requests.
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current || !centerOn) return;
+    if (!hasValidCoords(centerOn.lat, centerOn.lng)) return;
+    mapRef.current.setCenter({ lat: centerOn.lat, lng: centerOn.lng });
+    if (centerOn.zoom) mapRef.current.setZoom(centerOn.zoom);
+  }, [centerOn, status]);
+
+  const handleZoomIn = useCallback(() => {
+    const map = mapRef.current;
+    if (map) map.setZoom((map.getZoom() ?? 12) + 1);
+  }, []);
   const handleZoomOut = useCallback(() => {
-    mapRef.current?.zoomOut();
+    const map = mapRef.current;
+    if (map) map.setZoom((map.getZoom() ?? 12) - 1);
   }, []);
 
   return (
     <div className="absolute inset-0">
-      <style>{PIN_STYLES}</style>
-      <div ref={mapContainerRef} className="h-full w-full" />
-      <MapZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />
+      <div ref={containerRef} className="h-full w-full bg-muted" />
+
+      {status === "error" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/95 p-6 text-center">
+          <div className="max-w-xs space-y-2">
+            <MapPin className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="text-sm font-semibold text-foreground">Map unavailable</p>
+            <p className="text-xs text-muted-foreground">
+              A Google Maps browser key is required. Set{" "}
+              <code className="rounded bg-background px-1">VITE_GOOGLE_MAPS_JS_API_KEY</code> (HTTP-referrer
+              restricted) and reload.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {status === "ready" && <MapZoomControls onZoomIn={handleZoomIn} onZoomOut={handleZoomOut} />}
     </div>
   );
 }
