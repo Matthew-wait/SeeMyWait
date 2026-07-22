@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
+// Four tiers only — an office with no active report defaults to green "On Time",
+// so there is no separate grey "No reports" row.
 const items = [
   { color: "#22c55e", label: "On Time" },
   { color: "#eab308", label: "~30 Min" },
   { color: "#f97316", label: "~1 Hour" },
   { color: "#ef4444", label: "1.5+ Hours" },
-  { color: "#94a3b8", label: "No Reports" },
 ];
 export function MapLegend() {
   const [open, setOpen] = useState(false);

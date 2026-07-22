@@ -32,10 +32,18 @@ export const WAIT_TIME_TEXT_COLORS: Record<WaitTimeCategory, string> = {
 export interface WaitTimeSummary {
   category: WaitTimeCategory;
   label: string;
+  /** ISO timestamp of the latest report, or null when this is the default state. */
   lastReported: string | null;
-  isDefault: boolean;
 }
 
+/**
+ * Latest wait state for an office.
+ *
+ * An office with no active report shows the green **"On Time"** default (matches
+ * the mobile app's `waitTierVisual(null)` — the map pin, list card, legend, and
+ * popup all read from this). `lastReported: null` marks the default so callers
+ * can hide the "reported X ago" line; the badge stays green either way.
+ */
 export function getAverageWaitTime(
   reports: { wait_time: WaitTimeCategory; reported_at: string }[],
   maxAgeMinutes: number = 180
@@ -44,12 +52,7 @@ export function getAverageWaitTime(
   const recent = reports.filter((r) => r.reported_at > cutoffIso);
 
   if (recent.length === 0) {
-    return {
-      category: "on_time",
-      label: WAIT_TIME_LABELS.on_time,
-      lastReported: null,
-      isDefault: true,
-    };
+    return { category: "on_time", label: WAIT_TIME_LABELS.on_time, lastReported: null };
   }
 
   const sorted = [...recent].sort(
@@ -61,6 +64,5 @@ export function getAverageWaitTime(
     category: latest.wait_time,
     label: WAIT_TIME_LABELS[latest.wait_time],
     lastReported: latest.reported_at,
-    isDefault: false,
   };
 }

@@ -135,33 +135,23 @@ export function ClinicListPanel({
                         {clinic.specialty}
                       </Badge>
                     )}
-                    {clinic.routeDistance !== undefined ? (
-                      <>
-                        <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
-                          Driving {clinic.routeDistance.toFixed(1)} mi
-                        </span>
-                        <Badge variant="outline" className="h-[18px] px-2 text-[9px]">
-                          {clinic.routeDistanceSource === "google" ? "Google route" : "Fallback route"}
-                        </Badge>
-                      </>
-                    ) : (
-                      <span className="text-[10px] text-amber-600 font-medium">
-                        Driving unavailable
+                    {/* Only render a distance line when we actually have one — never "n/a". */}
+                    {Number.isFinite(clinic.routeDistance) && (
+                      <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
+                        Distance {clinic.routeDistance!.toFixed(1)} mi
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="min-w-[86px] shrink-0">
-                  {clinic.waitTime && (
-                    <div className="flex flex-col items-end gap-0.5">
-                      <WaitTimeBadge category={clinic.waitTime.category} />
-                      {clinic.waitTime.lastReported && !clinic.waitTime.isDefault && (
-                        <span className="text-right text-[9px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="flex flex-col items-end gap-0.5">
+                    <WaitTimeBadge category={clinic.waitTime?.category ?? null} />
+                    {clinic.waitTime?.lastReported && (
+                      <span className="text-right text-[9px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

@@ -1,45 +1,53 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, Loader2, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
-// City filter dropdown is temporarily disabled — re-enable along with the JSX below.
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BottomNav } from "@/components/BottomNav";
 import { useClinics } from "@/hooks/use-clinics";
-import { getCurrentPosition, getDistanceMeters } from "@/lib/geolocation";
-import { MapView, SearchArea } from "@/components/map/MapView";
+import { getCurrentPosition } from "@/lib/geolocation";
+import { MapView, PoiTap } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
 import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
-import { SearchCircleOverlay } from "@/components/map/SearchCircleOverlay";
 import { ClinicListPanel } from "@/components/map/ClinicListPanel";
 import { FindMeButton } from "@/components/map/FindMeButton";
+import { SearchResultsDropdown } from "@/components/map/SearchResultsDropdown";
+import { VerifyPlaceCard } from "@/components/map/VerifyPlaceCard";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
-import { useGeocode } from "@/hooks/use-geocode";
+import { useMedicalSearch } from "@/hooks/use-medical-search";
 import { useAppSettings } from "@/hooks/use-app-settings";
+import {
+  AddedClinic,
+  GoogleSearchResult,
+  MedicalSearchResult,
+  addMedicalPlace,
+  addErrorMessage,
+} from "@/lib/medical-search";
+import { reverseGeocode, getPlaceDetails } from "@/lib/google-places-client";
+import { AddDoctorPrefill } from "@/lib/add-doctor-prefill";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const SEARCH_RADIUS_METERS = 5000;
-// const CITY_FILTER_OPTIONS = ["all", "Miami", "Miami Beach", "Hialeah", "Coral Gables", "Doral"] as const;
-
 const Index = () => {
   const [search, setSearch] = useState("");
-  // const [cityFilter, setCityFilter] = useState<(typeof CITY_FILTER_OPTIONS)[number]>("all");
-  const cityFilter: "all" = "all";
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(true);
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
-  const [searchArea, setSearchArea] = useState<SearchArea | null>(null);
-  const [dbMatchedClinics, setDbMatchedClinics] = useState<ClinicWithWaitTime[]>([]);
   const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
+  /** Google result awaiting explicit verification — pinned on the map, not saved. */
+  const [candidate, setCandidate] = useState<GoogleSearchResult | null>(null);
+  /** Clinic ids returned by the current search, in server order. */
+  const [matchedClinicIds, setMatchedClinicIds] = useState<string[]>([]);
+  /** Whether the results dropdown is expanded (click-outside collapses it). */
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  /** Empty map point the user tapped, awaiting an "Add here" confirmation. */
+  const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [routeDistanceByClinicId, setRouteDistanceByClinicId] = useState<Record<string, number>>({});
   const [routeDistanceSourceByClinicId, setRouteDistanceSourceByClinicId] = useState<
     Record<string, "google" | "fallback" | "unavailable">
   >({});
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const navigate = useNavigate();
 
-  const { geocode, geocoding } = useGeocode();
   const { data: appSettings } = useAppSettings();
   const nearbyRadiusMiles = appSettings?.nearby_radius_miles ?? 100;
   const reportCooldownMinutes = appSettings?.report_cooldown_minutes ?? 60;
@@ -49,6 +57,14 @@ const Index = () => {
     userLocation?.lat,
     userLocation?.lng,
     reportCooldownMinutes
+  );
+
+  // Single search path: the `medical-search` edge function does DB-first
+  // matching and only reaches for Google when local results are thin. No
+  // client-side geocoding runs alongside it.
+  const searchState = useMedicalSearch(
+    search,
+    userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : null
   );
 
   useEffect(() => {
@@ -69,84 +85,17 @@ const Index = () => {
     })();
   }, []);
 
-  // Search logic: DB-first, then geocode fallback
+  // Mirror the search's DB hits onto the map.
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (!search.trim()) {
-      setSearchArea(null);
-      setDbMatchedClinics([]);
+    if (!searchState.searched) {
+      setMatchedClinicIds([]);
       return;
     }
-
-    debounceRef.current = setTimeout(async () => {
-      const query = search.trim().toLowerCase();
-
-      // Step 1: Search DB for exact/partial matches across name, specialty, address
-      if (clinics && clinics.length > 0) {
-        const matched = clinics.filter(
-          (c) =>
-            c.name.toLowerCase().includes(query) ||
-            (c.specialty && c.specialty.toLowerCase().includes(query)) ||
-            c.address.toLowerCase().includes(query)
-        );
-
-        if (matched.length > 0) {
-          setDbMatchedClinics(matched);
-
-          const avgLat = matched.reduce((s, c) => s + c.latitude, 0) / matched.length;
-          const avgLng = matched.reduce((s, c) => s + c.longitude, 0) / matched.length;
-
-          // Radius to encompass all matched clinics only (don't include user if far away)
-          let maxDist = 1000;
-          matched.forEach((c) => {
-            const d = getDistanceMeters(avgLat, avgLng, c.latitude, c.longitude);
-            if (d > maxDist) maxDist = d;
-          });
-
-          // Only include user location in radius if within 100km of results
-          if (userLocation) {
-            const userDist = getDistanceMeters(avgLat, avgLng, userLocation.lat, userLocation.lng);
-            if (userDist < 100000 && userDist > maxDist) {
-              maxDist = userDist;
-            }
-          }
-
-          setSearchArea({
-            lat: avgLat,
-            lng: avgLng,
-            radiusMeters: Math.max(maxDist * 1.3, 2000),
-            name: search.trim(),
-          });
-          return;
-        }
-      }
-
-      // Step 2: No DB match — geocode as location
-      setDbMatchedClinics([]);
-      const result = await geocode(search.trim());
-      if (result) {
-        // Check if any clinics exist near this geocoded location
-        const nearbyClinics = (clinics || []).filter((c) => {
-          const dist = getDistanceMeters(result.lat, result.lng, c.latitude, c.longitude);
-          return dist <= SEARCH_RADIUS_METERS;
-        });
-        setDbMatchedClinics(nearbyClinics);
-        setSearchArea({
-          lat: result.lat,
-          lng: result.lng,
-          radiusMeters: SEARCH_RADIUS_METERS,
-          name: search.trim(),
-        });
-      } else {
-        setSearchArea(null);
-      }
-    }, 400);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search, geocode, clinics, userLocation]);
+    const ids = searchState.results
+      .filter((r): r is Extract<MedicalSearchResult, { source: "db" }> => r.source === "db")
+      .map((r) => r.id);
+    setMatchedClinicIds(ids);
+  }, [searchState.results, searchState.searched]);
 
   // Clinics visible to user based on admin nearby radius setting
   const clinicsWithinNearbyRadius = useMemo(() => {
@@ -205,7 +154,7 @@ const Index = () => {
           if (error) throw error;
           const rows = Array.isArray(data?.distances) ? data.distances : [];
           const provider = data?.provider === "google" ? "google" : "fallback";
-          rows.forEach((row: any) => {
+          rows.forEach((row: { id?: unknown; route_distance_miles?: unknown }) => {
             if (typeof row?.id !== "string") return;
             if (typeof row?.route_distance_miles === "number") {
               nextMap[row.id] = row.route_distance_miles;
@@ -268,37 +217,45 @@ const Index = () => {
     [userLocation, routeDistanceByClinicId, nearbyRadiusMiles]
   );
 
-  const clinicsWithinRadiusAndCity = useMemo(() => {
-    if (cityFilter === "all") return clinicsWithinNearbyRadius;
-    const cityNeedle = cityFilter.toLowerCase();
-    return clinicsWithinNearbyRadius.filter((c) => c.address.toLowerCase().includes(cityNeedle));
-  }, [cityFilter, clinicsWithinNearbyRadius]);
+  const isSearching = Boolean(search.trim());
 
-  // Clinics to show on map: DB matches if searching, otherwise nearby-radius filtered
+  // Map markers:
+  //  - while searching, show exactly the offices the server matched;
+  //  - otherwise show EVERY active clinic (item 8) so a pin appears wherever the
+  //    map is panned, independent of the nearby-radius filter (which only
+  //    governs the list below). MapView guards non-finite coordinates.
   const displayedClinics = useMemo(() => {
-    if (!clinicsWithinRadiusAndCity.length) return [];
-    if (search.trim() && dbMatchedClinics.length > 0) {
-      return dbMatchedClinics.filter(
-        (c) =>
-          isWithinConfiguredRadius(c) &&
-          (cityFilter === "all" || c.address.toLowerCase().includes(cityFilter.toLowerCase()))
-      );
+    if (!clinics?.length) return [];
+    if (isSearching && matchedClinicIds.length > 0) {
+      const byId = new Map(clinics.map((c) => [c.id, c]));
+      return matchedClinicIds
+        .map((id) => byId.get(id))
+        .filter((c): c is ClinicWithWaitTime => Boolean(c));
     }
-    if (searchArea) {
-      return clinicsWithinRadiusAndCity.filter((c) => {
-        if (!isWithinConfiguredRadius(c)) return false;
-        const dist = getDistanceMeters(searchArea.lat, searchArea.lng, c.latitude, c.longitude);
-        return dist <= searchArea.radiusMeters;
-      });
-    }
-    return clinicsWithinRadiusAndCity.filter((c) => isWithinConfiguredRadius(c));
-  }, [cityFilter, clinicsWithinRadiusAndCity, search, dbMatchedClinics, searchArea, isWithinConfiguredRadius]);
+    if (isSearching) return [];
+    return clinics;
+  }, [clinics, isSearching, matchedClinicIds]);
+
+  // Frame the map on the search hits (only when no candidate pin owns the view).
+  const matchedIdsKey = matchedClinicIds.join(",");
+  useEffect(() => {
+    if (candidate || !matchedClinicIds.length || !clinics?.length) return;
+    const byId = new Map(clinics.map((c) => [c.id, c]));
+    const matched = matchedClinicIds.map((id) => byId.get(id)).filter(Boolean) as ClinicWithWaitTime[];
+    if (!matched.length) return;
+    setCenterOn({
+      lat: matched.reduce((s, c) => s + c.latitude, 0) / matched.length,
+      lng: matched.reduce((s, c) => s + c.longitude, 0) / matched.length,
+      zoom: matched.length === 1 ? 15 : 12,
+    });
+    // `clinics` is intentionally omitted: it gets a new identity on every
+    // background refetch, which would re-centre the map under the user.
+  }, [matchedIdsKey, candidate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Nearby clinics for "Explore" list — show all sorted by distance, or all if no location
   const nearbyClinics = useMemo(() => {
-    if (!clinicsWithinRadiusAndCity) return [];
-    if (!userLocation) return clinicsWithinRadiusAndCity;
-    return clinicsWithinRadiusAndCity
+    if (!userLocation) return clinicsWithinNearbyRadius;
+    return clinicsWithinNearbyRadius
       .filter((c) => isWithinConfiguredRadius(c))
       .map((c) => ({
         ...c,
@@ -310,7 +267,7 @@ const Index = () => {
           (a.routeDistance ?? a.distance ?? 999) - (b.routeDistance ?? b.distance ?? 999)
       );
   }, [
-    clinicsWithinRadiusAndCity,
+    clinicsWithinNearbyRadius,
     userLocation,
     routeDistanceByClinicId,
     routeDistanceSourceByClinicId,
@@ -344,16 +301,170 @@ const Index = () => {
     refetch();
   }, [refetch]);
 
-  const isSearching = Boolean(search.trim());
+  /**
+   * A `db` hit is already saved — open it. A `google` hit is only a candidate:
+   * pin it and ask for confirmation. Selecting must never write to the
+   * directory, otherwise an ambiguous query saves the wrong place.
+   */
+  const handleSelectResult = useCallback(
+    (result: MedicalSearchResult) => {
+      setDropdownOpen(false);
+      if (result.source === "db") {
+        const clinic = clinics?.find((c) => c.id === result.id);
+        if (clinic) {
+          setCandidate(null);
+          setSelectedClinic(clinic);
+        } else {
+          // Saved server-side but not in the local snapshot yet.
+          refetch();
+          setCenterOn({ lat: result.latitude, lng: result.longitude, zoom: 16 });
+        }
+        return;
+      }
+
+      setSelectedClinic(null);
+      setCandidate(result);
+    },
+    [clinics, refetch]
+  );
+
+  const handleVerified = useCallback(
+    async (added: AddedClinic) => {
+      setCandidate(null);
+      setSearch("");
+      toast.success(`${added.name} added.`);
+
+      // The place is already saved server-side; a failed refetch must not make
+      // it look like the add failed. Fall back to centring on the new pin.
+      try {
+        const { data: refreshed } = await refetch();
+        const clinic = refreshed?.find((c) => c.id === added.id);
+        if (clinic) {
+          setSelectedClinic(clinic);
+          return;
+        }
+      } catch {
+        // fall through to centring below
+      }
+      setCenterOn({ lat: added.latitude, lng: added.longitude, zoom: 16 });
+    },
+    [refetch]
+  );
+
+  const openClinicAfterAdd = useCallback(
+    async (added: AddedClinic) => {
+      try {
+        const { data: refreshed } = await refetch();
+        const clinic = refreshed?.find((c) => c.id === added.id);
+        if (clinic) {
+          setSelectedClinic(clinic);
+          return;
+        }
+      } catch {
+        // fall through to centring below
+      }
+      setCenterOn({ lat: added.latitude, lng: added.longitude, zoom: 16 });
+    },
+    [refetch]
+  );
+
+  /**
+   * Item 7a — tapping a medical POI. The user picked one specific verified
+   * place, so this auto-adds (no Verify step). If the place isn't addable
+   * (e.g. not_medical), fall back to the Add-Doctor form prefilled with what we
+   * can resolve, so the tap isn't wasted.
+   */
+  const handlePoiClick = useCallback(
+    async (poi: PoiTap) => {
+      setDropdownOpen(false);
+      setPendingPoint(null);
+
+      // Fast path: a saved clinic usually sits on its own Google POI, so a POI
+      // tap may land on an office we already have. Open its card instantly
+      // instead of a network `add` round-trip (which would just return
+      // existed:true after a visible delay).
+      const already = clinics?.find((c) => c.google_place_id === poi.placeId);
+      if (already) {
+        setSelectedClinic(already);
+        return;
+      }
+
+      const toastId = toast.loading("Adding this place…");
+      const res = await addMedicalPlace(poi.placeId);
+      toast.dismiss(toastId);
+
+      if (res.ok && res.clinic) {
+        toast.success(res.existed ? `${res.clinic.name} is already listed.` : `${res.clinic.name} added.`);
+        await openClinicAfterAdd(res.clinic);
+        return;
+      }
+
+      toast.error(addErrorMessage(res.error));
+      const details = await getPlaceDetails(poi.placeId);
+      const prefill: AddDoctorPrefill = {
+        name: details?.name ?? undefined,
+        address: details?.address ?? undefined,
+        place_id: poi.placeId,
+        lat: poi.lat,
+        lng: poi.lng,
+      };
+      navigate("/suggest", { state: { prefill } });
+    },
+    [clinics, navigate, openClinicAfterAdd]
+  );
+
+  /** Item 7b — tapping an empty map point shows an "Add here" affordance. */
+  const handleMapPointClick = useCallback((point: { lat: number; lng: number }) => {
+    setDropdownOpen(false);
+    setPendingPoint(point);
+  }, []);
+
+  /** Confirm "Add here": reverse-geocode the exact point, then open the form. */
+  const confirmAddHere = useCallback(async () => {
+    if (!pendingPoint) return;
+    const point = pendingPoint;
+    setPendingPoint(null);
+    const toastId = toast.loading("Locating…");
+    const geo = await reverseGeocode(point.lat, point.lng);
+    toast.dismiss(toastId);
+    // Coordinates come from the exact tapped point — authoritative, not fuzzy.
+    const prefill: AddDoctorPrefill = {
+      address: geo?.address ?? undefined,
+      place_id: geo?.placeId ?? undefined,
+      lat: point.lat,
+      lng: point.lng,
+    };
+    navigate("/suggest", { state: { prefill } });
+  }, [pendingPoint, navigate]);
+
+  const showResultsDropdown = isSearching && dropdownOpen && !candidate && !selectedClinic;
+
+  // Collapse the dropdown when the user clicks anywhere outside the search box
+  // (e.g. on the map). Listener is only attached while the dropdown is open, so
+  // it never interferes with the map when the dropdown is closed.
+  useEffect(() => {
+    if (!showResultsDropdown) return;
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [showResultsDropdown]);
 
   return (
     <div className="relative flex h-screen flex-col bg-background overflow-hidden pb-20 sm:pb-0">
       {/* Search bar overlay */}
       <div className="absolute top-0 left-0 right-0 z-[50] px-2 sm:px-3 pt-2 sm:pt-3 pb-2 pointer-events-none">
-        <div className="pointer-events-auto mx-auto max-w-lg">
+        <div ref={searchBoxRef} className="pointer-events-auto mx-auto max-w-lg">
           <div className="relative rounded-2xl border border-border/40 bg-card/90 backdrop-blur-xl shadow-xl">
             <div className="flex items-center gap-2 px-3">
-              {geocoding ? (
+              {searchState.loading ? (
                 <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
               ) : (
                 <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -361,42 +472,39 @@ const Index = () => {
               <Input
                 placeholder="Search doctor office or location…"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 px-0"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setDropdownOpen(true);
+                }}
+                onFocus={() => {
+                  if (search.trim()) setDropdownOpen(true);
+                }}
+                className="flex-1 border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 px-0"
               />
               {search && (
-                <button onClick={() => setSearch("")} className="shrink-0 text-muted-foreground hover:text-foreground">
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCandidate(null);
+                    setDropdownOpen(false);
+                  }}
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
-            {/*
-              City filter dropdown — temporarily disabled.
-              Restore this block (and the imports/state above) to bring it back.
-            <div className="border-t border-border/20 px-3 py-2">
-              <Select value={cityFilter} onValueChange={(v) => setCityFilter(v as (typeof CITY_FILTER_OPTIONS)[number])}>
-                <SelectTrigger className="h-8 border-border/40 bg-background/60 text-[11px] sm:text-xs">
-                  <SelectValue placeholder="Filter by city" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Cities</SelectItem>
-                  <SelectItem value="Miami">Miami</SelectItem>
-                  <SelectItem value="Miami Beach">Miami Beach</SelectItem>
-                  <SelectItem value="Hialeah">Hialeah</SelectItem>
-                  <SelectItem value="Coral Gables">Coral Gables</SelectItem>
-                  <SelectItem value="Doral">Doral</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            */}
-            {search.trim() && !geocoding && searchArea && (
-              <div className="border-t border-border/20 px-4 py-2 flex items-center gap-1.5">
-                <MapPin className="h-3 w-3 text-primary shrink-0" />
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {displayedClinics.length} doctor office{displayedClinics.length !== 1 ? "s" : ""} found
-                  {dbMatchedClinics.length > 0 ? " matching your search" : " near this location"}
-                </p>
-              </div>
+            {showResultsDropdown && (
+              <SearchResultsDropdown
+                results={searchState.results}
+                loading={searchState.loading}
+                limited={searchState.limited}
+                degraded={searchState.degraded}
+                searched={searchState.searched}
+                userLocation={userLocation}
+                onSelect={handleSelectResult}
+                onSuggestClinic={() => navigate("/suggest")}
+              />
             )}
           </div>
         </div>
@@ -423,24 +531,68 @@ const Index = () => {
           {/*
             Always keep MapView mounted. Unmounting it when isLoading flips
             (for example when the useClinics queryKey changes mid-session)
-            tears down Leaflet, re-fetches tiles, and re-runs the pin-drop
-            animation — that's what looked like "the map glitching".
-            The loading overlay above already covers the initial-fetch UX.
+            tears down the map instance and re-runs its setup — that's what
+            looked like "the map glitching". The loading overlay above already
+            covers the initial-fetch UX.
           */}
           <MapView
             clinics={displayedClinics}
             userLocation={userLocation}
             onClinicClick={handleClinicClick}
             onEmptyClick={handleEmptyClick}
+            onPoiClick={handlePoiClick}
+            onMapPointClick={handleMapPointClick}
             centerOn={centerOn}
-            searchArea={searchArea}
-            clinicsInSearchArea={displayedClinics.length}
+            candidate={
+              candidate
+                ? {
+                    name: candidate.name,
+                    latitude: candidate.latitude,
+                    longitude: candidate.longitude,
+                  }
+                : null
+            }
             nearbyRadiusMiles={nearbyRadiusMiles}
           />
 
           <FindMeButton onClick={handleFindMe} visible={!!userLocation} />
 
           <MapLegend />
+
+          {/* Item 7b — "Add here" affordance for a tapped empty point. */}
+          {pendingPoint && !candidate && !selectedClinic && (
+            <div className="absolute bottom-4 left-3 right-3 z-[60] mx-auto max-w-md animate-in slide-in-from-bottom-4 fade-in duration-300">
+              <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                  <MapPin className="h-4 w-4 text-primary" />
+                </div>
+                <p className="min-w-0 flex-1 text-xs font-medium text-card-foreground">
+                  Add a doctor office at this spot?
+                </p>
+                <button
+                  onClick={() => setPendingPoint(null)}
+                  className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAddHere}
+                  className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  Add here
+                </button>
+              </div>
+            </div>
+          )}
+
+          {candidate && (
+            <VerifyPlaceCard
+              candidate={candidate}
+              userLocation={userLocation}
+              onCancel={() => setCandidate(null)}
+              onVerified={handleVerified}
+            />
+          )}
 
           {selectedClinic && (
             <ClinicBottomSheet
@@ -450,15 +602,6 @@ const Index = () => {
               onReported={handleReported}
             />
           )}
-
-          {searchArea && !geocoding && displayedClinics.length === 0 && (
-            <SearchCircleOverlay
-              clinicCount={0}
-              searchName={searchArea.name}
-              onSuggestClinic={() => navigate("/suggest")}
-            />
-          )}
-
         </div>
 
         {/* Clinic list panel */}

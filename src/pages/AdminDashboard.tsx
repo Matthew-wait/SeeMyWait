@@ -18,20 +18,27 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
+import { addMedicalPlace, addErrorMessage, isGooglePlaceId, GoogleSearchResult, MedicalSearchResult, AddedClinic } from "@/lib/medical-search";
 import {
   clinicIdentityKey,
   findDuplicateClinicIdentity,
   isDuplicateKeyError,
 } from "@/lib/clinic-dedup";
 import {
-  LogOut, Loader2, Check, X, Trash2, Search, Download,
+  LogOut, Loader2, Check, X, Trash2, Search,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
   Upload, FileSpreadsheet, AlertCircle, Settings, RotateCcw,
+  Map as MapIcon, MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
+import { MapView, PoiTap } from "@/components/map/MapView";
+import { SearchResultsDropdown } from "@/components/map/SearchResultsDropdown";
+import { VerifyPlaceCard } from "@/components/map/VerifyPlaceCard";
+import { useMedicalSearch } from "@/hooks/use-medical-search";
+import { reverseGeocode, getPlaceDetails } from "@/lib/google-places-client";
+import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 
 type Clinic = {
   id: string;
@@ -43,6 +50,7 @@ type Clinic = {
   longitude: number;
   google_place_id: string | null;
   is_active: boolean;
+  created_at: string;
 };
 
 type ClinicFormData = {
@@ -92,34 +100,46 @@ function ClinicFormDialog({
   onClose,
   onSave,
   initialData,
+  prefill,
   isLoading,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (data: ClinicFormData) => void;
   initialData?: ClinicFormData;
+  /** Seeds a NEW office (create mode) with data from a map tap — coordinates included. */
+  prefill?: ClinicFormData;
   isLoading: boolean;
 }) {
-  const [form, setForm] = useState<ClinicFormData>(initialData || emptyForm);
+  const [form, setForm] = useState<ClinicFormData>(initialData || prefill || emptyForm);
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressSuggestError, setAddressSuggestError] = useState<string | null>(null);
   const [selectedAddressPlaceId, setSelectedAddressPlaceId] = useState<string | null>(null);
+  // Suppress the one autocomplete pass a prefilled address would otherwise trigger.
+  const skipAutocompleteRef = useRef(false);
 
   useEffect(() => {
-    setForm(initialData || emptyForm);
+    const seed = initialData || prefill || emptyForm;
+    setForm(seed);
     setAddressSuggestions([]);
     setAddressLoading(false);
     setSelectedAddressPlaceId(null);
-  }, [initialData, open]);
+    skipAutocompleteRef.current = Boolean(prefill?.address);
+  }, [initialData, prefill, open]);
 
   const set = (field: keyof ClinicFormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
+  // Prefill (create-mode seed from a map tap) is still a create, not an edit.
   const isCreateMode = !initialData;
 
   useEffect(() => {
     if (!open || !isCreateMode) return;
+    if (skipAutocompleteRef.current) {
+      skipAutocompleteRef.current = false;
+      return;
+    }
     const query = form.address.trim();
     if (query.length < 3) {
       setAddressSuggestions([]);
@@ -222,11 +242,11 @@ function ClinicFormDialog({
         <form onSubmit={handleSubmit} className="space-y-3 pt-1">
           <div className="space-y-1.5">
             <Label htmlFor="name" className="text-xs">Doctor Office Name *</Label>
-            <Input id="name" value={form.name} onChange={set("name")} placeholder="Dr. Maria Santos" required />
+            <Input id="name" value={form.name} onChange={set("name")} placeholder="e.g. Dr. Maria Santos" className="placeholder:text-muted-foreground/50" required />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="specialty" className="text-xs">Specialty</Label>
-            <Input id="specialty" value={form.specialty} onChange={set("specialty")} placeholder="Family Medicine" />
+            <Input id="specialty" value={form.specialty} onChange={set("specialty")} placeholder="e.g. Family Medicine" className="placeholder:text-muted-foreground/50" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="address" className="text-xs">Address *</Label>
@@ -235,7 +255,8 @@ function ClinicFormDialog({
                 id="address"
                 value={form.address}
                 onChange={isCreateMode ? handleAddressInput : set("address")}
-                placeholder="Start typing an address..."
+                placeholder="Start typing an address…"
+                className="placeholder:text-muted-foreground/50"
                 autoComplete="off"
                 required
               />
@@ -268,16 +289,16 @@ function ClinicFormDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone" className="text-xs">Phone</Label>
-            <Input id="phone" value={form.phone} onChange={set("phone")} placeholder="(305) 555-0100" />
+            <Input id="phone" value={form.phone} onChange={set("phone")} placeholder="e.g. (305) 555-0100" className="placeholder:text-muted-foreground/50" />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="latitude" className="text-xs">Latitude</Label>
-              <Input id="latitude" value={form.latitude} onChange={set("latitude")} placeholder="25.7617" />
+              <Input id="latitude" value={form.latitude} onChange={set("latitude")} placeholder="e.g. 25.7617" className="placeholder:text-muted-foreground/50" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="longitude" className="text-xs">Longitude</Label>
-              <Input id="longitude" value={form.longitude} onChange={set("longitude")} placeholder="-80.1918" />
+              <Input id="longitude" value={form.longitude} onChange={set("longitude")} placeholder="e.g. -80.1918" className="placeholder:text-muted-foreground/50" />
             </div>
           </div>
           <DialogFooter className="pt-2 gap-2">
@@ -582,13 +603,6 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("clinics");
   const [searchQuery, setSearchQuery] = useState("");
-  const [importQuery, setImportQuery] = useState("doctor clinic");
-  const [importLocation, setImportLocation] = useState("");
-  const [importLocationSuggestions, setImportLocationSuggestions] = useState<AddressSuggestion[]>([]);
-  const [importLocationLoading, setImportLocationLoading] = useState(false);
-  const [importLocationError, setImportLocationError] = useState<string | null>(null);
-  const [importLocationCoords, setImportLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [importing, setImporting] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
   const [showActiveReports, setShowActiveReports] = useState(true);
   const [nearbyRadius, setNearbyRadius] = useState("");
@@ -599,6 +613,15 @@ export default function AdminDashboard() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editClinic, setEditClinic] = useState<Clinic | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  /** Seeds the create dialog from a map tap (name/address + exact coordinates). */
+  const [prefillData, setPrefillData] = useState<ClinicFormData | null>(null);
+
+  // Map-tab add flows (search / POI tap / custom pin)
+  const [mapSearch, setMapSearch] = useState("");
+  const [mapDropdownOpen, setMapDropdownOpen] = useState(false);
+  const [mapCandidate, setMapCandidate] = useState<GoogleSearchResult | null>(null);
+  const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -613,7 +636,8 @@ export default function AdminDashboard() {
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
     queryKey: ["admin-clinics", searchQuery],
     queryFn: async () => {
-      let q = supabase.from("clinics").select("*").order("name");
+      // Most recently added first.
+      let q = supabase.from("clinics").select("*").order("created_at", { ascending: false });
       if (searchQuery) q = q.ilike("name", `%${searchQuery}%`);
       const { data, error } = await q;
       if (error) throw error;
@@ -675,50 +699,6 @@ export default function AdminDashboard() {
     return recentReports.filter((r: any) => new Date(r.reported_at).getTime() > expiryCutoffTime && !r.is_flagged).length;
   }, [recentReports, expiryCutoffTime]);
 
-  useEffect(() => {
-    const query = importLocation.trim();
-    if (query.length < 3) {
-      setImportLocationSuggestions([]);
-      setImportLocationLoading(false);
-      setImportLocationError(null);
-      return;
-    }
-
-    setImportLocationLoading(true);
-    setImportLocationError(null);
-    const timer = setTimeout(async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("google-places", {
-          body: { action: "autocomplete", query },
-        });
-        if (error) throw error;
-
-        if (data?.status && data.status !== "OK") {
-          setImportLocationError(getAutocompleteErrorMessage(data.status, data?.error_message));
-          setImportLocationSuggestions([]);
-          return;
-        }
-
-        const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
-        setImportLocationSuggestions(
-          predictions
-            .map((p: any) => ({
-              description: String(p?.description ?? ""),
-              place_id: String(p?.place_id ?? ""),
-            }))
-            .filter((p) => p.description && p.place_id)
-            .slice(0, 8)
-        );
-      } catch {
-        setImportLocationError("Unable to load location suggestions. Please try again.");
-        setImportLocationSuggestions([]);
-      } finally {
-        setImportLocationLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [importLocation]);
 
   const handleSaveSettings = async () => {
     setSavingSettings(true);
@@ -882,6 +862,17 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to reset wait reports."),
   });
 
+  /** Error codes the `medical-search` add action can return (see handoff §4.2). */
+  const ADD_ACTION_ERRORS = new Set([
+    "not_medical",
+    "permanently_closed",
+    "no_coordinates",
+    "lookup_failed",
+    "insert_failed",
+    "rate_limited",
+    "ADD_FAILED",
+  ]);
+
   const approveSuggestion = useMutation({
     mutationFn: async (suggestion: any) => {
       const name = String(suggestion.doctor_name ?? "").trim();
@@ -893,19 +884,30 @@ export default function AdminDashboard() {
       if (findDuplicateClinicIdentity(existing || [], name, address)) {
         throw new Error("DUPLICATE_CLINIC");
       }
-      const coords = await resolveClinicCoordinates(
-        address,
-        typeof suggestion.latitude === "number" ? String(suggestion.latitude) : undefined,
-        typeof suggestion.longitude === "number" ? String(suggestion.longitude) : undefined
-      );
-      const { error: clinicError } = await supabase.from("clinics").insert({
-        name,
-        address,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        google_place_id: suggestion.google_place_id,
-      });
-      if (clinicError) throw clinicError;
+      // Preferred path: hand the place id to the edge function's `add` action.
+      // It is the only writer that gets idempotency plus the partial-unique
+      // dedup on `google_place_id`, so re-approving can't create a twin.
+      if (isGooglePlaceId(suggestion.google_place_id)) {
+        const result = await addMedicalPlace(suggestion.google_place_id);
+        if (!result.ok) throw new Error(result.error || "ADD_FAILED");
+      } else {
+        // Legacy suggestions predating the place-id requirement have no id to
+        // look up, so they can only be inserted directly. New submissions can
+        // no longer reach this branch — SuggestClinic requires a Google place.
+        const coords = await resolveClinicCoordinates(
+          address,
+          typeof suggestion.latitude === "number" ? String(suggestion.latitude) : undefined,
+          typeof suggestion.longitude === "number" ? String(suggestion.longitude) : undefined
+        );
+        const { error: clinicError } = await supabase.from("clinics").insert({
+          name,
+          address,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          google_place_id: null,
+        });
+        if (clinicError) throw clinicError;
+      }
       const { error: updateError } = await supabase.from("clinic_suggestions").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("id", suggestion.id);
       if (updateError) throw updateError;
     },
@@ -915,6 +917,10 @@ export default function AdminDashboard() {
         toast.error("A doctor office with this name and address already exists.");
       } else if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
         toast.error("Suggestion address could not be located. Ask user/admin to provide a more precise address.");
+      } else if (ADD_ACTION_ERRORS.has((err as Error)?.message)) {
+        // Typed failure from the edge function's `add` action — show its reason
+        // rather than a generic "failed", so the admin knows why.
+        toast.error(addErrorMessage((err as Error).message));
       } else {
         toast.error("Failed to approve suggestion.");
       }
@@ -954,62 +960,123 @@ export default function AdminDashboard() {
     onError: () => toast.error("Failed to delete report."),
   });
 
-  const handleImport = async () => {
-    setImporting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-      const body: { action: string; query: string; location?: string } = {
-        action: "import",
-        query: importQuery.trim() || "doctor clinic",
-      };
-      if (importLocationCoords) {
-        body.location = `${importLocationCoords.lat},${importLocationCoords.lng}`;
-      }
-      const { data, error } = await supabase.functions.invoke("google-places", { body });
-      if (error) throw error;
-      const skipped = typeof data?.skippedDuplicates === "number" ? data.skippedDuplicates : 0;
-      toast.success(
-        `Imported ${data?.imported ?? 0} doctor office(s).${skipped > 0 ? ` ${skipped} duplicate(s) skipped.` : ""}`
-      );
-      queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
-    } catch (err: any) {
-      toast.error(err.message || "Import failed.");
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const handleImportLocationInput = (value: string) => {
-    setImportLocation(value);
-    setImportLocationCoords(null);
-    setImportLocationError(null);
-  };
-
-  const selectImportLocation = async (suggestion: AddressSuggestion) => {
-    setImportLocation(suggestion.description);
-    setImportLocationSuggestions([]);
-    setImportLocationError(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("google-places", {
-        body: { action: "details", placeId: suggestion.place_id },
-      });
-      if (error) throw error;
-      const lat = data?.result?.geometry?.location?.lat;
-      const lng = data?.result?.geometry?.location?.lng;
-      if (typeof lat === "number" && typeof lng === "number") {
-        setImportLocationCoords({ lat, lng });
-      } else {
-        setImportLocationCoords(null);
-        setImportLocationError("Selected location has no coordinates.");
-      }
-    } catch {
-      setImportLocationCoords(null);
-      setImportLocationError("Unable to fetch location details.");
-    }
-  };
-
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };
+
+  // ── Map tab: three add-methods (search / POI tap / custom pin) ──
+  const mapSearchState = useMedicalSearch(
+    mapSearch,
+    adminLoc ? { latitude: adminLoc.lat, longitude: adminLoc.lng } : null
+  );
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setAdminLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+    );
+  }, []);
+
+  // Adapt admin clinic rows to the shape MapView renders (all default to the
+  // green "On Time" pin; the admin map is for adding, not wait status).
+  const mapClinics: ClinicWithWaitTime[] = useMemo(
+    () =>
+      (clinics || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        address: c.address,
+        latitude: c.latitude,
+        longitude: c.longitude,
+        phone: c.phone,
+        google_place_id: c.google_place_id,
+        specialty: c.specialty,
+        waitTime: { category: "on_time", label: "On Time", lastReported: null },
+        recentReports: [],
+      })),
+    [clinics]
+  );
+
+  /** Open the create dialog on the Doctors tab, seeded from a map tap. */
+  const openPrefilledCreate = (data: Partial<ClinicFormData>) => {
+    setMapCandidate(null);
+    setPendingPoint(null);
+    setMapDropdownOpen(false);
+    setPrefillData({ ...emptyForm, ...data });
+    setActiveTab("clinics");
+    setCreateOpen(true);
+  };
+
+  const handleMapSelectResult = (result: MedicalSearchResult) => {
+    setMapDropdownOpen(false);
+    if (result.source === "db") {
+      // Already saved — jump to its edit dialog.
+      const existing = clinics?.find((c) => c.id === result.id);
+      if (existing) setEditClinic(existing);
+      else toast.info("Already in the directory.");
+      return;
+    }
+    // A Google candidate — confirm before saving.
+    setMapCandidate(result);
+  };
+
+  const handleMapVerified = (added: AddedClinic) => {
+    setMapCandidate(null);
+    setMapSearch("");
+    queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
+    toast.success(`${added.name} added.`);
+  };
+
+  const handleMapPoiClick = async (poi: PoiTap) => {
+    setMapDropdownOpen(false);
+    setPendingPoint(null);
+
+    // Already saved? Jump straight to its edit dialog — no network round-trip.
+    const existing = clinics?.find((c) => c.google_place_id === poi.placeId);
+    if (existing) {
+      setEditClinic(existing);
+      return;
+    }
+
+    const toastId = toast.loading("Adding this place…");
+    const res = await addMedicalPlace(poi.placeId);
+    toast.dismiss(toastId);
+
+    if (res.ok && res.clinic) {
+      queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
+      toast.success(res.existed ? `${res.clinic.name} is already listed.` : `${res.clinic.name} added.`);
+      return;
+    }
+
+    // Not auto-addable (e.g. not_medical) — fall back to the prefilled form.
+    toast.error("Couldn't auto-add — review the details and save.");
+    const details = await getPlaceDetails(poi.placeId);
+    openPrefilledCreate({
+      name: details?.name ?? "",
+      address: details?.address ?? "",
+      latitude: poi.lat.toFixed(6),
+      longitude: poi.lng.toFixed(6),
+    });
+  };
+
+  const handleMapPointClick = (point: { lat: number; lng: number }) => {
+    setMapDropdownOpen(false);
+    setPendingPoint(point);
+  };
+
+  const confirmAddHere = async () => {
+    if (!pendingPoint) return;
+    const point = pendingPoint;
+    setPendingPoint(null);
+    const toastId = toast.loading("Locating…");
+    const geo = await reverseGeocode(point.lat, point.lng);
+    toast.dismiss(toastId);
+    // Coordinates come from the exact tapped point — authoritative.
+    openPrefilledCreate({
+      address: geo?.address ?? "",
+      latitude: point.lat.toFixed(6),
+      longitude: point.lng.toFixed(6),
+    });
+  };
 
   const totalClinics = clinics?.length || 0;
   const totalSuggestions = suggestions?.length || 0;
@@ -1088,8 +1155,12 @@ export default function AdminDashboard() {
       <main className="mx-auto max-w-4xl px-3 pb-8 animate-in fade-in duration-500 sm:px-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-4">
-            <TabsList className="grid w-full grid-cols-3 gap-1 p-1 sm:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5">
               <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
+              <TabsTrigger value="map" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
+                <MapIcon className="h-3.5 w-3.5 sm:mr-1" />
+                <span className="hidden sm:inline">Map</span>
+              </TabsTrigger>
               <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <span className="hidden sm:inline">Suggestions</span>
               <span className="sm:hidden">Suggest</span>
@@ -1107,6 +1178,101 @@ export default function AdminDashboard() {
             </TabsList>
           </div>
 
+          {/* ── MAP TAB — add via search / POI tap / custom pin ── */}
+          <TabsContent value="map" className="space-y-3">
+            <div className="rounded-xl border border-border/40 bg-card p-3">
+              <p className="text-xs text-muted-foreground">
+                Search a place and <span className="font-medium text-foreground">Verify &amp; Add</span> it,
+                tap a medical place on the map to add it directly, or tap any empty spot to open the
+                Add form prefilled with exact coordinates.
+              </p>
+              {/* Search box + results */}
+              <div className="relative mt-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search doctor office or place…"
+                    value={mapSearch}
+                    onChange={(e) => { setMapSearch(e.target.value); setMapDropdownOpen(true); }}
+                    onFocus={() => { if (mapSearch.trim()) setMapDropdownOpen(true); }}
+                    className="pl-9"
+                    autoComplete="off"
+                  />
+                </div>
+                {mapSearch.trim() && mapDropdownOpen && !mapCandidate && (
+                  <div className="absolute z-[60] mt-1 w-full rounded-xl border border-border/40 bg-card shadow-xl">
+                    <SearchResultsDropdown
+                      results={mapSearchState.results}
+                      loading={mapSearchState.loading}
+                      limited={mapSearchState.limited}
+                      degraded={mapSearchState.degraded}
+                      searched={mapSearchState.searched}
+                      userLocation={adminLoc}
+                      onSelect={handleMapSelectResult}
+                      onSuggestClinic={() => { setMapDropdownOpen(false); setPrefillData(null); setCreateOpen(true); setActiveTab("clinics"); }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Map */}
+            <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
+              <MapView
+                clinics={mapClinics}
+                userLocation={adminLoc}
+                onClinicClick={(c) => {
+                  const row = clinics?.find((x) => x.id === c.id);
+                  if (row) setEditClinic(row);
+                }}
+                onEmptyClick={() => {}}
+                onPoiClick={handleMapPoiClick}
+                onMapPointClick={handleMapPointClick}
+                candidate={
+                  mapCandidate
+                    ? { name: mapCandidate.name, latitude: mapCandidate.latitude, longitude: mapCandidate.longitude }
+                    : null
+                }
+                nearbyRadiusMiles={100}
+              />
+
+              {/* "Add here" affordance for a tapped empty point */}
+              {pendingPoint && !mapCandidate && (
+                <div className="absolute bottom-3 left-3 right-3 z-[60] mx-auto max-w-md">
+                  <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                      <MapPin className="h-4 w-4 text-primary" />
+                    </div>
+                    <p className="min-w-0 flex-1 text-xs font-medium text-card-foreground">
+                      Add a doctor office at this spot?
+                    </p>
+                    <button
+                      onClick={() => setPendingPoint(null)}
+                      className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={confirmAddHere}
+                      className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      Add here
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {mapCandidate && (
+                <VerifyPlaceCard
+                  candidate={mapCandidate}
+                  userLocation={adminLoc}
+                  onCancel={() => setMapCandidate(null)}
+                  onVerified={handleMapVerified}
+                />
+              )}
+            </div>
+          </TabsContent>
+
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -1119,7 +1285,7 @@ export default function AdminDashboard() {
                   className="pl-9"
                 />
               </div>
-              <Button size="sm" onClick={() => setCreateOpen(true)} className="shrink-0 gap-1.5">
+              <Button size="sm" onClick={() => { setPrefillData(null); setCreateOpen(true); }} className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add</span>
               </Button>
@@ -1128,67 +1294,6 @@ export default function AdminDashboard() {
                 <span className="hidden sm:inline">CSV</span>
               </Button>
             </div>
-
-            <Card className="border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Download className="h-4 w-4 text-primary" />
-                  Import from Google Places
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <Input
-                  placeholder="Search query (e.g. dentist, dermatologist, pediatric office)"
-                  value={importQuery}
-                  onChange={(e) => setImportQuery(e.target.value)}
-                />
-                <div className="relative">
-                  <Input
-                    placeholder="Location (optional, any city/country)"
-                    value={importLocation}
-                    onChange={(e) => handleImportLocationInput(e.target.value)}
-                    autoComplete="off"
-                  />
-                  {(importLocationLoading || importLocationSuggestions.length > 0 || importLocationError) && (
-                    <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
-                      {importLocationLoading ? (
-                        <p className="px-2 py-2 text-xs text-muted-foreground">Loading suggestions…</p>
-                      ) : importLocationError ? (
-                        <p className="px-2 py-2 text-xs text-destructive">{importLocationError}</p>
-                      ) : (
-                        importLocationSuggestions.map((suggestion) => (
-                          <button
-                            type="button"
-                            key={suggestion.place_id}
-                            onClick={() => selectImportLocation(suggestion)}
-                            className="w-full rounded-sm px-2 py-2 text-left text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground"
-                          >
-                            {suggestion.description}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <p
-                    className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
-                    title={
-                      importLocationCoords
-                        ? `Using location bias: ${importLocation}`
-                        : "No location selected: import uses global text search."
-                    }
-                  >
-                    {importLocationCoords
-                      ? `Using location bias: ${importLocation}`
-                      : "No location selected: import uses global text search."}
-                  </p>
-                  <Button onClick={handleImport} disabled={importing} className="sm:w-auto">
-                  {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
             {clinicsLoading ? (
               <div className="flex justify-center py-8">
@@ -1310,25 +1415,26 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-4">
-            {/* Active/Expired Toggle */}
-            <div className="flex flex-col gap-2 rounded-xl border border-border/40 bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <Label htmlFor="report-toggle" className="text-sm font-medium">
-                  {showActiveReports ? "Active Reports" : "Expired Reports"}
-                </Label>
-                <Badge variant={showActiveReports ? "default" : "secondary"} className="text-[10px]">
-                  {filteredReports.length}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{showActiveReports ? "Active" : "Expired"}</span>
-                <Switch
-                  id="report-toggle"
-                  checked={showActiveReports}
-                  onCheckedChange={setShowActiveReports}
-                />
-              </div>
-            </div>
+            {/* Active / Expired filter tabs */}
+            <Tabs
+              value={showActiveReports ? "active" : "expired"}
+              onValueChange={(v) => setShowActiveReports(v === "active")}
+            >
+              <TabsList className="grid w-full grid-cols-2 gap-1 p-1 sm:w-auto sm:inline-grid">
+                <TabsTrigger value="active" className="gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3">
+                  Active
+                  {showActiveReports && (
+                    <Badge variant="secondary" className="text-[10px]">{filteredReports.length}</Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="expired" className="gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3">
+                  Expired
+                  {!showActiveReports && (
+                    <Badge variant="secondary" className="text-[10px]">{filteredReports.length}</Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
             <div className="overflow-x-auto rounded-lg border border-border/50">
               <Table>
@@ -1458,8 +1564,9 @@ export default function AdminDashboard() {
       {/* ── CREATE Dialog ── */}
       <ClinicFormDialog
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        onClose={() => { setCreateOpen(false); setPrefillData(null); }}
         onSave={(form) => createClinic.mutate(form)}
+        prefill={prefillData ?? undefined}
         isLoading={createClinic.isPending}
       />
 

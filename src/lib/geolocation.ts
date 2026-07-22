@@ -12,6 +12,44 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
   });
 }
 
+/**
+ * True when a coordinate pair can safely be handed to Leaflet.
+ *
+ * Leaflet throws "Invalid LatLng object" on a non-finite lat/lng, and there is
+ * no error boundary above the map — an unchecked pair blanks the whole page.
+ */
+export function hasValidCoords(latitude: unknown, longitude: unknown): boolean {
+  return (
+    typeof latitude === "number" &&
+    typeof longitude === "number" &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
+}
+
+/**
+ * Uncached fix, for gating a wait report. `maximumAge: 0` forces the browser to
+ * take a new reading — a minute-old cached position could place the user inside
+ * the geofence after they've already walked away.
+ */
+export function getFreshPosition(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0,
+    });
+  });
+}
+
 // Haversine distance in meters
 export function getDistanceMeters(
   lat1: number,

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, Info } from "lucide-react";
+import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, Info, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
-import { getCurrentPosition, isWithinRadius } from "@/lib/geolocation";
+import { getCurrentPosition, getFreshPosition, isWithinRadius } from "@/lib/geolocation";
+import { directionsUrl, viewOnGoogleMapsUrl } from "@/lib/medical-search";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -77,10 +78,9 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
     };
   }, [clinic.id, clinic.latitude, clinic.longitude]);
 
-  const isExpiringSoon =
-    clinic.waitTime && clinic.waitTime.lastReported && !clinic.waitTime.isDefault
-      ? Date.now() - new Date(clinic.waitTime.lastReported).getTime() > 2.5 * 60 * 60 * 1000
-      : false;
+  const isExpiringSoon = clinic.waitTime?.lastReported
+    ? Date.now() - new Date(clinic.waitTime.lastReported).getTime() > 2.5 * 60 * 60 * 1000
+    : false;
 
   const handleReport = async (category: WaitTimeCategory) => {
     setSelectedOption(category);
@@ -88,7 +88,8 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
     setSubmitting(true);
 
     try {
-      const pos = await getCurrentPosition();
+      // Fresh (uncached) fix: the eligibility check above may be minutes old.
+      const pos = await getFreshPosition();
       const withinRange = isWithinRadius(
         pos.coords.latitude,
         pos.coords.longitude,
@@ -150,9 +151,17 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
     }
   };
 
+  // Hand off to the external maps app — we never rebuild navigation in-app.
   const openDirections = () => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${clinic.latitude},${clinic.longitude}`;
-    window.open(url, "_blank");
+    window.open(directionsUrl(clinic.latitude, clinic.longitude), "_blank", "noopener,noreferrer");
+  };
+
+  const openInGoogleMaps = () => {
+    window.open(
+      viewOnGoogleMapsUrl(clinic.name, clinic.google_place_id),
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const eligibilityMessage = (): string => {
@@ -205,12 +214,15 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
           </div>
 
           <div className="rounded-xl bg-muted/10 border border-border/20 p-3">
-            {clinic.waitTime && (
-              <div className="space-y-2">
+            {/*
+              No active report defaults to green "On Time"; the "reported X ago"
+              line only shows when there is a real report (lastReported set).
+            */}
+            <div className="space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-                    <WaitTimeBadge category={clinic.waitTime.category} showIcon />
-                    {clinic.waitTime.lastReported && !clinic.waitTime.isDefault && (
+                    <WaitTimeBadge category={clinic.waitTime?.category} showIcon />
+                    {clinic.waitTime?.lastReported && (
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
                       </span>
@@ -225,8 +237,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
                     </p>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
           </div>
 
           {error && (
@@ -279,10 +290,21 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
             )}
           </div>
 
-          <Button type="button" onClick={openDirections} variant="outline" className="w-full gap-2 rounded-xl">
-            <Navigation className="h-4 w-4" />
-            Get Directions
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button type="button" onClick={openDirections} variant="outline" className="w-full gap-2 rounded-xl sm:flex-1">
+              <Navigation className="h-4 w-4" />
+              Get Directions
+            </Button>
+            <Button
+              type="button"
+              onClick={openInGoogleMaps}
+              variant="ghost"
+              className="w-full gap-2 rounded-xl text-muted-foreground sm:w-auto"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View on Google Maps
+            </Button>
+          </div>
         </div>
       </div>
     </div>
