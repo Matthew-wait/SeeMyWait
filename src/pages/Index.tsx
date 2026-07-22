@@ -552,6 +552,7 @@ const Index = () => {
                   }
                 : null
             }
+            pendingPoint={pendingPoint}
             nearbyRadiusMiles={nearbyRadiusMiles}
           />
 
@@ -566,9 +567,12 @@ const Index = () => {
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                   <MapPin className="h-4 w-4 text-primary" />
                 </div>
-                <p className="min-w-0 flex-1 text-xs font-medium text-card-foreground">
-                  Add a doctor office at this spot?
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-card-foreground">Add a doctor office here?</p>
+                  <p className="truncate text-[10px] text-muted-foreground tabular-nums">
+                    {pendingPoint.lat.toFixed(6)}, {pendingPoint.lng.toFixed(6)}
+                  </p>
+                </div>
                 <button
                   onClick={() => setPendingPoint(null)}
                   className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
