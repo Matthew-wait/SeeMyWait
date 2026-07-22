@@ -30,7 +30,7 @@ import {
   LogOut, Loader2, Check, X, Trash2, Search,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
   Upload, FileSpreadsheet, AlertCircle, Settings, RotateCcw,
-  Map as MapIcon, MapPin,
+  Map as MapIcon, MapPin, Crosshair,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MapView, PoiTap } from "@/components/map/MapView";
@@ -622,6 +622,7 @@ export default function AdminDashboard() {
   const [mapCandidate, setMapCandidate] = useState<GoogleSearchResult | null>(null);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -1063,6 +1064,28 @@ export default function AdminDashboard() {
     setPendingPoint(point);
   };
 
+  /** Center the map on the admin's exact current GPS position. */
+  const handleAdminLocate = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation isn't supported by this browser.");
+      return;
+    }
+    const toastId = toast.loading("Locating…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        toast.dismiss(toastId);
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setAdminLoc(loc);
+        setMapCenterOn({ ...loc, zoom: 15 });
+      },
+      () => {
+        toast.dismiss(toastId);
+        toast.error("Couldn't get your location. Check location permissions.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const confirmAddHere = async () => {
     if (!pendingPoint) return;
     const point = pendingPoint;
@@ -1221,6 +1244,7 @@ export default function AdminDashboard() {
               <MapView
                 clinics={mapClinics}
                 userLocation={adminLoc}
+                centerOn={mapCenterOn}
                 onClinicClick={(c) => {
                   const row = clinics?.find((x) => x.id === c.id);
                   if (row) setEditClinic(row);
@@ -1233,8 +1257,19 @@ export default function AdminDashboard() {
                     ? { name: mapCandidate.name, latitude: mapCandidate.latitude, longitude: mapCandidate.longitude }
                     : null
                 }
+                pendingPoint={pendingPoint}
                 nearbyRadiusMiles={100}
               />
+
+              {/* Locate-me: center on the admin's exact current position */}
+              <button
+                type="button"
+                onClick={handleAdminLocate}
+                title="Show my current location"
+                className="absolute right-3 top-3 z-[55] flex h-10 w-10 items-center justify-center rounded-xl border border-border/30 bg-card/90 shadow-lg backdrop-blur-xl transition-all hover:bg-card active:scale-95"
+              >
+                <Crosshair className="h-5 w-5 text-primary" />
+              </button>
 
               {/* "Add here" affordance for a tapped empty point */}
               {pendingPoint && !mapCandidate && (
@@ -1243,9 +1278,12 @@ export default function AdminDashboard() {
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
                       <MapPin className="h-4 w-4 text-primary" />
                     </div>
-                    <p className="min-w-0 flex-1 text-xs font-medium text-card-foreground">
-                      Add a doctor office at this spot?
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-card-foreground">Add a doctor office here?</p>
+                      <p className="truncate text-[10px] text-muted-foreground tabular-nums">
+                        {pendingPoint.lat.toFixed(6)}, {pendingPoint.lng.toFixed(6)}
+                      </p>
+                    </div>
                     <button
                       onClick={() => setPendingPoint(null)}
                       className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"

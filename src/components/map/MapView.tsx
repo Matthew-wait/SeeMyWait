@@ -50,6 +50,8 @@ interface MapViewProps {
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
   nearbyRadiusMiles?: number;
   candidate?: CandidatePlace | null;
+  /** A tapped empty point awaiting "Add here" — drops a pin + coordinate tooltip. */
+  pendingPoint?: { lat: number; lng: number } | null;
   /** Tapping a medical POI (has a place id). */
   onPoiClick?: (poi: PoiTap) => void;
   /** Tapping an empty (non-POI) map point. */
@@ -64,6 +66,7 @@ function MapViewInner({
   centerOn,
   nearbyRadiusMiles = 100,
   candidate = null,
+  pendingPoint = null,
   onPoiClick,
   onMapPointClick,
 }: MapViewProps) {
@@ -73,6 +76,8 @@ function MapViewInner({
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const userCircleRef = useRef<google.maps.Circle | null>(null);
   const candidateMarkerRef = useRef<google.maps.Marker | null>(null);
+  const pendingMarkerRef = useRef<google.maps.Marker | null>(null);
+  const pendingInfoRef = useRef<google.maps.InfoWindow | null>(null);
   const prevClinicKeyRef = useRef("");
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -231,6 +236,37 @@ function MapViewInner({
     map.setCenter({ lat: candidate.latitude, lng: candidate.longitude });
     map.setZoom(16);
   }, [candidate, status]);
+
+  // Pin for a tapped custom point, with its coordinates shown as a tooltip
+  // (like dropping a pin on Google Maps). Does not recenter — the user tapped
+  // where they can already see.
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current) return;
+    const map = mapRef.current;
+
+    pendingMarkerRef.current?.setMap(null);
+    pendingInfoRef.current?.close();
+    pendingMarkerRef.current = null;
+    pendingInfoRef.current = null;
+
+    if (!pendingPoint || !hasValidCoords(pendingPoint.lat, pendingPoint.lng)) return;
+
+    const position = { lat: pendingPoint.lat, lng: pendingPoint.lng };
+    const coordLabel = `${pendingPoint.lat.toFixed(6)}, ${pendingPoint.lng.toFixed(6)}`;
+
+    pendingMarkerRef.current = new google.maps.Marker({
+      map,
+      position,
+      icon: pinIcon(CANDIDATE_COLOR),
+      title: coordLabel,
+      zIndex: 1100,
+    });
+    pendingInfoRef.current = new google.maps.InfoWindow({
+      content: `<div style="font:600 12px system-ui,sans-serif;color:#0f172a;padding:2px 2px;">${coordLabel}</div>`,
+      disableAutoPan: true,
+    });
+    pendingInfoRef.current.open({ map, anchor: pendingMarkerRef.current });
+  }, [pendingPoint, status]);
 
   // Imperative recenter requests.
   useEffect(() => {
