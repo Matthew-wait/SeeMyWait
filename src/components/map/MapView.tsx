@@ -29,6 +29,40 @@ function pinIcon(color: string): google.maps.Icon {
   };
 }
 
+/**
+ * Tightens the default Google InfoWindow chrome for a sleeker look — softer
+ * corners/shadow, snug padding, no white gutter. Injected once per document.
+ */
+function ensureInfoWindowStyle(): void {
+  if (typeof document === "undefined" || document.getElementById("gm-iw-sleek")) return;
+  const style = document.createElement("style");
+  style.id = "gm-iw-sleek";
+  style.textContent = `
+    .gm-style .gm-style-iw-c {
+      padding: 0 !important;
+      border-radius: 14px !important;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.18) !important;
+    }
+    .gm-style .gm-style-iw-d { overflow: hidden !important; padding: 0 !important; }
+    .gm-style .gm-style-iw-tc::after { box-shadow: 0 8px 24px rgba(15,23,42,0.18) !important; }
+  `;
+  document.head.appendChild(style);
+}
+
+/** Sleek coordinate card shown in the pending-point tooltip. */
+function coordTooltipHtml(lat: number, lng: number): string {
+  const coords = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  return (
+    `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;padding:9px 13px;line-height:1.2;white-space:nowrap;">` +
+    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">` +
+    `<span style="width:7px;height:7px;border-radius:50%;background:${CANDIDATE_COLOR};box-shadow:0 0 0 3px rgba(37,99,235,0.18);"></span>` +
+    `<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;">Selected location</span>` +
+    `</div>` +
+    `<div style="font-size:13px;font-weight:600;color:#0f172a;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">${coords}</div>` +
+    `</div>`
+  );
+}
+
 export interface CandidatePlace {
   name: string;
   latitude: number;
@@ -251,19 +285,21 @@ function MapViewInner({
 
     if (!pendingPoint || !hasValidCoords(pendingPoint.lat, pendingPoint.lng)) return;
 
+    ensureInfoWindowStyle();
     const position = { lat: pendingPoint.lat, lng: pendingPoint.lng };
-    const coordLabel = `${pendingPoint.lat.toFixed(6)}, ${pendingPoint.lng.toFixed(6)}`;
 
     pendingMarkerRef.current = new google.maps.Marker({
       map,
       position,
       icon: pinIcon(CANDIDATE_COLOR),
-      title: coordLabel,
+      title: `${pendingPoint.lat.toFixed(6)}, ${pendingPoint.lng.toFixed(6)}`,
       zIndex: 1100,
     });
     pendingInfoRef.current = new google.maps.InfoWindow({
-      content: `<div style="font:600 12px system-ui,sans-serif;color:#0f172a;padding:2px 2px;">${coordLabel}</div>`,
+      content: coordTooltipHtml(pendingPoint.lat, pendingPoint.lng),
       disableAutoPan: true,
+      // Remove the default header/close (×) — the "Add here" bar handles dismiss.
+      headerDisabled: true,
     });
     pendingInfoRef.current.open({ map, anchor: pendingMarkerRef.current });
   }, [pendingPoint, status]);
