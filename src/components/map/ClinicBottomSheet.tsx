@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, Info, ExternalLink } from "lucide-react";
+import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
@@ -81,6 +81,9 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
   const isExpiringSoon = clinic.waitTime?.lastReported
     ? Date.now() - new Date(clinic.waitTime.lastReported).getTime() > 2.5 * 60 * 60 * 1000
     : false;
+
+  // The user can't submit a report (too far / weak GPS / GPS off) — surface it as danger.
+  const cannotReport = eligibility !== "loading" && eligibility !== "ready";
 
   const handleReport = async (category: WaitTimeCategory) => {
     setSelectedOption(category);
@@ -217,16 +220,19 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
             {/*
               No active report defaults to green "On Time"; the "reported X ago"
               line only shows when there is a real report (lastReported set).
+              Labeled row (left) + badge (right) so the card fills its width
+              instead of leaving a gap beside the pill.
             */}
             <div className="space-y-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-                    <WaitTimeBadge category={clinic.waitTime?.category} showIcon />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">Current wait</span>
+                  <div className="flex items-center gap-2">
                     {clinic.waitTime?.lastReported && (
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(clinic.waitTime.lastReported), { addSuffix: true })}
                       </span>
                     )}
+                    <WaitTimeBadge category={clinic.waitTime?.category} showIcon />
                   </div>
                 </div>
                 {isExpiringSoon && (
@@ -247,8 +253,20 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
             </div>
           )}
 
-          <div className="rounded-xl border border-border/30 bg-muted/5 p-3">
-            <p className="text-xs font-semibold text-card-foreground mb-2">Report Wait Time</p>
+          <div
+            className={`rounded-xl border p-3 transition-colors ${
+              cannotReport
+                ? "border-destructive/30 bg-destructive/5"
+                : "border-border/30 bg-muted/5"
+            }`}
+          >
+            <p
+              className={`text-xs font-semibold mb-2 ${
+                cannotReport ? "text-destructive" : "text-card-foreground"
+              }`}
+            >
+              Report Wait Time
+            </p>
 
             {eligibility === "loading" && (
               <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
@@ -282,10 +300,10 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
               </div>
             )}
 
-            {eligibility !== "loading" && eligibility !== "ready" && (
-              <div className="flex gap-2 rounded-lg bg-muted/30 px-3 py-2.5">
-                <Info className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
-                <p className="text-[11px] leading-relaxed text-muted-foreground">{eligibilityMessage()}</p>
+            {cannotReport && (
+              <div className="flex gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
+                <p className="text-[11px] leading-relaxed text-destructive font-medium">{eligibilityMessage()}</p>
               </div>
             )}
           </div>
