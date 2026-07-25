@@ -1261,12 +1261,12 @@ export default function AdminDashboard() {
                 nearbyRadiusMiles={100}
               />
 
-              {/* Locate-me: center on the admin's exact current position */}
+              {/* Locate-me: sits just above the zoom pill (bottom-left cluster) */}
               <button
                 type="button"
                 onClick={handleAdminLocate}
                 title="Show my current location"
-                className="absolute right-3 top-3 z-[55] flex h-10 w-10 items-center justify-center rounded-xl border border-border/30 bg-card/90 shadow-lg backdrop-blur-xl transition-all hover:bg-card active:scale-95"
+                className="absolute bottom-[152px] left-3 z-[55] flex h-10 w-10 items-center justify-center rounded-xl border border-border/30 bg-card/90 shadow-lg backdrop-blur-xl transition-all hover:bg-card active:scale-95"
               >
                 <Crosshair className="h-5 w-5 text-primary" />
               </button>
