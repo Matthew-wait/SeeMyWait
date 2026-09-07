@@ -1,0 +1,63 @@
+name: DB backup
+
+# Daily export of the important tables to backups/data.sql, committed to the
+# repo. The file is overwritten each run, so the repo stays small and git
+# history holds every previous snapshot (restore = check out an old version).
+#
+# Requires repo secret DB_CONNECTION_STRING:
+#   Supabase -> Project Settings -> Database -> Connection string -> "Session pooler"
+#   (port 5432; the pooler host is IPv4 so GitHub runners can reach it).
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # daily at 02:00 UTC
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Dump tables
+        env:
+          DB_URL_RAW: ${{ secrets.DB_CONNECTION_STRING }}
+        run: |
+          # Strip any stray whitespace/newlines that can sneak in when pasting
+          # the secret (a trailing newline makes the dbname "postgres\n").
+          DB_URL="$(printf '%s' "$DB_URL_RAW" | tr -d '[:space:]')"
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" \
+            --data-only --column-inserts --no-owner --no-privileges \
+            -t public.clinics \
+            -t public.clinic_suggestions \
+            -t public.app_settings \
+            -t public.user_roles \
+            -f backups/data.sql
+          echo "Rows dumped:"
+          grep -c '^INSERT' backups/data.sql || true
+
+      - name: Commit if changed
+        run: |
+          git config user.name "db-backup"
+          git config user.email "db-backup@users.noreply.github.com"
+          git add backups/data.sql
+          if git diff --cached --quiet; then
+            echo "No changes to back up."
+          else
+            git commit -m "Automated DB backup"
+            git push
+          fi

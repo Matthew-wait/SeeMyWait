@@ -35,3 +35,23 @@ scripts/out/
 
 # Supabase CLI local cache
 supabase/.temp/
+
+# Expo / React Native (apps/mobile)
+.expo/
+web-build/
+expo-env.d.ts
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+*.tsbuildinfo
+# generated native folders
+apps/mobile/ios/
+apps/mobile/android/
+**/.gradle/
+**/.cxx/
+*.apk
+*.aab

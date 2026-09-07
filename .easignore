@@ -1,0 +1,13 @@
+# Keep EAS Build uploads lean — only apps/mobile + shared packages/supabase
+# are needed to build the native app. https://docs.expo.dev/build-reference/easignore/
+apps/web/
+docs/
+backups/
+dist/
+build/
+scripts/out/
+node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
+*.log
+supabase/.temp/
