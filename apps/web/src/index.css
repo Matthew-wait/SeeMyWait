@@ -164,3 +164,21 @@ All colors MUST be HSL.
   background: transparent;
   border: 0;
 }
+
+/*
+ * Keep Leaflet's own panes and control containers UNDER the app's map overlays.
+ * The search bar / zoom / legend / find-me sit at z-index 50 and the bottom
+ * sheets at 60–70; Leaflet's defaults (panes 200–700, control containers 1000)
+ * otherwise paint over them once the map finishes initialising — which looked
+ * like the controls flashing in, then vanishing.
+ */
+.leaflet-container {
+  z-index: 0;
+}
+.leaflet-pane {
+  z-index: 0 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10 !important;
+}
