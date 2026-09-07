@@ -249,8 +249,52 @@ async function geocodeNominatim(rows) {
   return byNpi;
 }
 
+/**
+ * Geocode via the deployed `medical-search` edge function's `geocode` action.
+ * Runs Census (works from Supabase's egress even when it's WAF-blocked locally)
+ * with a Nominatim fallback, and populates `geocode_cache` — so the app reuses
+ * these results. Needs SUPABASE_URL + a key.
+ */
+async function geocodeEdge(rows) {
+  const url = process.env.SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("--geocoder edge needs SUPABASE_URL and a key in env.");
+  const endpoint = `${url.replace(/\/$/, "")}/functions/v1/medical-search`;
+  const byNpi = new Map();
+  const CONC = 25;
+  for (let i = 0; i < rows.length; i += CONC) {
+    const chunk = rows.slice(i, i + CONC);
+    await Promise.all(
+      chunk.map(async (r) => {
+        const q = `${r.address_line}, ${r.city}, ${r.state} ${r.postal_code}`.trim();
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "geocode", query: q }),
+          });
+          const d = await res.json();
+          const loc = d?.results?.[0]?.geometry?.location;
+          if (loc && Number.isFinite(loc.lat) && Number.isFinite(loc.lng)) {
+            byNpi.set(r.npi, { latitude: loc.lat, longitude: loc.lng });
+          }
+        } catch (e) {
+          console.warn(`  edge geocode ${r.npi}: ${e.message}`);
+        }
+      }),
+    );
+    console.log(`  edge geocode ${Math.min(i + CONC, rows.length)}/${rows.length} (${byNpi.size} hit)`);
+  }
+  return byNpi;
+}
+
 function geocode(rows, which) {
-  return which === "nominatim" ? geocodeNominatim(rows) : geocodeCensusBatch(rows);
+  if (which === "edge") return geocodeEdge(rows);
+  if (which === "nominatim") return geocodeNominatim(rows);
+  return geocodeCensusBatch(rows);
 }
 
 /* --------------------------- push --------------------------- */
