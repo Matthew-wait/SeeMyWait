@@ -30,8 +30,20 @@ type CountryOption = {
   flag: string;
 };
 type Suggestion = {
+  /** Synthetic "geo:<lat>,<lng>" id from the Photon-backed autocomplete. */
   place_id: string;
   description: string;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+/** Parse a "geo:<lat>,<lng>" synthetic id. */
+const parseGeoId = (id: string): { latitude: number; longitude: number } | null => {
+  const m = /^geo:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(id.trim());
+  if (!m) return null;
+  const latitude = Number(m[1]);
+  const longitude = Number(m[2]);
+  return Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : null;
 };
 
 const TYPE_OPTIONS: ClinicType[] = ['doctor', 'clinic', 'hospital', 'urgent_care'];
@@ -108,48 +120,10 @@ const pickLatLng = (payload: Record<string, unknown>): { latitude: number; longi
   return null;
 };
 
-type GoogleReverseResult = {
+type ServerReverseResult = {
   formattedAddress: string;
   placeId: string | null;
   score: number;
-};
-
-const pickBestGoogleReverse = (
-  results: { formatted_address?: string; place_id?: string; types?: string[]; geometry?: { location_type?: string } }[]
-): GoogleReverseResult | null => {
-  if (!Array.isArray(results) || results.length === 0) return null;
-  const scoreType = (types: string[] | undefined): number => {
-    if (!types) return 0;
-    if (types.includes('street_address')) return 6;
-    if (types.includes('premise') || types.includes('subpremise')) return 5;
-    if (types.includes('route')) return 4;
-    if (types.includes('intersection')) return 3;
-    if (types.includes('neighborhood')) return 2;
-    if (types.includes('locality')) return 1;
-    return 0;
-  };
-  const scoreLocationType = (locationType: string | undefined): number => {
-    if (locationType === 'ROOFTOP') return 4;
-    if (locationType === 'RANGE_INTERPOLATED') return 2;
-    if (locationType === 'GEOMETRIC_CENTER') return 1;
-    return 0;
-  };
-
-  const ranked = results
-    .map((r) => ({
-      formattedAddress: String(r.formatted_address ?? '').trim(),
-      placeId: typeof r.place_id === 'string' ? r.place_id : null,
-      score: scoreType(r.types) + scoreLocationType(r.geometry?.location_type),
-    }))
-    .filter((r) => r.formattedAddress.length > 0)
-    .sort((a, b) => b.score - a.score);
-
-  if (ranked.length === 0) return null;
-  return {
-    formattedAddress: ranked[0].formattedAddress,
-    placeId: ranked[0].placeId,
-    score: ranked[0].score,
-  };
 };
 
 const isBroadAreaAddress = (raw: string): boolean => {
@@ -168,42 +142,19 @@ const withPinnedCoords = (address: string, latitude: number, longitude: number):
   return `${address} (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`;
 };
 
-const reverseGeocodeGoogle = async (
+/** Server reverse-geocode via the medical-search edge function (Nominatim). */
+const reverseGeocodeServer = async (
   latitude: number,
   longitude: number
-): Promise<GoogleReverseResult | null> => {
-  const key = process.env.EXPO_PUBLIC_GOOGLE_GEOCODE_API_KEY?.trim();
-  if (!key) return null;
+): Promise<ServerReverseResult | null> => {
   try {
-    const latlng = `${latitude},${longitude}`;
-    const strictUrl =
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng}` +
-      `&result_type=street_address|premise|subpremise|route&location_type=ROOFTOP&key=${encodeURIComponent(key)}`;
-    const response = await fetch(
-      strictUrl
-    );
-    if (response.ok) {
-      const payload = (await response.json()) as {
-        status?: string;
-        results?: { formatted_address?: string; place_id?: string; types?: string[]; geometry?: { location_type?: string } }[];
-      };
-      if (payload.status === 'OK') {
-        const strictPick = pickBestGoogleReverse(payload.results ?? []);
-        if (strictPick) return strictPick;
-      }
-    }
-
-    // Fallback broader reverse geocode if strict rooftop/street result unavailable.
-    const fallbackResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latlng}&key=${encodeURIComponent(key)}`
-    );
-    if (!fallbackResponse.ok) return null;
-    const fallbackPayload = (await fallbackResponse.json()) as {
-      status?: string;
-      results?: { formatted_address?: string; place_id?: string; types?: string[]; geometry?: { location_type?: string } }[];
-    };
-    if (fallbackPayload.status !== 'OK') return null;
-    return pickBestGoogleReverse(fallbackPayload.results ?? []);
+    const { data, error } = await supabase.functions.invoke('medical-search', {
+      body: { action: 'reverse', lat: latitude, lng: longitude },
+    });
+    if (error || !data?.address) return null;
+    // No rooftop confidence signal from Nominatim — score 0 so the caller
+    // appends the exact pinned coords for anything that looks broad.
+    return { formattedAddress: String(data.address), placeId: null, score: 0 };
   } catch {
     return null;
   }
@@ -363,6 +314,8 @@ export const SuggestClinicPage = () => {
       .map((item) => ({
         place_id: String(item.place_id ?? ''),
         description: String(item.description ?? ''),
+        latitude: typeof item.latitude === 'number' ? item.latitude : null,
+        longitude: typeof item.longitude === 'number' ? item.longitude : null,
       }))
       .filter((item) => item.place_id && item.description)
       .slice(0, AUTOCOMPLETE_LIMIT);
@@ -399,11 +352,18 @@ export const SuggestClinicPage = () => {
     setSelectedPlaceId(suggestion.place_id);
     setSuggestions([]);
 
-    const { data } = await supabase.functions.invoke('google-places', {
-      body: { action: 'details', placeId: suggestion.place_id, place_id: suggestion.place_id },
-    });
-    const payload = (data ?? {}) as Record<string, unknown>;
-    const coords = pickLatLng(payload);
+    // Photon predictions carry coordinates inline (also encoded in the geo: id);
+    // fall back to a geocode call only if neither is present.
+    let coords: { latitude: number; longitude: number } | null =
+      typeof suggestion.latitude === 'number' && typeof suggestion.longitude === 'number'
+        ? { latitude: suggestion.latitude, longitude: suggestion.longitude }
+        : parseGeoId(suggestion.place_id);
+    if (!coords) {
+      const { data } = await supabase.functions.invoke('medical-search', {
+        body: { action: 'geocode', query: suggestion.description },
+      });
+      coords = pickLatLng((data ?? {}) as Record<string, unknown>);
+    }
     if (coords) {
       setSelectedLatLng(coords);
       setLatInput(String(coords.latitude));
@@ -427,12 +387,12 @@ export const SuggestClinicPage = () => {
   const resolveCoordinates = async () => {
     if (parsedManualCoords) return parsedManualCoords;
     if (selectedLatLng) return selectedLatLng;
-    const { data } = await supabase.functions.invoke('google-places', {
+    const { data } = await supabase.functions.invoke('medical-search', {
       body: { action: 'geocode', query: address },
     });
     const payload = (data ?? {}) as Record<string, unknown>;
-    const googleCoords = pickLatLng(payload);
-    if (googleCoords) return googleCoords;
+    const serverCoords = pickLatLng(payload);
+    if (serverCoords) return serverCoords;
 
     try {
       const country = process.env.EXPO_PUBLIC_GEOCODE_COUNTRY || 'us';
@@ -454,11 +414,10 @@ export const SuggestClinicPage = () => {
       const { latitude, longitude } = position.coords;
       let resolvedAddress: string | null = null;
 
-      // Prefer Google reverse-geocode for pin-accurate, full formatted address + place id.
-      const googleReverse = await reverseGeocodeGoogle(latitude, longitude);
-      if (googleReverse?.formattedAddress) {
-        resolvedAddress = googleReverse.formattedAddress;
-        if (googleReverse.placeId) setSelectedPlaceId(googleReverse.placeId);
+      // Prefer the server reverse-geocode (Nominatim) for a full formatted address.
+      const serverReverse = await reverseGeocodeServer(latitude, longitude);
+      if (serverReverse?.formattedAddress) {
+        resolvedAddress = serverReverse.formattedAddress;
       }
 
       if (!resolvedAddress) {
@@ -492,7 +451,7 @@ export const SuggestClinicPage = () => {
       }
 
       const pinAddress =
-        isBroadAreaAddress(resolvedAddress) || (googleReverse?.score ?? 0) < 4
+        isBroadAreaAddress(resolvedAddress) || (serverReverse?.score ?? 0) < 4
           ? withPinnedCoords(resolvedAddress, latitude, longitude)
           : resolvedAddress;
       setAddress(pinAddress);
@@ -591,7 +550,8 @@ export const SuggestClinicPage = () => {
         clinic_type: clinicType,
         latitude: coords.latitude,
         longitude: coords.longitude,
-        google_place_id: selectedPlaceId,
+        // No Google place ids any more — admin approval matches on NPI / name+address.
+        google_place_id: null,
       });
       if (error) throw error;
 
@@ -694,7 +654,7 @@ export const SuggestClinicPage = () => {
             </View>
             <Text style={[styles.stepCardTitle, { color: isDark ? '#f1f5f9' : '#111827' }]}>Admin Reviews</Text>
             <Text style={[styles.stepCardText, { color: isDark ? '#94a3b8' : '#334155' }]}>
-              We verify via Google Maps and public records.
+              We verify against public records (NPPES) and maps.
             </Text>
           </View>
           <View style={styles.stepCard}>

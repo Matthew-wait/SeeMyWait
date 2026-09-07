@@ -2,10 +2,9 @@ import type { ExpoConfig } from '@expo/config-types';
 import 'dotenv/config';
 
 export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
+  // Android's react-native-maps base map uses the (free, unlimited) Google Maps
+  // SDK for Android. iOS uses Apple Maps via PROVIDER_DEFAULT — no key.
   const mapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
-  // A single Google key cannot be restricted to both Android and iOS apps at
-  // once, so allow a dedicated iOS key. Falls back to the shared key if unset.
-  const iosMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_IOS_API_KEY || mapsApiKey;
 
   return {
     ...config,
@@ -46,9 +45,6 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
         // App uses only standard/exempt encryption (HTTPS/TLS) — avoids the
         // export-compliance prompt and annual US self-classification reports.
         ITSAppUsesNonExemptEncryption: false,
-      },
-      config: {
-        googleMapsApiKey: iosMapsApiKey,
       },
     },
     android: {
