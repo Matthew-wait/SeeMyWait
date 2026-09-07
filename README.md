@@ -1,71 +1,76 @@
-# SeeMyWait – Real-Time Doctor Wait Times
+# SeeMyWait — Real-Time Doctor Wait Times
 
-SeeMyWait is a modern web application that allows patients to see real-time, location-verified wait times at doctor's offices before they leave home. 
+Patients see real-time, location-verified wait times at doctor's offices before
+they leave home.
 
----
+## Monorepo layout
 
-## 🛠️ Tech Stack
+```
+apps/
+  web/        React + Vite + Tailwind + shadcn/ui   (@seemywait/web)
+  mobile/     Expo (React Native, expo-router)       (@seemywait/mobile)
+packages/
+  core/       shared TypeScript — NPPES directory client, geo math,
+              dedup, generated DB types             (@seemywait/core)
+supabase/     migrations + edge functions (medical-search, send-email,
+              push-notifications) — shared by both apps
+scripts/      seed-nppes.mjs (metro seed) + tooling
+docs/         plans, R&D, migration runbooks
+```
 
-This project is built using:
-- **Frontend Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-- **Database & Auth**: [Supabase](https://supabase.com/)
-- **Maps**: [Leaflet](https://leafletjs.com/) + [OpenStreetMap](https://www.openstreetmap.org/) tiles
-- **Directory & Geocoding**: [NPPES NPI Registry](https://npiregistry.cms.hhs.gov/api/), [US Census geocoder](https://geocoding.geo.census.gov/), [Nominatim](https://nominatim.openstreetmap.org/), [Photon](https://photon.komoot.io/) — all free, no API key
-- **Testing**: [Vitest](https://vitest.dev/)
+npm workspaces. `npm install` at the repo root installs everything.
 
----
+## Stack
 
-## ⚙️ Local Development Setup
+- **Frontend**: React + Vite + TypeScript (web); Expo / React Native (mobile)
+- **Database & Auth**: [Supabase](https://supabase.com/) (Postgres + RLS + Edge Functions)
+- **Maps**: [Leaflet](https://leafletjs.com/) + OpenStreetMap tiles (web);
+  `react-native-maps` with `PROVIDER_DEFAULT` — Apple Maps on iOS, free Google
+  SDK on Android (mobile)
+- **Directory & geocoding**: NPPES NPI Registry (CMS), US Census geocoder,
+  Nominatim, Photon — all free, no API key
+  (see [docs/RD-GOOGLE-MAPS-REPLACEMENT.md](docs/RD-GOOGLE-MAPS-REPLACEMENT.md))
 
-### Prerequisites
-Ensure you have [Node.js (v20+)](https://nodejs.org/) installed.
+## Develop
 
-### 1. Clone & Install
 ```bash
-# Clone the repository
-git clone https://github.com/Matthew-wait/SeeMyWait.git
-cd SeeMyWait
+npm install            # root — installs all workspaces
 
-# Install dependencies
-npm install
+# web
+npm run web             # or: npm run dev  --workspace @seemywait/web  (localhost:3001)
+npm run web:build
+npm run web:test
+
+# mobile
+npm run mobile          # expo start   (from apps/mobile)
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env` and fill in the Supabase values (Dashboard → Project
-Settings → API):
-```env
-VITE_SUPABASE_URL="your_supabase_url"
-VITE_SUPABASE_PUBLISHABLE_KEY="your_publishable_key"
-```
-The map runs on keyless OpenStreetMap tiles by default. For production set
-`VITE_MAP_TILE_URL` to a provider with a commercial free tier (e.g. Stadia Maps)
-and put the key in `VITE_MAP_TILE_KEY`. The `medical-search` edge function needs
-no API keys — see `supabase/functions/medical-search/README.md`.
+### Environment
 
-### 3. Start Development Server
+- Web: copy `apps/web/.env.example` → `apps/web/.env`, fill the two Supabase
+  values. Map runs on keyless OpenStreetMap tiles by default.
+- Mobile: `apps/mobile/.env` with `EXPO_PUBLIC_SUPABASE_URL` /
+  `_PUBLISHABLE_KEY` / `_PROJECT_ID`.
+- Edge functions: no API keys except `RESEND_*` for `send-email`.
+
+## Database
+
+Migrations in `supabase/migrations/`. Apply with `supabase db push` (needs the
+project DB password or a personal access token) or the dashboard SQL editor.
+
 ```bash
-npm run dev
-```
-The app runs locally at `http://localhost:3001`.
-
----
-
-## 🧪 Production Build & Testing
-
-### Run Tests
-```bash
-npm run test
+node scripts/seed-nppes.mjs --state FL --city Miami --limit 800 --geocode --push
 ```
 
-### Compile Production Build
-```bash
-npm run build
-```
-This generates compiled static assets in the `dist/` directory.
+## Deploy
 
----
+- **Web** → Vercel. Project **Root Directory = `apps/web`**. SPA routing via
+  `apps/web/vercel.json`. Pushes to `main` auto-deploy.
+- **Mobile** → EAS. `cd apps/mobile && eas build --profile production`. A root
+  `.easignore` keeps `apps/web` out of the upload.
+- **Edge functions** → `supabase functions deploy <name>`.
 
-## 🚀 Deployment
+## Region
 
-The project is configured for automated deployments to **Vercel** with client-side SPA routing supported via `vercel.json`. Whenever changes are pushed to the `main` branch, Vercel will automatically build and deploy the update live to [seemywait.com](https://seemywait.com).
+Backend is being moved us-west-1 → **us-east-1** (closer to Miami). Cutover
+runbook: [docs/MIGRATION-US-EAST.md](docs/MIGRATION-US-EAST.md).
