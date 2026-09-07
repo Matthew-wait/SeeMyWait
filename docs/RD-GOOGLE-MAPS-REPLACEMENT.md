@@ -272,25 +272,37 @@ Why it stays flat:
 
 | Phase | Scope | State |
 |---|---|---|
-| 0 | `npi` + `geocode_cache` migrations; types; tile env vars | **done** (migrations not yet applied to DB) |
+| 0 | `npi` + `geocode_cache` migrations; DB types; tile env vars | **done — migrations applied to the live us-east-1 project** |
 | 1 | `MapView` rewritten on Leaflet + OSM; `map-tiles.ts`; Google Maps JS deleted | **done** |
-| 2 | `medical-search` edge function — NPPES `search`/`add`, Census+Nominatim geocode, Photon autocomplete, `geocode_cache`; `nppes.ts` pure helpers + tests | **done** (not yet deployed) |
+| 2 | `medical-search` edge function — NPPES `search`/`add`, Census+Nominatim geocode, Photon autocomplete, `geocode_cache`; `nppes.ts` pure helpers + tests | **done — deployed & smoke-tested** on us-east-1 |
 | 3 | Every client call site rewired to `medical-search`; NPI identity; `google-maps.ts` + `google-places/` + `@googlemaps/*` deleted | **done** |
-| 4 | Leaflet `MiniMap` on clinic detail; Google env vars removed; README + landing copy fixed; `city`/`state`/`postal_code` columns added (§6) end-to-end | **done** |
-| 5 | `scripts/seed-nppes.mjs` — NPPES API → Census batch (Nominatim fallback) → `clinics_seed.csv` / `--push` upsert on `npi`; zero npm deps; verified end-to-end | **done — run at launch per metro** |
+| 4 | Leaflet `MiniMap` on clinic detail; Google env vars removed; README + copy; `city`/`state`/`postal_code` columns (§6) end-to-end | **done** |
+| 5 | `scripts/seed-nppes.mjs` — NPPES API → Census batch (Nominatim fallback) → CSV / `--push` upsert on `npi`; zero npm deps | **done — verified end-to-end; run per metro at launch** |
+| + | Monorepo: `apps/web` + `apps/mobile` + `packages/core` (shared NPPES client / geo / dedup / DB types). Mobile ported to the same NPPES backend; `react-native-maps` → `PROVIDER_DEFAULT` (Apple Maps iOS / free Google SDK Android) | **done — both apps build; mobile `expo export` clean** |
+| + | Region move us-west-1 → **us-east-1** (closer to Miami). New project schema + 3 functions + admin user; both apps' `.env` switched | **done — verified locally** |
 
-**No Google Maps Platform API is called anywhere in the app.** 39 tests green,
-production build clean, map + list + reporting verified against live data.
+**No Google Maps Platform API is referenced anywhere in either app.** The only
+`google.com` strings left are two **keyless deep links** in
+`packages/core/src/medical-search.ts` — `directionsUrl` ("Get Directions") and
+`viewOnMapUrl` ("View on Google Maps") — plain URL schemes that open the Maps
+app. No key, no quota, not billed. (Product choice: the client prefers the
+Google Maps app UI for these over an OSM link.)
 
-### Remaining operational steps (need Supabase credentials)
-1. Apply the two Phase 0 migrations (dashboard SQL editor or `supabase db push`).
-2. `supabase functions deploy medical-search`, then the smoke tests in
-   `supabase/functions/medical-search/README.md`.
-3. (Recommended) add `city` / `state` / `postal_code` columns (§6) and persist
-   them from the `add` action.
-4. (Launch) run the Phase 5 metro seed for Miami-Dade.
-5. Pick the production tile provider: Stadia free tier now, Protomaps self-host
-   as the growth path.
+Verified: web `tsc` + 40 tests + `vite build`; mobile `tsc` + `expo export`;
+live search / add / geocode / reverse / autocomplete against us-east-1; admin
+login; 47 clinics (12 Miami seed + 28 Islamabad/Rawalpindi restored) rendering
+on the Leaflet map.
+
+### Remaining — operational, on the client (see docs/MIGRATION-US-EAST.md)
+1. Merge the `chore/monorepo` branch.
+2. New project → Edge Function Secrets: `RESEND_API_KEY`, `RESEND_FROM`, `ADMIN_EMAIL`.
+3. Vercel: Root Directory `apps/web` + env → us-east-1 → redeploy → verify.
+4. EAS: set `EXPO_PUBLIC_*` secrets; fix the non-square app icon (912×1158 →
+   1024²); `eas build` + submit to both stores.
+5. Update the `DB_CONNECTION_STRING` repo secret (db-backup workflow).
+6. Delete the old us-west project — only after 3 is live and 4 has rolled out.
+7. Pick the production tile provider: keyless OSM is fine for launch; Stadia
+   free tier or self-hosted Protomaps as volume grows.
 
 ---
 
