@@ -6,127 +6,173 @@ const corsHeaders: Record<string, string> = {
   "Access-Control-Max-Age": "86400",
 };
 
-type SendEmailBody = {
+/**
+ * `send-email` — Resend wrapper, shared by web + mobile.
+ *
+ * Two request shapes:
+ *  1. Raw:    { to, subject, html }                       — caller supplies everything
+ *  2. Action: { action, ...fields }                       — the function picks the
+ *             recipient (ADMIN_EMAIL for admin notes, `to` for user replies) and
+ *             builds the HTML, so no inbox address lives in client code.
+ *
+ * Actions: "clinic_suggestion", "feedback_admin", "feedback_thank_you"
+ *          (aliases accepted: "clinic_suggestion_created", "feedback_admin_notification")
+ *
+ * Secrets: RESEND_API_KEY, RESEND_FROM, ADMIN_EMAIL
+ */
+
+type Body = {
   to?: string;
   subject?: string;
   html?: string;
-  templateId?: string;
-  variables?: Record<string, string | number | boolean | null>;
+  action?: string;
+  // action fields
+  doctor_name?: string;
+  specialty?: string;
+  address?: string;
+  phone?: string;
+  clinic_type?: string;
+  latitude?: string | number;
+  longitude?: string | number;
+  email?: string | null;
+  message?: string;
 };
 
-function jsonResponse(payload: unknown, status = 200): Response {
+function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
+const esc = (v: unknown): string =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+function shell(title: string, inner: string): string {
+  const year = new Date().getFullYear();
+  return `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0f172a;">
+    <h2 style="margin:0 0 4px;font-size:18px;">${esc(title)}</h2>
+    <p style="margin:0 0 16px;color:#64748b;font-size:13px;">SeeMyWait — Live Wait Times, Smarter Visits</p>
+    ${inner}
+    <p style="margin:20px 0 0;color:#94a3b8;font-size:11px;">SeeMyWait · ${year}</p>
+  </div>`;
+}
+
+function row(label: string, value: unknown): string {
+  return `<tr>
+    <td style="padding:6px 0;color:#64748b;font-size:13px;width:150px;vertical-align:top;">${esc(label)}</td>
+    <td style="padding:6px 0;color:#0f172a;font-size:14px;font-weight:600;">${esc(value) || "—"}</td>
+  </tr>`;
+}
+
+function buildEmail(body: Body, adminEmail: string):
+  | { to: string; subject: string; html: string }
+  | { error: string; status: number } {
+  const action = (body.action || "").trim();
+
+  if (action === "clinic_suggestion" || action === "clinic_suggestion_created") {
+    if (!adminEmail) return { error: "ADMIN_EMAIL not configured", status: 500 };
+    const html = shell(
+      "New Doctor Office Suggestion",
+      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+        ${row("Name", body.doctor_name)}
+        ${row("Address", body.address)}
+        ${row("Type", body.clinic_type)}
+        ${row("Specialty", body.specialty)}
+        ${row("Phone", body.phone)}
+        ${body.latitude != null ? row("Latitude", body.latitude) : ""}
+        ${body.longitude != null ? row("Longitude", body.longitude) : ""}
+      </table>`,
+    );
+    return { to: adminEmail, subject: "New Doctor Office Suggestion • SeeMyWait", html };
   }
 
-  if (req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed. Use POST." }, 405);
+  if (action === "feedback_admin" || action === "feedback_admin_notification") {
+    if (!adminEmail) return { error: "ADMIN_EMAIL not configured", status: 500 };
+    const html = shell(
+      "New Feedback / Support Message",
+      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:12px;">
+        ${row("From", body.email || "Not provided")}
+      </table>
+      <div style="padding:14px;background:#f8fbff;border:1px solid #dbe7f3;border-radius:10px;">
+        <div style="font-size:12px;color:#64748b;margin-bottom:6px;font-weight:600;">Message</div>
+        <div style="font-size:15px;line-height:1.7;">${esc(body.message).replace(/\n/g, "<br/>")}</div>
+      </div>`,
+    );
+    return { to: adminEmail, subject: "New Support Message • SeeMyWait", html };
   }
+
+  if (action === "feedback_thank_you") {
+    const to = String(body.to || "").trim();
+    if (!to) return { error: "feedback_thank_you needs `to`", status: 400 };
+    return {
+      to,
+      subject: "We received your message • SeeMyWait",
+      html: shell(
+        "Thanks for contacting us",
+        `<p style="font-size:15px;line-height:1.7;">We received your message and our team will review it shortly. You don't need to do anything else.</p>`,
+      ),
+    };
+  }
+
+  return { error: `Unknown action: ${action || "(none)"}`, status: 400 };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed. Use POST." }, 405);
 
   try {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const resendFrom = Deno.env.get("RESEND_FROM");
+    const adminEmail = (Deno.env.get("ADMIN_EMAIL") || "").trim();
 
     if (!resendApiKey || !resendFrom) {
-      return jsonResponse(
-        { error: "Missing RESEND_API_KEY or RESEND_FROM environment variable." },
-        500
-      );
+      return json({ error: "Missing RESEND_API_KEY or RESEND_FROM environment variable." }, 500);
     }
 
-    const body = (await req.json()) as SendEmailBody;
-    const to = String(body?.to || "").trim();
-    const subject = String(body?.subject || "").trim();
-    const html = String(body?.html || "").trim();
-    const templateId = String(body?.templateId || "").trim();
-    const variables = body?.variables ?? {};
-    const hasTemplate = Boolean(templateId);
+    const body = (await req.json()) as Body;
 
-    if (!to) {
-      return jsonResponse(
-        { error: "Invalid payload. Required field: to." },
-        400
-      );
-    }
+    let to: string;
+    let subject: string;
+    let html: string;
 
-    if (!hasTemplate && (!subject || !html)) {
-      return jsonResponse(
-        { error: "For non-template emails, required fields are: subject, html." },
-        400
-      );
-    }
-
-    const resendPayload: Record<string, unknown> = {
-      from: resendFrom,
-      to: [to],
-    };
-
-    if (hasTemplate) {
-      resendPayload.template = {
-        id: templateId,
-        variables,
-      };
-      if (subject) resendPayload.subject = subject;
+    if (body.action) {
+      const built = buildEmail(body, adminEmail);
+      if ("error" in built) return json({ success: false, error: built.error }, built.status);
+      ({ to, subject, html } = built);
     } else {
-      resendPayload.subject = subject;
-      resendPayload.html = html;
+      to = String(body.to || "").trim();
+      subject = String(body.subject || "").trim();
+      html = String(body.html || "").trim();
+      if (!to) return json({ error: "Required field: to (or action)." }, 400);
+      if (!subject || !html) {
+        return json({ error: "For raw emails, subject and html are required." }, 400);
+      }
     }
 
-    let resendResponse = await fetch("https://api.resend.com/emails", {
+    const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(resendPayload),
+      body: JSON.stringify({ from: resendFrom, to: [to], subject, html }),
     });
-
-    let resendData = await resendResponse.json();
-
-    // If template send fails and html is provided, fall back to classic HTML send.
-    if (!resendResponse.ok && hasTemplate && html && subject) {
-      const fallbackPayload = {
-        from: resendFrom,
-        to: [to],
-        subject,
-        html,
-      };
-      resendResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(fallbackPayload),
-      });
-      resendData = await resendResponse.json();
-    }
+    const resendData = await resendResponse.json();
 
     if (!resendResponse.ok) {
-      return jsonResponse(
-        {
-          success: false,
-          error: "Failed to send email via Resend.",
-          details: resendData,
-        },
-        resendResponse.status
+      return json(
+        { success: false, error: "Failed to send email via Resend.", details: resendData },
+        resendResponse.status,
       );
     }
-
-    return jsonResponse({
-      success: true,
-      message: "Email sent successfully.",
-      data: resendData,
-    });
+    return json({ success: true, message: "Email sent successfully.", data: resendData });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return jsonResponse({ success: false, error: message }, 500);
+    return json({ success: false, error: message }, 500);
   }
 });

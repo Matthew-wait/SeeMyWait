@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
-import { buildSupportThankYouEmail, buildSupportTicketAdminEmail } from "@/lib/email-templates";
 import {
   Settings, Heart, Moon, Sun, Bell, BellOff,
   Globe, ChevronRight, Sparkles,
@@ -17,9 +16,6 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// const SUPPORT_EMAIL = "contact@seemywait.com"; // production inbox
-const SUPPORT_EMAIL = "rohansheikh197@gmail.com"; // testing inbox
-const RESEND_TEMPLATE_ID = "welcome-email";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -57,37 +53,14 @@ export default function SettingsPage() {
       });
       if (error) throw error;
 
-      // Feedback should remain saved even if outbound email has an issue.
+      // Feedback stays saved even if the notification email fails. The admin
+      // recipient is the ADMIN_EMAIL secret on the edge function, not here.
       await supabase.functions
         .invoke("send-email", {
           body: {
-            to: SUPPORT_EMAIL,
-            subject: "New Support Ticket • SeeMyWait",
-            templateId: RESEND_TEMPLATE_ID,
-            variables: {
-              APP_NAME: "SeeMyWait",
-              APP_TAGLINE: "Live Wait Times, Smarter Visits",
-              title: "New Support Ticket",
-              intro: "A new support request was submitted from the app settings page.",
-              year: String(new Date().getFullYear()),
-              contentHtml: `
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; margin-bottom:14px;">
-                  <tr>
-                    <td style="padding:8px 0; color:#64748b; font-size:13px; width:160px; vertical-align:top;">
-                      From email
-                    </td>
-                    <td style="padding:8px 0; color:#0f172a; font-size:14px; font-weight:600;">
-                      ${feedbackEmail.trim() || "Not provided"}
-                    </td>
-                  </tr>
-                </table>
-                <div style="padding:16px; background:#f8fbff; border:1px solid #dbe7f3; border-radius:12px;">
-                  <div style="font-size:13px; color:#64748b; margin-bottom:8px; font-weight:600;">Message</div>
-                  <div style="font-size:15px; color:#0f172a; line-height:1.7;">${feedbackMessage.trim()}</div>
-                </div>
-              `,
-            },
-            html: buildSupportTicketAdminEmail(feedbackEmail.trim(), feedbackMessage.trim()),
+            action: "feedback_admin",
+            email: feedbackEmail.trim() || null,
+            message: feedbackMessage.trim(),
           },
         })
         .catch((emailError) => {
@@ -98,35 +71,7 @@ export default function SettingsPage() {
       if (replyToEmail) {
         await supabase.functions
           .invoke("send-email", {
-            body: {
-              to: replyToEmail,
-              subject: "We received your message • SeeMyWait",
-              templateId: RESEND_TEMPLATE_ID,
-              variables: {
-                APP_NAME: "SeeMyWait",
-                APP_TAGLINE: "Live Wait Times, Smarter Visits",
-                title: "Thanks for contacting us",
-                intro: "We received your message and our team will review it shortly.",
-                year: String(new Date().getFullYear()),
-                contentHtml: `
-                  <div style="padding:16px; background:#f8fbff; border:1px solid #dbe7f3; border-radius:12px;">
-                    <div style="font-size:13px; color:#64748b; margin-bottom:8px; font-weight:600;">Your message</div>
-                    <div style="font-size:15px; color:#0f172a; line-height:1.7;">${feedbackMessage.trim()}</div>
-                  </div>
-                  <p style="margin:18px 0 0; color:#64748b; font-size:13px; text-align:center;">Thank you for helping us improve SeeMyWait.</p>
-                  <table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:18px; margin-left:auto; margin-right:auto;">
-                    <tr>
-                      <td style="border-radius:9999px; background:linear-gradient(135deg,#06b6d4 0%,#2563eb 100%); box-shadow:0 6px 16px rgba(37,99,235,0.25);">
-                        <a href="https://seemywait.com/app" style="display:inline-block; padding:10px 20px; color:#ffffff; font-size:13px; font-weight:700; text-decoration:none;">
-                          Open SeeMyWait
-                        </a>
-                      </td>
-                    </tr>
-                  </table>
-                `,
-              },
-              html: buildSupportThankYouEmail(feedbackMessage.trim()),
-            },
+            body: { action: "feedback_thank_you", to: replyToEmail },
           })
           .catch((emailError) => {
             console.error("Failed to send feedback thank-you email:", emailError);
