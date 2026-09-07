@@ -158,3 +158,9 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Leaflet: our teardrop pins are custom SVG divIcons — drop the default chrome. */
+.leaflet-div-icon.smw-pin {
+  background: transparent;
+  border: 0;
+}

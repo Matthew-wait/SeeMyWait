@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, useCallback, memo } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { hasValidCoords } from "@/lib/geolocation";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
-import { loadGoogleMaps, MEDICAL_ONLY_MAP_STYLE, hasMapsJsKey } from "@/lib/google-maps";
+import { tileUrlTemplate, TILE_ATTRIBUTION, TILE_MAX_ZOOM } from "@/lib/map-tiles";
 import { MapZoomControls } from "@/components/map/MapZoomControls";
 import { MapPin } from "lucide-react";
 
@@ -12,45 +14,58 @@ const WAIT_COLORS: Record<WaitTimeCategory, string> = {
   "1_hour": "#f97316",
   "1.5_hours_plus": "#ef4444",
 };
-/** Unsaved Google candidate awaiting verification — deliberately distinct from wait colours. */
+/** Unsaved candidate awaiting verification — deliberately distinct from wait colours. */
 const CANDIDATE_COLOR = "#2563eb";
-const DEFAULT_CENTER = { lat: 25.7617, lng: -80.1918 };
+const DEFAULT_CENTER: L.LatLngTuple = [25.7617, -80.1918];
 
-/** Teardrop pin as an SVG data-URI, coloured per wait tier. */
-function pinIcon(color: string): google.maps.Icon {
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 24 32">` +
-    `<path fill="${color}" stroke="white" stroke-width="1.5" d="M12 .5C5.9.5 1 5.4 1 11.5c0 8 11 19.5 11 19.5s11-11.5 11-19.5C23 5.4 18.1.5 12 .5z"/>` +
-    `<circle cx="12" cy="11.5" r="4.3" fill="white"/></svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(36, 48),
-    anchor: new google.maps.Point(18, 48),
-  };
-}
-
-/**
- * Tightens the default Google InfoWindow chrome for a sleeker look — softer
- * corners/shadow, snug padding, no white gutter. Injected once per document.
- */
-function ensureInfoWindowStyle(): void {
-  if (typeof document === "undefined" || document.getElementById("gm-iw-sleek")) return;
+/** One-time CSS: strip Leaflet's default divIcon chrome + style the coord popup
+ *  and attribution to match the app surface. Injected once per document. */
+function ensureMapStyle(): void {
+  if (typeof document === "undefined" || document.getElementById("smw-map-style")) return;
   const style = document.createElement("style");
-  style.id = "gm-iw-sleek";
+  style.id = "smw-map-style";
   style.textContent = `
-    .gm-style .gm-style-iw-c {
-      padding: 0 !important;
-      border-radius: 14px !important;
-      box-shadow: 0 8px 24px rgba(15,23,42,0.18) !important;
+    .leaflet-container { background: #e8eaed; font: inherit; }
+    .leaflet-div-icon.smw-pin { background: transparent; border: 0; }
+    .smw-pin svg { display: block; filter: drop-shadow(0 2px 4px rgba(15,23,42,0.28)); }
+    .smw-coord-popup .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.18);
     }
-    .gm-style .gm-style-iw-d { overflow: hidden !important; padding: 0 !important; }
-    .gm-style .gm-style-iw-tc::after { box-shadow: 0 8px 24px rgba(15,23,42,0.18) !important; }
+    .smw-coord-popup .leaflet-popup-content { margin: 0; }
+    .smw-coord-popup .leaflet-popup-tip { box-shadow: 0 8px 24px rgba(15,23,42,0.18); }
+    /* Attribution stays visible (OSM tile policy) but understated. */
+    .leaflet-control-attribution {
+      background: rgba(255,255,255,0.78) !important;
+      backdrop-filter: blur(4px);
+      border-radius: 8px 0 0 0;
+      font-size: 10px;
+      padding: 1px 6px;
+    }
   `;
   document.head.appendChild(style);
 }
 
-/** Sleek coordinate card shown in the pending-point tooltip. */
-function coordTooltipHtml(lat: number, lng: number): string {
+function pinSvg(color: string): string {
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 24 32">` +
+    `<path fill="${color}" stroke="white" stroke-width="1.5" d="M12 .5C5.9.5 1 5.4 1 11.5c0 8 11 19.5 11 19.5s11-11.5 11-19.5C23 5.4 18.1.5 12 .5z"/>` +
+    `<circle cx="12" cy="11.5" r="4.3" fill="white"/></svg>`
+  );
+}
+
+function pinIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    html: pinSvg(color),
+    className: "smw-pin",
+    iconSize: [36, 48],
+    iconAnchor: [18, 48],
+    popupAnchor: [0, -44],
+  });
+}
+
+/** Sleek coordinate card shown in the pending-point popup (matches the old InfoWindow). */
+function coordPopupHtml(lat: number, lng: number): string {
   const coords = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   return (
     `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;padding:9px 13px;line-height:1.2;white-space:nowrap;">` +
@@ -69,7 +84,11 @@ export interface CandidatePlace {
   longitude: number;
 }
 
-/** A medical POI the user tapped on the map (item 7a). */
+/**
+ * A medical POI the user tapped on the map. Retained for API compatibility with
+ * callers written for the Google Maps version — raster OSM tiles have no
+ * clickable POI objects, so `onPoiClick` never fires on web.
+ */
 export interface PoiTap {
   placeId: string;
   lat: number;
@@ -84,11 +103,11 @@ interface MapViewProps {
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
   nearbyRadiusMiles?: number;
   candidate?: CandidatePlace | null;
-  /** A tapped empty point awaiting "Add here" — drops a pin + coordinate tooltip. */
+  /** A tapped empty point awaiting "Add here" — drops a pin + coordinate popup. */
   pendingPoint?: { lat: number; lng: number } | null;
-  /** Tapping a medical POI (has a place id). */
+  /** Inert on web (kept so callers don't need to change); see {@link PoiTap}. */
   onPoiClick?: (poi: PoiTap) => void;
-  /** Tapping an empty (non-POI) map point. */
+  /** Tapping an empty map point. */
   onMapPointClick?: (point: { lat: number; lng: number }) => void;
 }
 
@@ -101,17 +120,14 @@ function MapViewInner({
   nearbyRadiusMiles = 100,
   candidate = null,
   pendingPoint = null,
-  onPoiClick,
   onMapPointClick,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const clinicMarkersRef = useRef<google.maps.Marker[]>([]);
-  const userMarkerRef = useRef<google.maps.Marker | null>(null);
-  const userCircleRef = useRef<google.maps.Circle | null>(null);
-  const candidateMarkerRef = useRef<google.maps.Marker | null>(null);
-  const pendingMarkerRef = useRef<google.maps.Marker | null>(null);
-  const pendingInfoRef = useRef<google.maps.InfoWindow | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const clinicLayerRef = useRef<L.LayerGroup | null>(null);
+  const userLayerRef = useRef<L.LayerGroup | null>(null);
+  const candidateMarkerRef = useRef<L.Marker | null>(null);
+  const pendingMarkerRef = useRef<L.Marker | null>(null);
   const prevClinicKeyRef = useRef("");
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -119,73 +135,63 @@ function MapViewInner({
   // Keep the latest callbacks reachable from stable map listeners.
   const onClinicClickRef = useRef(onClinicClick);
   const onEmptyClickRef = useRef(onEmptyClick);
-  const onPoiClickRef = useRef(onPoiClick);
   const onMapPointClickRef = useRef(onMapPointClick);
   onClinicClickRef.current = onClinicClick;
   onEmptyClickRef.current = onEmptyClick;
-  onPoiClickRef.current = onPoiClick;
   onMapPointClickRef.current = onMapPointClick;
 
-  // Initialise the map once, after the API loads.
+  // Initialise the map once.
   useEffect(() => {
-    let cancelled = false;
-    if (!hasMapsJsKey) {
-      setStatus("error");
-      return;
-    }
+    if (!containerRef.current || mapRef.current) return;
+    ensureMapStyle();
 
-    loadGoogleMaps()
-      .then((google) => {
-        if (cancelled || !containerRef.current || mapRef.current) return;
+    try {
+      const map = L.map(containerRef.current, {
+        center: userLocation ? [userLocation.lat, userLocation.lng] : DEFAULT_CENTER,
+        zoom: userLocation ? 14 : 12,
+        zoomControl: false, // we render a custom MapZoomControls cluster
+      });
+      map.attributionControl.setPrefix(false); // drop the "Leaflet" flag, keep the tile credit
 
-        const map = new google.maps.Map(containerRef.current, {
-          center: userLocation ?? DEFAULT_CENTER,
-          zoom: userLocation ? 14 : 12,
-          styles: MEDICAL_ONLY_MAP_STYLE,
-          gestureHandling: "greedy", // pinch/scroll zoom without a modifier key
-          clickableIcons: true, // required so POI taps fire
-          disableDefaultUI: true,
-          zoomControl: false,
-        });
+      L.tileLayer(tileUrlTemplate(), {
+        attribution: TILE_ATTRIBUTION,
+        maxZoom: TILE_MAX_ZOOM,
+      }).addTo(map);
 
-        map.addListener("click", (e: google.maps.MapMouseEvent) => {
-          const iconEvent = e as google.maps.IconMouseEvent;
-          if (iconEvent.placeId) {
-            // A medical POI — suppress the default info window and hand it up.
-            iconEvent.stop();
-            if (e.latLng) {
-              onPoiClickRef.current?.({
-                placeId: iconEvent.placeId,
-                lat: e.latLng.lat(),
-                lng: e.latLng.lng(),
-              });
-            }
-            return;
-          }
-          if (e.latLng && onMapPointClickRef.current) {
-            onMapPointClickRef.current({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-          } else {
-            onEmptyClickRef.current();
-          }
-        });
-
-        mapRef.current = map;
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("error");
+      map.on("click", (e: L.LeafletMouseEvent) => {
+        if (onMapPointClickRef.current) {
+          onMapPointClickRef.current({ lat: e.latlng.lat, lng: e.latlng.lng });
+        } else {
+          onEmptyClickRef.current();
+        }
       });
 
+      clinicLayerRef.current = L.layerGroup().addTo(map);
+      userLayerRef.current = L.layerGroup().addTo(map);
+
+      mapRef.current = map;
+      setStatus("ready");
+      // The container may still be settling into its flex height on first paint.
+      requestAnimationFrame(() => map.invalidateSize());
+    } catch {
+      setStatus("error");
+    }
+
     return () => {
-      cancelled = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+      clinicLayerRef.current = null;
+      userLayerRef.current = null;
+      candidateMarkerRef.current = null;
+      pendingMarkerRef.current = null;
+      prevClinicKeyRef.current = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Clinic markers — rebuilt only when the set or their wait colours change.
   useEffect(() => {
-    if (status !== "ready" || !mapRef.current) return;
-    const map = mapRef.current;
+    if (status !== "ready" || !clinicLayerRef.current) return;
 
     const key = clinics
       .map((c) => `${c.id}:${c.waitTime?.category || "on_time"}`)
@@ -194,131 +200,118 @@ function MapViewInner({
     if (key === prevClinicKeyRef.current) return;
     prevClinicKeyRef.current = key;
 
-    clinicMarkersRef.current.forEach((m) => m.setMap(null));
-    clinicMarkersRef.current = [];
+    const layer = clinicLayerRef.current;
+    layer.clearLayers();
 
     clinics.forEach((clinic) => {
       if (!hasValidCoords(clinic.latitude, clinic.longitude)) return;
       const color = WAIT_COLORS[clinic.waitTime?.category ?? "on_time"];
-      const marker = new google.maps.Marker({
-        position: { lat: clinic.latitude, lng: clinic.longitude },
-        map,
+      L.marker([clinic.latitude, clinic.longitude], {
         icon: pinIcon(color),
         title: clinic.name,
-      });
-      marker.addListener("click", () => onClinicClickRef.current(clinic));
-      clinicMarkersRef.current.push(marker);
+        keyboard: false,
+      })
+        .on("click", () => onClinicClickRef.current(clinic))
+        .addTo(layer);
     });
   }, [clinics, status]);
 
   // User location dot + nearby-radius circle.
   useEffect(() => {
-    if (status !== "ready" || !mapRef.current) return;
-    const map = mapRef.current;
-
-    userMarkerRef.current?.setMap(null);
-    userCircleRef.current?.setMap(null);
-    userMarkerRef.current = null;
-    userCircleRef.current = null;
+    if (status !== "ready" || !userLayerRef.current) return;
+    const layer = userLayerRef.current;
+    layer.clearLayers();
 
     if (!userLocation || !hasValidCoords(userLocation.lat, userLocation.lng)) return;
+    const center: L.LatLngTuple = [userLocation.lat, userLocation.lng];
 
-    userCircleRef.current = new google.maps.Circle({
-      map,
-      center: userLocation,
+    L.circle(center, {
       radius: nearbyRadiusMiles * 1609.34,
-      strokeColor: "#0284c7",
-      strokeOpacity: 0.25,
-      strokeWeight: 1.5,
+      color: "#0284c7",
+      opacity: 0.25,
+      weight: 1.5,
       fillColor: "#0284c7",
       fillOpacity: 0.04,
-      clickable: false,
-    });
-    userMarkerRef.current = new google.maps.Marker({
-      map,
-      position: userLocation,
-      clickable: false,
-      zIndex: 5,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 7,
-        fillColor: "#0284c7",
-        fillOpacity: 1,
-        strokeColor: "#ffffff",
-        strokeWeight: 3,
-      },
-    });
+      interactive: false,
+    }).addTo(layer);
+
+    L.circleMarker(center, {
+      radius: 7,
+      fillColor: "#0284c7",
+      fillOpacity: 1,
+      color: "#ffffff",
+      weight: 3,
+      interactive: false,
+    }).addTo(layer);
   }, [userLocation, nearbyRadiusMiles, status]);
 
-  // Candidate pin (verify-before-save) — distinct blue, above everything.
+  // Candidate pin (verify-before-save) — distinct blue, recenters onto it.
   useEffect(() => {
     if (status !== "ready" || !mapRef.current) return;
     const map = mapRef.current;
 
-    candidateMarkerRef.current?.setMap(null);
+    candidateMarkerRef.current?.remove();
     candidateMarkerRef.current = null;
 
     if (!candidate || !hasValidCoords(candidate.latitude, candidate.longitude)) return;
 
-    candidateMarkerRef.current = new google.maps.Marker({
-      map,
-      position: { lat: candidate.latitude, lng: candidate.longitude },
+    candidateMarkerRef.current = L.marker([candidate.latitude, candidate.longitude], {
       icon: pinIcon(CANDIDATE_COLOR),
       title: candidate.name,
-      zIndex: 1000,
-    });
-    map.setCenter({ lat: candidate.latitude, lng: candidate.longitude });
-    map.setZoom(16);
+      zIndexOffset: 1000,
+      keyboard: false,
+    }).addTo(map);
+    map.setView([candidate.latitude, candidate.longitude], 16);
   }, [candidate, status]);
 
-  // Pin for a tapped custom point, with its coordinates shown as a tooltip
-  // (like dropping a pin on Google Maps). Does not recenter — the user tapped
-  // where they can already see.
+  // Pin for a tapped custom point, with its coordinates in a popup (like
+  // dropping a pin on Google Maps). Does not recenter — the user tapped where
+  // they can already see.
   useEffect(() => {
     if (status !== "ready" || !mapRef.current) return;
     const map = mapRef.current;
 
-    pendingMarkerRef.current?.setMap(null);
-    pendingInfoRef.current?.close();
+    pendingMarkerRef.current?.remove();
     pendingMarkerRef.current = null;
-    pendingInfoRef.current = null;
 
     if (!pendingPoint || !hasValidCoords(pendingPoint.lat, pendingPoint.lng)) return;
 
-    ensureInfoWindowStyle();
-    const position = { lat: pendingPoint.lat, lng: pendingPoint.lng };
-
-    pendingMarkerRef.current = new google.maps.Marker({
-      map,
-      position,
+    const marker = L.marker([pendingPoint.lat, pendingPoint.lng], {
       icon: pinIcon(CANDIDATE_COLOR),
       title: `${pendingPoint.lat.toFixed(6)}, ${pendingPoint.lng.toFixed(6)}`,
-      zIndex: 1100,
-    });
-    pendingInfoRef.current = new google.maps.InfoWindow({
-      content: coordTooltipHtml(pendingPoint.lat, pendingPoint.lng),
-      disableAutoPan: true,
-      // Remove the default header/close (×) — the "Add here" bar handles dismiss.
-      headerDisabled: true,
-    });
-    pendingInfoRef.current.open({ map, anchor: pendingMarkerRef.current });
+      zIndexOffset: 1100,
+      keyboard: false,
+    }).addTo(map);
+
+    marker
+      .bindPopup(coordPopupHtml(pendingPoint.lat, pendingPoint.lng), {
+        closeButton: false,
+        autoClose: false,
+        closeOnClick: false,
+        autoPan: false,
+        className: "smw-coord-popup",
+        offset: [0, -8],
+      })
+      .openPopup();
+
+    pendingMarkerRef.current = marker;
   }, [pendingPoint, status]);
 
   // Imperative recenter requests.
   useEffect(() => {
     if (status !== "ready" || !mapRef.current || !centerOn) return;
     if (!hasValidCoords(centerOn.lat, centerOn.lng)) return;
-    mapRef.current.setCenter({ lat: centerOn.lat, lng: centerOn.lng });
-    if (centerOn.zoom) mapRef.current.setZoom(centerOn.zoom);
+    mapRef.current.setView(
+      [centerOn.lat, centerOn.lng],
+      centerOn.zoom ?? mapRef.current.getZoom()
+    );
   }, [centerOn, status]);
 
   const handleZoomIn = useCallback(() => {
-    const map = mapRef.current;
-    if (map) map.setZoom((map.getZoom() ?? 12) + 1);
+    mapRef.current?.zoomIn();
   }, []);
   const handleZoomOut = useCallback(() => {
-    const map = mapRef.current;
-    if (map) map.setZoom((map.getZoom() ?? 12) - 1);
+    mapRef.current?.zoomOut();
   }, []);
 
   return (
@@ -331,9 +324,7 @@ function MapViewInner({
             <MapPin className="mx-auto h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-semibold text-foreground">Map unavailable</p>
             <p className="text-xs text-muted-foreground">
-              A Google Maps browser key is required. Set{" "}
-              <code className="rounded bg-background px-1">VITE_GOOGLE_MAPS_JS_API_KEY</code> (HTTP-referrer
-              restricted) and reload.
+              The map failed to load. Check your connection and reload.
             </p>
           </div>
         </div>

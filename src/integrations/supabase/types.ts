@@ -47,6 +47,7 @@ export type Database = {
           id: string
           latitude: number | null
           longitude: number | null
+          npi: string | null
           phone: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -62,6 +63,7 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          npi?: string | null
           phone?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          npi?: string | null
           phone?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -89,6 +92,7 @@ export type Database = {
       clinics: {
         Row: {
           address: string
+          city: string | null
           created_at: string
           google_place_id: string | null
           id: string
@@ -96,12 +100,16 @@ export type Database = {
           latitude: number
           longitude: number
           name: string
+          npi: string | null
           phone: string | null
+          postal_code: string | null
           specialty: string | null
+          state: string | null
           updated_at: string
         }
         Insert: {
           address: string
+          city?: string | null
           created_at?: string
           google_place_id?: string | null
           id?: string
@@ -109,12 +117,16 @@ export type Database = {
           latitude: number
           longitude: number
           name: string
+          npi?: string | null
           phone?: string | null
+          postal_code?: string | null
           specialty?: string | null
+          state?: string | null
           updated_at?: string
         }
         Update: {
           address?: string
+          city?: string | null
           created_at?: string
           google_place_id?: string | null
           id?: string
@@ -122,8 +134,11 @@ export type Database = {
           latitude?: number
           longitude?: number
           name?: string
+          npi?: string | null
           phone?: string | null
+          postal_code?: string | null
           specialty?: string | null
+          state?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -152,6 +167,33 @@ export type Database = {
           id?: string
           message?: string
           page?: string
+        }
+        Relationships: []
+      }
+      geocode_cache: {
+        Row: {
+          fetched_at: string
+          latitude: number | null
+          longitude: number | null
+          provider: string | null
+          query: string
+          query_hash: string
+        }
+        Insert: {
+          fetched_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          provider?: string | null
+          query: string
+          query_hash: string
+        }
+        Update: {
+          fetched_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          provider?: string | null
+          query?: string
+          query_hash?: string
         }
         Relationships: []
       }

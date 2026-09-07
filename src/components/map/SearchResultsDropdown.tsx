@@ -50,7 +50,7 @@ export function SearchResultsDropdown({
   const notice = limited
     ? "Search limit reached — showing saved offices only."
     : degraded
-      ? "Google search unavailable — showing saved offices."
+      ? "Registry search unavailable — showing saved offices."
       : null;
 
   if (results.length === 0) {
@@ -78,7 +78,7 @@ export function SearchResultsDropdown({
       )}
       <ul className="max-h-72 overflow-y-auto py-1">
         {results.map((result) => {
-          const key = result.source === "db" ? `db:${result.id}` : `google:${result.place_id}`;
+          const key = result.source === "db" ? `db:${result.id}` : `npi:${result.npi}`;
           const distance = formatDistance(userLocation, result.latitude, result.longitude);
 
           return (
@@ -110,7 +110,7 @@ export function SearchResultsDropdown({
                     {distance && <span className="text-muted-foreground/70"> · {distance}</span>}
                   </span>
                 </span>
-                {result.source === "google" && (
+                {result.source === "npi" && (
                   <span className="mt-0.5 shrink-0 rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
                     Verify
                   </span>
@@ -120,9 +120,8 @@ export function SearchResultsDropdown({
           );
         })}
       </ul>
-      {/* Google TOS: attribution wherever Google-sourced data is displayed. */}
       <p className="border-t border-border/20 px-4 py-1.5 text-[9px] text-muted-foreground/70">
-        Powered by Google
+        Registry data from the NPPES NPI Registry (CMS)
       </p>
     </div>
   );

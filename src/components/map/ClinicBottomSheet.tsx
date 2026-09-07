@@ -6,7 +6,7 @@ import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
 import { getCurrentPosition, getFreshPosition, isWithinRadius } from "@/lib/geolocation";
-import { directionsUrl, viewOnGoogleMapsUrl } from "@/lib/medical-search";
+import { directionsUrl, viewOnMapUrl } from "@/lib/medical-search";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -161,7 +161,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
 
   const openInGoogleMaps = () => {
     window.open(
-      viewOnGoogleMapsUrl(clinic.name, clinic.google_place_id),
+      viewOnMapUrl(clinic.name, clinic.latitude, clinic.longitude),
       "_blank",
       "noopener,noreferrer"
     );
@@ -320,7 +320,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
               className="w-full gap-2 rounded-xl text-muted-foreground sm:w-auto"
             >
               <ExternalLink className="h-4 w-4" />
-              View on Google Maps
+              View on map
             </Button>
           </div>
         </div>

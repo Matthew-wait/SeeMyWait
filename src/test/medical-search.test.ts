@@ -5,14 +5,14 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: { functions: { invoke: (...args: unknown[]) => invoke(...args) } },
 }));
 
-import { searchMedicalPlaces, addMedicalPlace, isGooglePlaceId } from "@/lib/medical-search";
+import { searchMedicalPlaces, addMedicalPlace, isNpi } from "@/lib/medical-search";
 import { hasValidCoords } from "@/lib/geolocation";
 
 const NEARBY = { latitude: 25.76, longitude: -80.19 };
 
-const googleRow = (over: Record<string, unknown> = {}) => ({
-  source: "google",
-  place_id: "ChIJgood",
+const npiRow = (over: Record<string, unknown> = {}) => ({
+  source: "npi",
+  npi: "1234567893",
   name: "Good Clinic",
   address: "1 Main St",
   latitude: 25.76,
@@ -44,27 +44,21 @@ describe("hasValidCoords", () => {
   });
 });
 
-describe("isGooglePlaceId", () => {
-  it("rejects Nominatim's numeric place_id", () => {
-    // Regression: the geocode fallback chain ends at Nominatim, whose JSON has
-    // a `place_id` that is an internal OSM integer. It was being written into
-    // clinics.google_place_id, poisoning the dedup index.
-    expect(isGooglePlaceId("305759221")).toBe(false);
-    expect(isGooglePlaceId(305759221)).toBe(false);
+describe("isNpi", () => {
+  it("accepts exactly 10 digits", () => {
+    expect(isNpi("1234567893")).toBe(true);
+    expect(isNpi("0000000000")).toBe(true);
   });
 
-  it("rejects empty, short, and whitespace-bearing values", () => {
-    expect(isGooglePlaceId("")).toBe(false);
-    expect(isGooglePlaceId(null)).toBe(false);
-    expect(isGooglePlaceId(undefined)).toBe(false);
-    expect(isGooglePlaceId("ChIJ")).toBe(false);
-    expect(isGooglePlaceId("ChIJ abc def ghi")).toBe(false);
-  });
-
-  it("accepts real Google place id shapes", () => {
-    expect(isGooglePlaceId("ChIJN1t_tDeuEmsRUsoyG83frY4")).toBe(true);
-    expect(isGooglePlaceId("EicRchIJrTLr-GyuEmsRBfy61i59si0")).toBe(true);
-    expect(isGooglePlaceId("GhIJQWDl0CIeQUARxks3icF8U8A")).toBe(true);
+  it("rejects wrong length, non-digits, and non-strings", () => {
+    expect(isNpi("123456789")).toBe(false);
+    expect(isNpi("12345678901")).toBe(false);
+    expect(isNpi("12345 6789")).toBe(false);
+    expect(isNpi("ChIJN1t_tDeuEmsRUsoyG83frY4")).toBe(false);
+    expect(isNpi("")).toBe(false);
+    expect(isNpi(null)).toBe(false);
+    expect(isNpi(undefined)).toBe(false);
+    expect(isNpi(1234567893)).toBe(false);
   });
 });
 
@@ -80,10 +74,10 @@ describe("searchMedicalPlaces", () => {
       data: {
         ok: true,
         results: [
-          googleRow(),
-          googleRow({ place_id: "ChIJnull", latitude: null, longitude: null }),
-          googleRow({ place_id: "ChIJnan", latitude: NaN, longitude: 0 }),
-          googleRow({ place_id: "ChIJmissing", latitude: undefined, longitude: undefined }),
+          npiRow(),
+          npiRow({ npi: "2000000001", latitude: null, longitude: null }),
+          npiRow({ npi: "2000000002", latitude: NaN, longitude: 0 }),
+          npiRow({ npi: "2000000003", latitude: undefined, longitude: undefined }),
           { source: "db", id: "", name: "No id", address: "x", latitude: 1, longitude: 1 },
         ],
       },
@@ -133,14 +127,14 @@ describe("addMedicalPlace", () => {
 
   it("returns the saved clinic on success", async () => {
     invoke.mockResolvedValue({ data: { ok: true, existed: false, clinic }, error: null });
-    const res = await addMedicalPlace("ChIJgood");
+    const res = await addMedicalPlace("1234567893");
     expect(res.ok).toBe(true);
     expect(res.clinic?.id).toBe("uuid-1");
   });
 
   it("treats an idempotent re-add as success", async () => {
     invoke.mockResolvedValue({ data: { ok: true, existed: true, clinic }, error: null });
-    const res = await addMedicalPlace("ChIJgood");
+    const res = await addMedicalPlace("1234567893");
     expect(res.ok).toBe(true);
     expect(res.existed).toBe(true);
   });
@@ -150,20 +144,20 @@ describe("addMedicalPlace", () => {
       data: { ok: true, clinic: { ...clinic, latitude: null, longitude: null } },
       error: null,
     });
-    const res = await addMedicalPlace("ChIJbad");
+    const res = await addMedicalPlace("1234567893");
     expect(res.ok).toBe(false);
     expect(res.error).toBe("no_coordinates");
   });
 
   it("surfaces typed failures rather than throwing", async () => {
     invoke.mockResolvedValue({ data: { ok: false, error: "not_medical" }, error: null });
-    const res = await addMedicalPlace("ChIJshop");
+    const res = await addMedicalPlace("1234567893");
     expect(res).toMatchObject({ ok: false, error: "not_medical" });
   });
 
   it("does not leave the caller pending when invoke rejects", async () => {
     invoke.mockRejectedValue(new Error("boom"));
-    const res = await addMedicalPlace("ChIJgood");
+    const res = await addMedicalPlace("1234567893");
     expect(res).toEqual({ ok: false, error: "lookup_failed" });
   });
 });

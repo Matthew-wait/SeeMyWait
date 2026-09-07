@@ -10,7 +10,8 @@ This project is built using:
 - **Frontend Framework**: [React](https://react.dev/) + [Vite](https://vitejs.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
 - **Database & Auth**: [Supabase](https://supabase.com/)
-- **Maps & Geocoding**: [Google Maps Platform](https://developers.google.com/maps)
+- **Maps**: [Leaflet](https://leafletjs.com/) + [OpenStreetMap](https://www.openstreetmap.org/) tiles
+- **Directory & Geocoding**: [NPPES NPI Registry](https://npiregistry.cms.hhs.gov/api/), [US Census geocoder](https://geocoding.geo.census.gov/), [Nominatim](https://nominatim.openstreetmap.org/), [Photon](https://photon.komoot.io/) — all free, no API key
 - **Testing**: [Vitest](https://vitest.dev/)
 
 ---
@@ -31,20 +32,22 @@ npm install
 ```
 
 ### 2. Configure Environment Variables
-Create a `.env` file in the root directory and add the following keys (see `.env.example` for details):
+Copy `.env.example` to `.env` and fill in the Supabase values (Dashboard → Project
+Settings → API):
 ```env
-VITE_SUPABASE_PROJECT_ID="your_project_id"
-VITE_SUPABASE_PUBLISHABLE_KEY="your_publishable_key"
 VITE_SUPABASE_URL="your_supabase_url"
-GOOGLE_MAPS_API_KEY="your_google_maps_key"
-GOOGLE_GEOCODE_API_KEY="your_google_geocode_key"
+VITE_SUPABASE_PUBLISHABLE_KEY="your_publishable_key"
 ```
+The map runs on keyless OpenStreetMap tiles by default. For production set
+`VITE_MAP_TILE_URL` to a provider with a commercial free tier (e.g. Stadia Maps)
+and put the key in `VITE_MAP_TILE_KEY`. The `medical-search` edge function needs
+no API keys — see `supabase/functions/medical-search/README.md`.
 
 ### 3. Start Development Server
 ```bash
 npm run dev
 ```
-The app will run locally at `http://localhost:8080` (or `http://localhost:5173`).
+The app runs locally at `http://localhost:3001`.
 
 ---
 

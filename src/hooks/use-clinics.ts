@@ -7,10 +7,14 @@ export interface Clinic {
   id: string;
   name: string;
   address: string;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
   latitude: number;
   longitude: number;
   phone: string | null;
   google_place_id: string | null;
+  npi?: string | null;
   specialty: string | null;
 }
 
@@ -23,9 +27,8 @@ export interface ClinicWithWaitTime extends Clinic {
   waitTime: ReturnType<typeof getAverageWaitTime>;
   /** Reports submitted within the last HISTORY_WINDOW_MINUTES, sorted newest-first. */
   recentReports: ClinicReport[];
+  /** Straight-line miles from the user (haversine), when a location is known. */
   distance?: number;
-  routeDistance?: number;
-  routeDistanceSource?: "google" | "fallback" | "unavailable";
 }
 
 const HISTORY_WINDOW_MINUTES = 180; // last 3 hours

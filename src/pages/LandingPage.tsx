@@ -533,7 +533,7 @@ export default function LandingPage() {
                   icon: MapPin,
                   step: "03",
                   title: "Location-Verified Reporting",
-                  desc: "Reports are only accepted within 50–100 meters. No fake data passes through.",
+                  desc: "Reports are only accepted within about 1 km of the office. No fake data passes through.",
                   visual: "map",
                 },
                 {
@@ -619,7 +619,7 @@ export default function LandingPage() {
                 <div className="space-y-5">
                   {[
                     { label: "Real-time updates", detail: "Live data from patients right now" },
-                    { label: "Verified location data", detail: "GPS-confirmed within 50-100m" },
+                    { label: "Verified location data", detail: "GPS-confirmed at the office" },
                     { label: "Anti-spam & geofencing", detail: "Device + location verification" },
                     { label: "Real patient reports", detail: "From people actually in the doctor office" },
                     { label: "Anonymous & private", detail: "Zero personal data collected" },
@@ -898,7 +898,7 @@ export default function LandingPage() {
                 {[
                   {
                     q: "How do you verify wait times?",
-                    a: "Users can only submit wait time reports when physically present at a doctor office, verified through GPS geofencing within 50–100 meters. Combined with device-based rate limiting, this ensures authentic reports.",
+                    a: "Users can only submit wait time reports when physically present at a doctor office, verified through GPS geofencing (within about 1 km) plus a GPS-accuracy check. Combined with device-based rate limiting, this ensures authentic reports.",
                   },
                   {
                     q: "Is my location tracked?",

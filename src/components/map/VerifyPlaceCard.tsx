@@ -3,15 +3,15 @@ import { AlertTriangle, Check, ExternalLink, Loader2, MapPin, X } from "lucide-r
 import { Button } from "@/components/ui/button";
 import {
   AddedClinic,
-  GoogleSearchResult,
+  NpiSearchResult,
   addErrorMessage,
   addMedicalPlace,
-  viewOnGoogleMapsUrl,
+  viewOnMapUrl,
 } from "@/lib/medical-search";
 import { getDistanceMiles } from "@/lib/geolocation";
 
 interface VerifyPlaceCardProps {
-  candidate: GoogleSearchResult;
+  candidate: NpiSearchResult;
   userLocation: { lat: number; lng: number } | null;
   onCancel: () => void;
   onVerified: (clinic: AddedClinic) => void;
@@ -41,7 +41,7 @@ export function VerifyPlaceCard({
     setSubmitting(true);
     setError(null);
 
-    const response = await addMedicalPlace(candidate.place_id);
+    const response = await addMedicalPlace(candidate.npi);
     setSubmitting(false);
 
     if (response.ok && response.clinic) {
@@ -116,18 +116,20 @@ export function VerifyPlaceCard({
               className="w-full gap-2 rounded-xl sm:w-auto"
               onClick={() =>
                 window.open(
-                  viewOnGoogleMapsUrl(candidate.name, candidate.place_id),
+                  viewOnMapUrl(candidate.name, candidate.latitude, candidate.longitude),
                   "_blank",
                   "noopener,noreferrer"
                 )
               }
             >
               <ExternalLink className="h-4 w-4" />
-              View on Google Maps
+              View on map
             </Button>
           </div>
 
-          <p className="text-center text-[9px] text-muted-foreground/70">Powered by Google</p>
+          <p className="text-center text-[9px] text-muted-foreground/70">
+            Provider data from the NPPES NPI Registry
+          </p>
         </div>
       </div>
     </div>

@@ -136,9 +136,11 @@ export function ClinicListPanel({
                       </Badge>
                     )}
                     {/* Only render a distance line when we actually have one — never "n/a". */}
-                    {Number.isFinite(clinic.routeDistance) && (
+                    {Number.isFinite(clinic.distance) && (
                       <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
-                        Distance {clinic.routeDistance!.toFixed(1)} mi
+                        {clinic.distance! < 10
+                          ? `${clinic.distance!.toFixed(1)} mi`
+                          : `${Math.round(clinic.distance!)} mi`}
                       </span>
                     )}
                   </div>

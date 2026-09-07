@@ -48,8 +48,11 @@ export function getAverageWaitTime(
   reports: { wait_time: WaitTimeCategory; reported_at: string }[],
   maxAgeMinutes: number = 180
 ): WaitTimeSummary {
-  const cutoffIso = new Date(Date.now() - maxAgeMinutes * 60 * 1000).toISOString();
-  const recent = reports.filter((r) => r.reported_at > cutoffIso);
+  // Compare on epoch ms, not ISO strings: PostgREST returns "…+00:00" offsets
+  // while Date#toISOString() returns "…Z", so a lexicographic `>` mis-orders
+  // reports around the cutoff second.
+  const cutoffMs = Date.now() - maxAgeMinutes * 60 * 1000;
+  const recent = reports.filter((r) => new Date(r.reported_at).getTime() >= cutoffMs);
 
   if (recent.length === 0) {
     return { category: "on_time", label: WAIT_TIME_LABELS.on_time, lastReported: null };

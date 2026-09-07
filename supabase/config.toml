@@ -1,6 +1,6 @@
 project_id = "sgbstsgomdxafzszohwg"
 
-[functions.google-places]
+[functions.medical-search]
 verify_jwt = false
 
 [functions.send-email]

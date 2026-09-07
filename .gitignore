@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# Seed-script output
+scripts/out/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,3 +32,6 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+
+# Supabase CLI local cache
+supabase/.temp/

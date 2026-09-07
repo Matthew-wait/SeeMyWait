@@ -3,14 +3,11 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { hasValidCoords } from "@/lib/geolocation";
 
 /**
- * Client for the shared `medical-search` edge function.
+ * Client for the `medical-search` edge function (NPPES-backed directory).
  *
- * The Google *server* key lives only inside that function — the browser never
- * calls Google Places directly and never sees it. Everything here goes through
- * Supabase with the anon key.
- *
- * The function always answers HTTP 200 with a typed envelope, so we branch on
- * the body (`ok`), never on the HTTP status.
+ * The browser never calls NPPES / a geocoder directly — everything goes through
+ * Supabase with the anon key. The function always answers HTTP 200 with a typed
+ * envelope, so we branch on the body (`ok`), never on the HTTP status.
  */
 
 /** Minimum trimmed query length before we call the function at all. */
@@ -29,24 +26,29 @@ export interface DbSearchResult {
   longitude: number;
 }
 
-export interface GoogleSearchResult {
-  source: "google";
-  /** Google place id — a *candidate*, not saved until explicitly verified. */
-  place_id: string;
+export interface NpiSearchResult {
+  source: "npi";
+  /** NPPES National Provider Identifier — a *candidate*, not saved until verified. */
+  npi: string;
   name: string;
   address: string;
+  city?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
   latitude: number;
   longitude: number;
+  specialty?: string | null;
+  phone?: string | null;
 }
 
-export type MedicalSearchResult = DbSearchResult | GoogleSearchResult;
+export type MedicalSearchResult = DbSearchResult | NpiSearchResult;
 
 export interface MedicalSearchResponse {
   ok: boolean;
   results: MedicalSearchResult[];
-  /** Rate limit hit — Google was skipped, DB results are still present. */
+  /** Rate limit hit — the registry was skipped, DB results are still present. */
   limited: boolean;
-  /** Google was attempted but unavailable — DB results are still present. */
+  /** The registry was attempted but unavailable — DB results are still present. */
   degraded: boolean;
 }
 
@@ -54,9 +56,13 @@ export interface AddedClinic {
   id: string;
   name: string;
   address: string;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
   latitude: number;
   longitude: number;
   phone: string | null;
+  npi: string | null;
   google_place_id: string | null;
   specialty: string | null;
   source: string;
@@ -80,7 +86,7 @@ export interface MedicalAddResponse {
 
 const ADD_ERROR_MESSAGES: Record<string, string> = {
   not_medical: "That place doesn't look like a medical office, so it can't be added.",
-  permanently_closed: "That place is permanently closed and can't be added.",
+  permanently_closed: "That provider is deactivated in the registry and can't be added.",
   no_coordinates: "We couldn't get a location for that place.",
   lookup_failed: "We couldn't look up that place. Please try again.",
   insert_failed: "We couldn't save that place. Please try again.",
@@ -99,28 +105,20 @@ const FAILED_SEARCH: MedicalSearchResponse = {
 };
 
 /**
- * True for something that plausibly is a *Google* place id.
+ * True for something shaped like an NPPES NPI: exactly 10 digits.
  *
- * This exists because the address-geocoding fallback chain ends at Nominatim,
- * whose JSON also has a `place_id` field — but it is an internal OSM integer
- * (e.g. 305759221). Writing that into `clinics.google_place_id` poisons the
- * partial-unique index the edge function dedups on, and makes
- * `viewOnGoogleMapsUrl` produce dead links. Google ids are opaque
- * base64url-ish strings and are never all-digits, which is what we key on.
+ * Replaces the old `isGooglePlaceId` guard. NPIs are the stable identity for
+ * directory rows now (`clinics.npi`, partial-unique). A value that isn't a
+ * 10-digit string must never be written there.
  */
-export function isGooglePlaceId(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    value.length >= 10 &&
-    !/^\d+$/.test(value) &&
-    !/\s/.test(value)
-  );
+export function isNpi(value: unknown): value is string {
+  return typeof value === "string" && /^\d{10}$/.test(value);
 }
 
 /** A search row is usable only if we can both identify it and place it. */
 function isMappable(result: MedicalSearchResult): boolean {
   if (!result) return false;
-  const hasIdentity = result.source === "db" ? Boolean(result.id) : Boolean(result.place_id);
+  const hasIdentity = result.source === "db" ? Boolean(result.id) : Boolean(result.npi);
   return hasIdentity && hasValidCoords(result.latitude, result.longitude);
 }
 
@@ -167,16 +165,16 @@ export async function searchMedicalPlaces(
 }
 
 /**
- * Saves a Google candidate into `clinics`. Idempotent — re-adding the same
- * place returns the existing row (`existed: true`) instead of duplicating it.
+ * Saves an NPPES provider (by NPI) into `clinics`. Idempotent — re-adding the
+ * same NPI returns the existing row (`existed: true`) instead of duplicating it.
  * This is the *only* path that writes clinics; never insert from the client.
  */
-export async function addMedicalPlace(placeId: string): Promise<MedicalAddResponse> {
+export async function addMedicalPlace(npi: string): Promise<MedicalAddResponse> {
   try {
     const { data, error } = await supabase.functions.invoke("medical-search", {
       body: {
         action: "add",
-        placeId,
+        npi,
         deviceId: getDeviceFingerprint(),
       },
     });
@@ -194,7 +192,6 @@ export async function addMedicalPlace(placeId: string): Promise<MedicalAddRespon
 
     return response;
   } catch {
-    // Never let a rejected invoke() leave the caller stuck in a pending state.
     return { ok: false, error: "lookup_failed" };
   }
 }
@@ -204,7 +201,7 @@ export function directionsUrl(latitude: number, longitude: number): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving`;
 }
 
-export function viewOnGoogleMapsUrl(name: string, placeId?: string | null): string {
-  const base = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
-  return placeId ? `${base}&query_place_id=${encodeURIComponent(placeId)}` : base;
+/** "View on map" deep link (OpenStreetMap; keyless, opens the user's map app). */
+export function viewOnMapUrl(_name: string, latitude: number, longitude: number): string {
+  return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
 }

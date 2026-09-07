@@ -17,6 +17,19 @@ export function findDuplicateClinicIdentity<
   );
 }
 
+/**
+ * NPI is the stable identity for directory-sourced offices (`clinics.npi`,
+ * partial-unique). Prefer this over name+address when an NPI is present.
+ */
+export function findClinicByNpi<T extends { id: string; npi?: string | null }>(
+  rows: T[] | undefined,
+  npi: string | null | undefined,
+  excludeId?: string
+): T | undefined {
+  if (!npi || !/^\d{10}$/.test(npi)) return undefined;
+  return rows?.find((r) => r.id !== excludeId && r.npi === npi);
+}
+
 export function isDuplicateKeyError(error: unknown): boolean {
   return (
     typeof error === "object" &&

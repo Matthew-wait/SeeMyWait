@@ -21,7 +21,6 @@ import {
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import { GEOCODE_COUNTRY } from "@/lib/geocode-region";
-import { isGooglePlaceId } from "@/lib/medical-search";
 import { autocompletePlaces, reverseGeocode, getPlaceDetails } from "@/lib/google-places-client";
 import { AddDoctorPrefill } from "@/lib/add-doctor-prefill";
 import { buildClinicSuggestionAdminEmail } from "@/lib/email-templates";
@@ -42,7 +41,7 @@ const STEPS = [
   {
     icon: ShieldCheck,
     title: "Admin Reviews",
-    description: "We verify via Google Maps and public records.",
+    description: "We verify against public records (NPPES) and maps.",
     emoji: "🔍",
   },
   {
@@ -129,14 +128,14 @@ export default function SuggestClinic() {
 
   const resolveCoordinatesFromAddress = async (
     rawAddress: string
-  ): Promise<{ lat: number; lng: number; placeId: string | null }> => {
+  ): Promise<{ lat: number; lng: number }> => {
     const normalized = rawAddress.trim();
     if (!normalized) {
       throw new Error("ADDRESS_REQUIRED");
     }
 
     const { data: geoData, error: geoError } = await supabase.functions.invoke(
-      "google-places",
+      "medical-search",
       { body: { action: "geocode", query: normalized } }
     );
     if (!geoError) {
@@ -144,15 +143,11 @@ export default function SuggestClinic() {
       const lat = first?.geometry?.location?.lat;
       const lng = first?.geometry?.location?.lng;
       if (typeof lat === "number" && typeof lng === "number") {
-        return {
-          lat,
-          lng,
-          placeId: typeof first?.place_id === "string" ? first.place_id : null,
-        };
+        return { lat, lng };
       }
     }
 
-    // Final fallback from client side in case edge provider is temporarily unavailable.
+    // Client-side fallback if the edge function is momentarily unavailable.
     const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=${GEOCODE_COUNTRY}&q=${encodeURIComponent(
       normalized
     )}`;
@@ -162,10 +157,7 @@ export default function SuggestClinic() {
     const lat = firstOsm?.lat ? parseFloat(firstOsm.lat) : NaN;
     const lng = firstOsm?.lon ? parseFloat(firstOsm.lon) : NaN;
     if (!isNaN(lat) && !isNaN(lng)) {
-      // Deliberately null: Nominatim's `place_id` is an internal OSM integer,
-      // not a Google place id. Storing it in `google_place_id` would poison the
-      // dedup index and break "View on Google Maps" links.
-      return { lat, lng, placeId: null };
+      return { lat, lng };
     }
 
     throw new Error("COORDINATES_NOT_FOUND");
@@ -339,30 +331,18 @@ export default function SuggestClinic() {
     try {
       let latToSave: number | null;
       let lngToSave: number | null;
-      let placeIdToSave = selectedAddressPlaceId;
 
       if (parsedManualCoords) {
-        // Manual coordinates win — whether auto-filled from a pick/GPS/tap or
-        // pasted from Google Maps, they are exact. A custom point is defined by
-        // its coordinates; a place id is kept only if we already have a real one.
+        // Manual coordinates win — from a suggestion pick, GPS, a map tap, or a
+        // pasted lat/lng. A custom point is defined by its coordinates.
         latToSave = parsedManualCoords.lat;
         lngToSave = parsedManualCoords.lng;
-        placeIdToSave = isGooglePlaceId(placeIdToSave) ? placeIdToSave : null;
       } else {
-        // No coordinates: geocode the typed address. Require BOTH coordinates
-        // and a real place id so we never save fuzzy, un-dedupable junk (this is
-        // what pollutes the directory).
+        // No coordinates: geocode the typed address. Require coordinates so we
+        // never save an un-placeable row (that is what pollutes the directory).
         const resolved = await resolveCoordinatesFromAddress(address);
         latToSave = resolved.lat;
         lngToSave = resolved.lng;
-        placeIdToSave = isGooglePlaceId(resolved.placeId) ? resolved.placeId : null;
-
-        if (latToSave === null || lngToSave === null) {
-          throw new Error("COORDINATES_NOT_FOUND");
-        }
-        if (!isGooglePlaceId(placeIdToSave)) {
-          throw new Error("PLACE_ID_REQUIRED");
-        }
       }
 
       // Absolute guard: coordinates are mandatory for every saved place.
@@ -384,8 +364,6 @@ export default function SuggestClinic() {
         clinic_type: clinicType,
         latitude: latToSave,
         longitude: lngToSave,
-        // Never persist a non-Google id (e.g. an OSM integer).
-        google_place_id: isGooglePlaceId(placeIdToSave) ? placeIdToSave : null,
       });
 
       if (error) throw error;
@@ -456,8 +434,6 @@ export default function SuggestClinic() {
     } catch (err) {
       if ((err as Error)?.message === "COORDINATES_NOT_FOUND") {
         toast.error("Could not locate this address. Please enter a more specific address.");
-      } else if ((err as Error)?.message === "PLACE_ID_REQUIRED") {
-        toast.error("Please pick the address from the dropdown suggestions so we can locate it exactly.");
       } else {
         toast.error("Failed to submit. Please try again.");
       }

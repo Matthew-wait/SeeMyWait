@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
-import { addMedicalPlace, addErrorMessage, isGooglePlaceId, GoogleSearchResult, MedicalSearchResult, AddedClinic } from "@/lib/medical-search";
+import { addMedicalPlace, addErrorMessage, isNpi, NpiSearchResult, MedicalSearchResult, AddedClinic } from "@/lib/medical-search";
 import {
   clinicIdentityKey,
   findDuplicateClinicIdentity,
@@ -33,11 +33,11 @@ import {
   Map as MapIcon, MapPin, Crosshair,
 } from "lucide-react";
 import { toast } from "sonner";
-import { MapView, PoiTap } from "@/components/map/MapView";
+import { MapView } from "@/components/map/MapView";
 import { SearchResultsDropdown } from "@/components/map/SearchResultsDropdown";
 import { VerifyPlaceCard } from "@/components/map/VerifyPlaceCard";
 import { useMedicalSearch } from "@/hooks/use-medical-search";
-import { reverseGeocode, getPlaceDetails } from "@/lib/google-places-client";
+import { reverseGeocode } from "@/lib/google-places-client";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 
 type Clinic = {
@@ -65,6 +65,8 @@ type ClinicFormData = {
 type AddressSuggestion = {
   description: string;
   place_id: string;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 const emptyForm: ClinicFormData = {
@@ -74,25 +76,6 @@ const emptyForm: ClinicFormData = {
   specialty: "",
   latitude: "",
   longitude: "",
-};
-
-const getAutocompleteErrorMessage = (status?: string, errorMessage?: string) => {
-  if (status === "ZERO_RESULTS") {
-    return "No matching locations found. Try a more specific address (street, area, city).";
-  }
-  if (status === "REQUEST_DENIED") {
-    return "Address suggestions are temporarily unavailable. You can still enter the full address manually.";
-  }
-  if (status === "INVALID_REQUEST") {
-    return "Please type at least 3 characters to search for an address.";
-  }
-  if (status === "OVER_QUERY_LIMIT") {
-    return "Too many address lookups right now. Please wait a moment and try again.";
-  }
-  if (status) {
-    return `We could not load address suggestions.${errorMessage ? ` ${errorMessage}` : ""}`;
-  }
-  return "Unable to load address suggestions. Please try again.";
 };
 
 function ClinicFormDialog({
@@ -152,21 +135,18 @@ function ClinicFormDialog({
     setAddressSuggestError(null);
     const timer = setTimeout(async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("google-places", {
+        const { data, error } = await supabase.functions.invoke("medical-search", {
           body: { action: "autocomplete", query },
         });
         if (error) throw error;
-        if (data?.status && data.status !== "OK") {
-          setAddressSuggestError(getAutocompleteErrorMessage(data.status, data?.error_message));
-          setAddressSuggestions([]);
-          return;
-        }
         const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
         setAddressSuggestions(
           predictions
             .map((p: any) => ({
               description: String(p?.description ?? ""),
               place_id: String(p?.place_id ?? ""),
+              latitude: typeof p?.latitude === "number" ? p.latitude : null,
+              longitude: typeof p?.longitude === "number" ? p.longitude : null,
             }))
             .filter((p) => p.description && p.place_id)
             .slice(0, 8)
@@ -194,24 +174,30 @@ function ClinicFormDialog({
     setAddressSuggestions([]);
     setForm((f) => ({ ...f, address: suggestion.description }));
 
-    try {
-      const { data, error } = await supabase.functions.invoke("google-places", {
-        body: { action: "details", placeId: suggestion.place_id },
-      });
-      if (error) throw error;
-
-      const place = data?.result;
-      const lat = place?.geometry?.location?.lat;
-      const lng = place?.geometry?.location?.lng;
-
-      setForm((f) => ({
-        ...f,
-        latitude: typeof lat === "number" ? String(lat) : f.latitude,
-        longitude: typeof lng === "number" ? String(lng) : f.longitude,
-      }));
-    } catch {
-      toast.error("Unable to fetch location details for this address.");
+    // Photon predictions carry coordinates inline; fall back to a geocode call
+    // only if a suggestion somehow arrives without them.
+    let lat = suggestion.latitude ?? null;
+    let lng = suggestion.longitude ?? null;
+    if (lat === null || lng === null) {
+      try {
+        const { data, error } = await supabase.functions.invoke("medical-search", {
+          body: { action: "geocode", query: suggestion.description },
+        });
+        if (error) throw error;
+        const loc = data?.results?.[0]?.geometry?.location;
+        lat = typeof loc?.lat === "number" ? loc.lat : null;
+        lng = typeof loc?.lng === "number" ? loc.lng : null;
+      } catch {
+        toast.error("Unable to fetch location details for this address.");
+        return;
+      }
     }
+
+    setForm((f) => ({
+      ...f,
+      latitude: typeof lat === "number" ? String(lat) : f.latitude,
+      longitude: typeof lng === "number" ? String(lng) : f.longitude,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -336,7 +322,7 @@ function CsvUploadDialog({
       return { latitude: parsedLat, longitude: parsedLng };
     }
 
-    const { data, error } = await supabase.functions.invoke("google-places", {
+    const { data, error } = await supabase.functions.invoke("medical-search", {
       body: { action: "geocode", query: address },
     });
     if (error) throw error;
@@ -619,7 +605,7 @@ export default function AdminDashboard() {
   // Map-tab add flows (search / POI tap / custom pin)
   const [mapSearch, setMapSearch] = useState("");
   const [mapDropdownOpen, setMapDropdownOpen] = useState(false);
-  const [mapCandidate, setMapCandidate] = useState<GoogleSearchResult | null>(null);
+  const [mapCandidate, setMapCandidate] = useState<NpiSearchResult | null>(null);
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
@@ -734,7 +720,7 @@ export default function AdminDashboard() {
       return { latitude: parsedLat, longitude: parsedLng };
     }
 
-    const { data, error } = await supabase.functions.invoke("google-places", {
+    const { data, error } = await supabase.functions.invoke("medical-search", {
       body: { action: "geocode", query: address },
     });
     if (error) throw error;
@@ -885,16 +871,15 @@ export default function AdminDashboard() {
       if (findDuplicateClinicIdentity(existing || [], name, address)) {
         throw new Error("DUPLICATE_CLINIC");
       }
-      // Preferred path: hand the place id to the edge function's `add` action.
-      // It is the only writer that gets idempotency plus the partial-unique
-      // dedup on `google_place_id`, so re-approving can't create a twin.
-      if (isGooglePlaceId(suggestion.google_place_id)) {
-        const result = await addMedicalPlace(suggestion.google_place_id);
+      // Preferred path: hand the NPI to the edge function's `add` action. It is
+      // the only writer that gets idempotency plus the partial-unique dedup on
+      // `npi`, so re-approving can't create a twin.
+      if (isNpi(suggestion.npi)) {
+        const result = await addMedicalPlace(suggestion.npi);
         if (!result.ok) throw new Error(result.error || "ADD_FAILED");
       } else {
-        // Legacy suggestions predating the place-id requirement have no id to
-        // look up, so they can only be inserted directly. New submissions can
-        // no longer reach this branch — SuggestClinic requires a Google place.
+        // Suggestions with no NPI (custom map points, legacy rows) are inserted
+        // directly with their submitted coordinates.
         const coords = await resolveClinicCoordinates(
           address,
           typeof suggestion.latitude === "number" ? String(suggestion.latitude) : undefined,
@@ -1016,7 +1001,7 @@ export default function AdminDashboard() {
       else toast.info("Already in the directory.");
       return;
     }
-    // A Google candidate — confirm before saving.
+    // An NPPES candidate — confirm before saving.
     setMapCandidate(result);
   };
 
@@ -1025,38 +1010,6 @@ export default function AdminDashboard() {
     setMapSearch("");
     queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
     toast.success(`${added.name} added.`);
-  };
-
-  const handleMapPoiClick = async (poi: PoiTap) => {
-    setMapDropdownOpen(false);
-    setPendingPoint(null);
-
-    // Already saved? Jump straight to its edit dialog — no network round-trip.
-    const existing = clinics?.find((c) => c.google_place_id === poi.placeId);
-    if (existing) {
-      setEditClinic(existing);
-      return;
-    }
-
-    const toastId = toast.loading("Adding this place…");
-    const res = await addMedicalPlace(poi.placeId);
-    toast.dismiss(toastId);
-
-    if (res.ok && res.clinic) {
-      queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
-      toast.success(res.existed ? `${res.clinic.name} is already listed.` : `${res.clinic.name} added.`);
-      return;
-    }
-
-    // Not auto-addable (e.g. not_medical) — fall back to the prefilled form.
-    toast.error("Couldn't auto-add — review the details and save.");
-    const details = await getPlaceDetails(poi.placeId);
-    openPrefilledCreate({
-      name: details?.name ?? "",
-      address: details?.address ?? "",
-      latitude: poi.lat.toFixed(6),
-      longitude: poi.lng.toFixed(6),
-    });
   };
 
   const handleMapPointClick = (point: { lat: number; lng: number }) => {
@@ -1250,7 +1203,6 @@ export default function AdminDashboard() {
                   if (row) setEditClinic(row);
                 }}
                 onEmptyClick={() => {}}
-                onPoiClick={handleMapPoiClick}
                 onMapPointClick={handleMapPointClick}
                 candidate={
                   mapCandidate

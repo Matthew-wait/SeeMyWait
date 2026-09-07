@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope, ExternalLink, User } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Loader2, Clock, Stethoscope, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { BottomNav } from "@/components/BottomNav";
 import { LocationErrorOverlay } from "@/components/LocationErrorOverlay";
+import { MiniMap } from "@/components/map/MiniMap";
 import {
   WaitTimeCategory,
   getAverageWaitTime,
@@ -28,34 +29,6 @@ const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] 
   { value: "1_hour", label: "1 Hour", emoji: "🟠" },
   { value: "1.5_hours_plus", label: "1.5+ Hrs", emoji: "🔴" },
 ];
-
-function GoogleMapEmbed({ lat, lon, name }: { lat: number; lon: number; name: string }) {
-  const query = encodeURIComponent(`${name}`);
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}&center=${lat},${lon}`;
-  const embedUrl = `https://maps.google.com/maps?q=${lat},${lon}&z=16&output=embed&hl=en`;
-
-  return (
-    <div className="relative w-full overflow-hidden rounded-2xl border border-border/30" style={{ height: 200 }}>
-      <iframe
-        title="Doctor Location Map"
-        src={embedUrl}
-        className="absolute inset-0 h-full w-full border-0"
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        allowFullScreen
-      />
-      <a
-        href={mapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-card/90 backdrop-blur-md px-2.5 py-1.5 text-[11px] font-medium text-foreground shadow-lg border border-border/30 hover:bg-card transition-colors sm:px-3 sm:text-xs"
-      >
-        <ExternalLink className="h-3 w-3 text-primary" />
-        Open in Maps
-      </a>
-    </div>
-  );
-}
 
 export default function ClinicDetail() {
   const { id } = useParams<{ id: string }>();
@@ -341,7 +314,7 @@ export default function ClinicDetail() {
         </div>
 
         {/* Map */}
-        <GoogleMapEmbed lat={clinic.latitude} lon={clinic.longitude} name={clinic.name} />
+        <MiniMap latitude={clinic.latitude} longitude={clinic.longitude} name={clinic.name} />
 
         {/* Current Wait Time */}
         <div className="rounded-2xl border border-border/30 bg-card overflow-hidden">

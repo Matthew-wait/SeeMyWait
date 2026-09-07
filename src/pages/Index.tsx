@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { BottomNav } from "@/components/BottomNav";
 import { useClinics } from "@/hooks/use-clinics";
 import { getCurrentPosition } from "@/lib/geolocation";
-import { MapView, PoiTap } from "@/components/map/MapView";
+import { MapView } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
 import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
 import { ClinicListPanel } from "@/components/map/ClinicListPanel";
@@ -16,16 +16,13 @@ import { useMedicalSearch } from "@/hooks/use-medical-search";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import {
   AddedClinic,
-  GoogleSearchResult,
+  NpiSearchResult,
   MedicalSearchResult,
-  addMedicalPlace,
-  addErrorMessage,
 } from "@/lib/medical-search";
-import { reverseGeocode, getPlaceDetails } from "@/lib/google-places-client";
+import { reverseGeocode } from "@/lib/google-places-client";
 import { AddDoctorPrefill } from "@/lib/add-doctor-prefill";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [search, setSearch] = useState("");
@@ -33,8 +30,8 @@ const Index = () => {
   const [locating, setLocating] = useState(true);
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
-  /** Google result awaiting explicit verification — pinned on the map, not saved. */
-  const [candidate, setCandidate] = useState<GoogleSearchResult | null>(null);
+  /** NPPES result awaiting explicit verification — pinned on the map, not saved. */
+  const [candidate, setCandidate] = useState<NpiSearchResult | null>(null);
   /** Clinic ids returned by the current search, in server order. */
   const [matchedClinicIds, setMatchedClinicIds] = useState<string[]>([]);
   /** Whether the results dropdown is expanded (click-outside collapses it). */
@@ -42,10 +39,6 @@ const Index = () => {
   const searchBoxRef = useRef<HTMLDivElement>(null);
   /** Empty map point the user tapped, awaiting an "Add here" confirmation. */
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [routeDistanceByClinicId, setRouteDistanceByClinicId] = useState<Record<string, number>>({});
-  const [routeDistanceSourceByClinicId, setRouteDistanceSourceByClinicId] = useState<
-    Record<string, "google" | "fallback" | "unavailable">
-  >({});
   const navigate = useNavigate();
 
   const { data: appSettings } = useAppSettings();
@@ -104,117 +97,14 @@ const Index = () => {
     return clinics.filter((c) => (c.distance || 999) <= nearbyRadiusMiles);
   }, [clinics, userLocation, nearbyRadiusMiles]);
 
-  // Hold the latest clinic list in a ref so the effect below can read it
-  // without depending on the array reference itself (which gets a new
-  // identity every minute when `useClinics` refetches, even when the data
-  // hasn't actually changed). The effect only re-fires when the *set* of
-  // clinic IDs really changes.
-  const clinicsWithinNearbyRadiusRef = useRef(clinicsWithinNearbyRadius);
-  clinicsWithinNearbyRadiusRef.current = clinicsWithinNearbyRadius;
-
-  const clinicsWithinNearbyRadiusKey = useMemo(
-    () =>
-      clinicsWithinNearbyRadius
-        .map((c) => c.id)
-        .sort()
-        .join(","),
-    [clinicsWithinNearbyRadius],
-  );
-
-  useEffect(() => {
-    const fetchRouteDistances = async () => {
-      const list = clinicsWithinNearbyRadiusRef.current;
-      if (!userLocation || !list.length) {
-        setRouteDistanceByClinicId({});
-        setRouteDistanceSourceByClinicId({});
-        return;
-      }
-
-      const chunks: { id: string; lat: number; lng: number }[][] = [];
-      const candidates = list
-        .slice(0, 50)
-        .map((c) => ({ id: c.id, lat: c.latitude, lng: c.longitude }));
-
-      for (let i = 0; i < candidates.length; i += 25) {
-        chunks.push(candidates.slice(i, i + 25));
-      }
-
-      const nextMap: Record<string, number> = {};
-      const nextSourceMap: Record<string, "google" | "fallback" | "unavailable"> = {};
-      for (const chunk of chunks) {
-        try {
-          const { data, error } = await supabase.functions.invoke("google-places", {
-            body: {
-              action: "distance_matrix",
-              origin: userLocation,
-              destinations: chunk,
-            },
-          });
-
-          if (error) throw error;
-          const rows = Array.isArray(data?.distances) ? data.distances : [];
-          const provider = data?.provider === "google" ? "google" : "fallback";
-          rows.forEach((row: { id?: unknown; route_distance_miles?: unknown }) => {
-            if (typeof row?.id !== "string") return;
-            if (typeof row?.route_distance_miles === "number") {
-              nextMap[row.id] = row.route_distance_miles;
-              nextSourceMap[row.id] = provider;
-            } else {
-              nextSourceMap[row.id] = "unavailable";
-            }
-          });
-        } catch (err) {
-          console.warn("[distance_matrix] edge invoke failed; using client OSRM fallback", {
-            error: err instanceof Error ? err.message : String(err),
-            chunkSize: chunk.length,
-          });
-          // Last-resort fallback: query OSRM directly from client for this chunk.
-          await Promise.all(
-            chunk.map(async (dest) => {
-              try {
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLocation.lng},${userLocation.lat};${dest.lng},${dest.lat}?overview=false`;
-                const response = await fetch(osrmUrl);
-                const payload = await response.json();
-                const meters =
-                  Array.isArray(payload?.routes) && typeof payload.routes[0]?.distance === "number"
-                    ? payload.routes[0].distance
-                    : null;
-                if (meters !== null) {
-                  nextMap[dest.id] = meters / 1609.34;
-                  nextSourceMap[dest.id] = "fallback";
-                } else {
-                  console.warn("[distance_matrix] client OSRM no route", { destinationId: dest.id });
-                  nextSourceMap[dest.id] = "unavailable";
-                }
-              } catch {
-                console.warn("[distance_matrix] client OSRM request failed", { destinationId: dest.id });
-                nextSourceMap[dest.id] = "unavailable";
-              }
-            })
-          );
-        }
-      }
-      setRouteDistanceByClinicId(nextMap);
-      setRouteDistanceSourceByClinicId(nextSourceMap);
-    };
-
-    fetchRouteDistances().catch(() => {
-      // Keep map visible if everything fails; distance shows unavailable.
-      setRouteDistanceByClinicId({});
-      setRouteDistanceSourceByClinicId({});
-    });
-  }, [userLocation, clinicsWithinNearbyRadiusKey]);
-
+  // Distance is straight-line (haversine), computed in useClinics. Driving
+  // distance via Google Distance Matrix was removed in the cost-reduction plan.
   const isWithinConfiguredRadius = useCallback(
     (clinic: ClinicWithWaitTime) => {
       if (!userLocation) return true;
-      const routeDistance = routeDistanceByClinicId[clinic.id];
-      if (typeof routeDistance === "number") {
-        return routeDistance <= nearbyRadiusMiles;
-      }
       return (clinic.distance ?? 999) <= nearbyRadiusMiles;
     },
-    [userLocation, routeDistanceByClinicId, nearbyRadiusMiles]
+    [userLocation, nearbyRadiusMiles]
   );
 
   const isSearching = Boolean(search.trim());
@@ -257,30 +147,9 @@ const Index = () => {
     if (!userLocation) return clinicsWithinNearbyRadius;
     return clinicsWithinNearbyRadius
       .filter((c) => isWithinConfiguredRadius(c))
-      .map((c) => ({
-        ...c,
-        routeDistance: routeDistanceByClinicId[c.id],
-        routeDistanceSource: routeDistanceSourceByClinicId[c.id],
-      }))
-      .sort(
-        (a, b) =>
-          (a.routeDistance ?? a.distance ?? 999) - (b.routeDistance ?? b.distance ?? 999)
-      );
-  }, [
-    clinicsWithinNearbyRadius,
-    userLocation,
-    routeDistanceByClinicId,
-    routeDistanceSourceByClinicId,
-    isWithinConfiguredRadius,
-  ]);
-
-  const displayedClinicsWithRouteDistance = useMemo(() => {
-    return displayedClinics.map((c) => ({
-      ...c,
-      routeDistance: routeDistanceByClinicId[c.id],
-      routeDistanceSource: routeDistanceSourceByClinicId[c.id],
-    }));
-  }, [displayedClinics, routeDistanceByClinicId, routeDistanceSourceByClinicId]);
+      .slice()
+      .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
+  }, [clinicsWithinNearbyRadius, userLocation, isWithinConfiguredRadius]);
 
   const handleFindMe = useCallback(() => {
     if (userLocation) {
@@ -302,7 +171,7 @@ const Index = () => {
   }, [refetch]);
 
   /**
-   * A `db` hit is already saved — open it. A `google` hit is only a candidate:
+   * A `db` hit is already saved — open it. An `npi` hit is only a candidate:
    * pin it and ask for confirmation. Selecting must never write to the
    * directory, otherwise an ambiguous query saves the wrong place.
    */
@@ -351,69 +220,7 @@ const Index = () => {
     [refetch]
   );
 
-  const openClinicAfterAdd = useCallback(
-    async (added: AddedClinic) => {
-      try {
-        const { data: refreshed } = await refetch();
-        const clinic = refreshed?.find((c) => c.id === added.id);
-        if (clinic) {
-          setSelectedClinic(clinic);
-          return;
-        }
-      } catch {
-        // fall through to centring below
-      }
-      setCenterOn({ lat: added.latitude, lng: added.longitude, zoom: 16 });
-    },
-    [refetch]
-  );
-
-  /**
-   * Item 7a — tapping a medical POI. The user picked one specific verified
-   * place, so this auto-adds (no Verify step). If the place isn't addable
-   * (e.g. not_medical), fall back to the Add-Doctor form prefilled with what we
-   * can resolve, so the tap isn't wasted.
-   */
-  const handlePoiClick = useCallback(
-    async (poi: PoiTap) => {
-      setDropdownOpen(false);
-      setPendingPoint(null);
-
-      // Fast path: a saved clinic usually sits on its own Google POI, so a POI
-      // tap may land on an office we already have. Open its card instantly
-      // instead of a network `add` round-trip (which would just return
-      // existed:true after a visible delay).
-      const already = clinics?.find((c) => c.google_place_id === poi.placeId);
-      if (already) {
-        setSelectedClinic(already);
-        return;
-      }
-
-      const toastId = toast.loading("Adding this place…");
-      const res = await addMedicalPlace(poi.placeId);
-      toast.dismiss(toastId);
-
-      if (res.ok && res.clinic) {
-        toast.success(res.existed ? `${res.clinic.name} is already listed.` : `${res.clinic.name} added.`);
-        await openClinicAfterAdd(res.clinic);
-        return;
-      }
-
-      toast.error(addErrorMessage(res.error));
-      const details = await getPlaceDetails(poi.placeId);
-      const prefill: AddDoctorPrefill = {
-        name: details?.name ?? undefined,
-        address: details?.address ?? undefined,
-        place_id: poi.placeId,
-        lat: poi.lat,
-        lng: poi.lng,
-      };
-      navigate("/suggest", { state: { prefill } });
-    },
-    [clinics, navigate, openClinicAfterAdd]
-  );
-
-  /** Item 7b — tapping an empty map point shows an "Add here" affordance. */
+  /** Tapping an empty map point shows an "Add here" affordance. */
   const handleMapPointClick = useCallback((point: { lat: number; lng: number }) => {
     setDropdownOpen(false);
     setPendingPoint(point);
@@ -540,7 +347,6 @@ const Index = () => {
             userLocation={userLocation}
             onClinicClick={handleClinicClick}
             onEmptyClick={handleEmptyClick}
-            onPoiClick={handlePoiClick}
             onMapPointClick={handleMapPointClick}
             centerOn={centerOn}
             candidate={
@@ -610,7 +416,7 @@ const Index = () => {
 
         {/* Clinic list panel */}
         <ClinicListPanel
-          clinics={displayedClinicsWithRouteDistance}
+          clinics={displayedClinics}
           nearbyClinics={nearbyClinics}
           isSearching={isSearching}
           searchQuery={search.trim()}
