@@ -12,7 +12,7 @@ import {
   titleCase,
   toCandidate,
   type NppesResult,
-} from "../../supabase/functions/medical-search/nppes.ts";
+} from "../../../../supabase/functions/medical-search/nppes.ts";
 
 const individual: NppesResult = {
   number: 1234567893,
