@@ -1,6 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { directionsUrl, viewOnMapUrl } from '@seemywait/core';
+
 import type { ClinicWithMeta } from '@/src/hooks/use-clinics';
 import { waitTierVisual } from '@/src/lib/wait-tier-style';
 
@@ -243,19 +245,12 @@ export const ProximityPrompt = ({
   const tier = waitTierVisual(clinic.latestWaitMinutes);
 
   const openDirections = () => {
-    const { latitude, longitude } = clinic;
-    const url = `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${latitude},${longitude}&travelmode=driving`;
-    void Linking.openURL(url).catch(() => {});
+    void Linking.openURL(directionsUrl(clinic.latitude, clinic.longitude)).catch(() => {});
   };
 
-  // Verification: open the place on Google Maps (photos/reviews). Uses the exact
-  // place when we know it (Google-sourced), else the coordinates.
+  // Open the location on a map (OpenStreetMap; keyless, opens the user's map app).
   const openInMaps = () => {
-    const base = 'https://www.google.com/maps/search/?api=1';
-    const url = clinic.google_place_id
-      ? `${base}&query=${encodeURIComponent(clinic.name)}&query_place_id=${encodeURIComponent(clinic.google_place_id)}`
-      : `${base}&query=${clinic.latitude},${clinic.longitude}`;
-    void Linking.openURL(url).catch(() => {});
+    void Linking.openURL(viewOnMapUrl(clinic.name, clinic.latitude, clinic.longitude)).catch(() => {});
   };
 
   return (
@@ -363,9 +358,9 @@ export const ProximityPrompt = ({
             onPress={openInMaps}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="View on Google Maps">
+            accessibilityLabel="View on map">
             <Feather name="external-link" size={13} color="#64748b" />
-            <Text style={styles.mapsLinkText}>View on Google Maps</Text>
+            <Text style={styles.mapsLinkText}>View on map</Text>
           </Pressable>
         </View>
       </View>

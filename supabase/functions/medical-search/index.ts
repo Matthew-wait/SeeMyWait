@@ -375,6 +375,8 @@ async function handleAdd(sb: SupabaseClient, body: Record<string, unknown>): Pro
       phone: cand.phone,
       specialty: cand.specialty,
       npi,
+      source: "npi",
+      verified: true,
       is_active: true,
     })
     .select("*")

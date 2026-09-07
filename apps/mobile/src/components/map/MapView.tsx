@@ -187,11 +187,12 @@ export const MapView = ({
     );
   }
 
-  const { NativeMap, NativeCircle, NativeMarker, googleProvider } = mapsParts;
+  const { NativeMap, NativeCircle, NativeMarker } = mapsParts;
 
-  // Google Maps on all platforms (Android + iOS + macOS). iOS/macOS require a
-  // valid "Maps SDK for iOS" key in ios.config.googleMapsApiKey (see app.config.ts).
-  const provider = googleProvider;
+  // PROVIDER_DEFAULT: Apple Maps on iOS (no key, no cost), Google Maps SDK on
+  // Android (free/unlimited). Avoids needing a "Maps SDK for iOS" key. All
+  // Places/Geocoding calls go through the medical-search edge function, not here.
+  const provider = undefined;
 
   return (
     <View style={styles.mapWrap}>

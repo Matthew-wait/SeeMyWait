@@ -7,9 +7,11 @@ export const ENV = {
     getEnv(process.env.VITE_SUPABASE_PUBLISHABLE_KEY),
   supabaseProjectId:
     getEnv(process.env.EXPO_PUBLIC_SUPABASE_PROJECT_ID) || getEnv(process.env.VITE_SUPABASE_PROJECT_ID),
-  googleMapsApiKey: getEnv(process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY) || getEnv(process.env.GOOGLE_MAPS_API_KEY),
-  googleGeocodeApiKey:
-    getEnv(process.env.EXPO_PUBLIC_GOOGLE_GEOCODE_API_KEY) || getEnv(process.env.GOOGLE_GEOCODE_API_KEY),
+  // Android's react-native-maps base map still uses the (free, unlimited) Google
+  // Maps SDK. iOS uses Apple Maps and needs no key. No Places/Geocoding key —
+  // all of that goes through the medical-search edge function now.
+  googleMapsApiKey:
+    getEnv(process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY) || getEnv(process.env.GOOGLE_MAPS_API_KEY),
 };
 
 export const assertEnv = (): void => {

@@ -206,36 +206,16 @@ export const IndexPage = () => {
       const distanceMap: Record<string, number | null> = {};
       const sourceMap: Record<string, DistanceSource> = {};
 
+      // Driving distance via the free OSRM routing service (no Google API).
       for (let i = 0; i < first50.length; i += chunkSize) {
         const chunk = first50.slice(i, i + chunkSize);
-        try {
-          const { data, error } = await supabase.functions.invoke('google-places', {
-            body: {
-              action: 'distance_matrix',
-              origin: userLocation,
-              destinations: chunk.map((clinic) => ({
-                id: clinic.id,
-                latitude: clinic.latitude,
-                longitude: clinic.longitude,
-              })),
-            },
+        for (const clinic of chunk) {
+          const routeMeters = await fetchOsrmDistanceMeters(userLocation, {
+            latitude: clinic.latitude,
+            longitude: clinic.longitude,
           });
-
-          if (error) throw error;
-          const rows = (data as { distances?: { id: string; meters: number | null }[] }).distances ?? [];
-          rows.forEach((row) => {
-            distanceMap[row.id] = row.meters;
-            sourceMap[row.id] = typeof row.meters === 'number' ? 'google' : 'unavailable';
-          });
-        } catch {
-          for (const clinic of chunk) {
-            const fallbackDistance = await fetchOsrmDistanceMeters(userLocation, {
-              latitude: clinic.latitude,
-              longitude: clinic.longitude,
-            });
-            distanceMap[clinic.id] = fallbackDistance;
-            sourceMap[clinic.id] = typeof fallbackDistance === 'number' ? 'fallback' : 'unavailable';
-          }
+          distanceMap[clinic.id] = routeMeters;
+          sourceMap[clinic.id] = typeof routeMeters === 'number' ? 'fallback' : 'unavailable';
         }
       }
 
@@ -377,7 +357,7 @@ export const IndexPage = () => {
         is_active: true,
         phone: c.phone ?? null,
         google_place_id: c.google_place_id ?? null,
-        source: 'google',
+        source: 'npi',
         verified: true,
         latestWaitMinutes: null,
         latestReportAt: null,
@@ -398,11 +378,11 @@ export const IndexPage = () => {
           ? 'That place is permanently closed.'
           : 'Could not add this place. Please try again.';
 
-  // "Verify & Add": save the confirmed Google place, then open its clinic card.
+  // "Verify & Add": save the confirmed NPPES place, then open its clinic card.
   const handleVerify = useCallback(
     async (result: MedicalPlaceResult) => {
-      if (!result.place_id) return;
-      const res = await addPlace(result.place_id);
+      if (result.source !== 'npi' || !result.npi) return;
+      const res = await addPlace(result.npi);
       if (res.ok) {
         setPendingPlace(null);
         openAddedClinic(res.clinic);
@@ -413,26 +393,12 @@ export const IndexPage = () => {
     [addPlace, openAddedClinic]
   );
 
-  // Tap a Google medical POI → auto-add it (verified), else fall back to Suggest.
+  // Tapping a map POI → open the Suggest form prefilled with the point. (Raster
+  // OSM / Apple Maps have no addable "place id" the way Google POIs did.)
   const handlePoiPress = useCallback(
     async (poi: { placeId?: string; name?: string; coordinate: LatLng }) => {
       if (isPopupActive) return;
       setMapTapPoint(null);
-      if (poi.placeId) {
-        // Already in our DB? Open its card instantly — no network round-trip, so
-        // there's no lag when tapping a location that's already added.
-        const existing = clinics.find((c) => c.google_place_id === poi.placeId);
-        if (existing) {
-          openClinicPopup(existing);
-          return;
-        }
-        const res = await addPlace(poi.placeId);
-        if (res.ok) {
-          openAddedClinic(res.clinic);
-          return;
-        }
-        if (res.reason === 'busy') return;
-      }
       router.push({
         pathname: '/suggest-clinic',
         params: {
@@ -442,7 +408,7 @@ export const IndexPage = () => {
         },
       });
     },
-    [addPlace, openAddedClinic, openClinicPopup, isPopupActive, router, clinics]
+    [isPopupActive, router]
   );
 
   // Tap an empty map point → show a "add here" affordance (item 7).

@@ -20,7 +20,7 @@ type Props = {
 };
 
 const keyFor = (r: MedicalPlaceResult): string =>
-  r.source === 'db' ? `db-${r.id ?? r.name}` : `g-${r.place_id ?? r.name}`;
+  r.source === 'db' ? `db-${r.id ?? r.name}` : `npi-${r.npi ?? r.name}`;
 
 const distanceLabel = (from: LatLng | null, r: MedicalPlaceResult): string | null => {
   if (!from) return null;
@@ -29,7 +29,8 @@ const distanceLabel = (from: LatLng | null, r: MedicalPlaceResult): string | nul
   return miles < 0.1 ? 'here' : `${miles.toFixed(1)} mi`;
 };
 
-/** Dropdown under the search box. Tap a result to view it (Google places save on tap). */
+/** Dropdown under the search box. Tap a DB result to open it; tap a registry
+ *  (NPI) result to confirm it on the map before saving. */
 export const SearchResults = ({
   visible,
   loading,
@@ -66,7 +67,7 @@ export const SearchResults = ({
 
         {results.map((r) => {
           const dist = distanceLabel(userLocation, r);
-          const saving = r.source === 'google' && !!r.place_id && addingPlaceId === r.place_id;
+          const saving = r.source === 'npi' && !!r.npi && addingPlaceId === r.npi;
           return (
             <Pressable
               key={keyFor(r)}
@@ -104,7 +105,7 @@ export const SearchResults = ({
               {limited
                 ? 'Too many searches just now — showing saved offices only. Try again shortly.'
                 : degraded
-                  ? 'Google search is unavailable right now. Showing saved offices only.'
+                  ? 'Registry search is unavailable right now. Showing saved offices only.'
                   : `No medical places found for “${query.trim()}”.`}
             </Text>
             <Pressable
@@ -120,7 +121,7 @@ export const SearchResults = ({
 
         {!nothing && (limited || degraded) ? (
           <Text style={[styles.noticeText, { color: title }]}>
-            {limited ? 'Search limit reached — Google results paused briefly.' : 'Some Google results may be unavailable.'}
+            {limited ? 'Search limit reached — registry results paused briefly.' : 'Some registry results may be unavailable.'}
           </Text>
         ) : null}
       </ScrollView>

@@ -1,6 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { viewOnMapUrl } from '@seemywait/core';
+
 import type { MedicalPlaceResult } from '@/src/hooks/use-medical-search';
 import { haversineDistanceMeters, metersToMiles } from '@/src/lib/distance';
 import type { LatLng } from '@/src/lib/geolocation';
@@ -15,7 +17,7 @@ type Props = {
 };
 
 /**
- * Bottom sheet shown when a Google search result is tapped. The place is NOT
+ * Bottom sheet shown when an NPPES registry result is tapped. The place is NOT
  * saved yet — its pin is dropped on the SeeMyWait map above this card so the
  * user can confirm the location, then "Verify & Add" saves it.
  */
@@ -32,11 +34,7 @@ export const VerifyCard = ({ place, userLocation, adding, isDark, onVerify, onCl
     : null;
 
   const openInMaps = () => {
-    const base = 'https://www.google.com/maps/search/?api=1';
-    const url = place.place_id
-      ? `${base}&query=${encodeURIComponent(place.name)}&query_place_id=${encodeURIComponent(place.place_id)}`
-      : `${base}&query=${place.latitude},${place.longitude}`;
-    void Linking.openURL(url).catch(() => {});
+    void Linking.openURL(viewOnMapUrl(place.name, place.latitude, place.longitude)).catch(() => {});
   };
 
   return (
@@ -99,9 +97,9 @@ export const VerifyCard = ({ place, userLocation, adding, isDark, onVerify, onCl
           onPress={openInMaps}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="View on Google Maps">
+          accessibilityLabel="View on map">
           <Feather name="external-link" size={13} color={secondary} />
-          <Text style={[styles.mapsLinkText, { color: secondary }]}>View on Google Maps</Text>
+          <Text style={[styles.mapsLinkText, { color: secondary }]}>View on map</Text>
         </Pressable>
       </View>
     </View>
