@@ -248,7 +248,7 @@ export const ProximityPrompt = ({
     void Linking.openURL(directionsUrl(clinic.latitude, clinic.longitude)).catch(() => {});
   };
 
-  // Open the location on a map (OpenStreetMap; keyless, opens the user's map app).
+  // Open the location in Google Maps (plain deep link — no API key, not billed).
   const openInMaps = () => {
     void Linking.openURL(viewOnMapUrl(clinic.name, clinic.latitude, clinic.longitude)).catch(() => {});
   };
@@ -358,9 +358,9 @@ export const ProximityPrompt = ({
             onPress={openInMaps}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="View on map">
+            accessibilityLabel="View on Google Maps">
             <Feather name="external-link" size={13} color="#64748b" />
-            <Text style={styles.mapsLinkText}>View on map</Text>
+            <Text style={styles.mapsLinkText}>View on Google Maps</Text>
           </Pressable>
         </View>
       </View>

@@ -320,7 +320,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
               className="w-full gap-2 rounded-xl text-muted-foreground sm:w-auto"
             >
               <ExternalLink className="h-4 w-4" />
-              View on map
+              View on Google Maps
             </Button>
           </div>
         </div>

@@ -97,9 +97,9 @@ export const VerifyCard = ({ place, userLocation, adding, isDark, onVerify, onCl
           onPress={openInMaps}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="View on map">
+          accessibilityLabel="View on Google Maps">
           <Feather name="external-link" size={13} color={secondary} />
-          <Text style={[styles.mapsLinkText, { color: secondary }]}>View on map</Text>
+          <Text style={[styles.mapsLinkText, { color: secondary }]}>View on Google Maps</Text>
         </Pressable>
       </View>
     </View>

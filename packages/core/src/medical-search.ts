@@ -162,7 +162,11 @@ export function directionsUrl(latitude: number, longitude: number): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving`;
 }
 
-/** "View on map" deep link (OpenStreetMap; keyless, opens the user's map app). */
+/**
+ * "View on map" deep link. A plain google.com/maps URL — no API, no key, not
+ * billed — so it opens the Google Maps app (photos / reviews / hours) without
+ * reintroducing the Maps Platform dependency.
+ */
 export function viewOnMapUrl(_name: string, latitude: number, longitude: number): string {
-  return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
+  return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 }

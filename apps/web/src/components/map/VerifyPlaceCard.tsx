@@ -123,7 +123,7 @@ export function VerifyPlaceCard({
               }
             >
               <ExternalLink className="h-4 w-4" />
-              View on map
+              View on Google Maps
             </Button>
           </div>
 
