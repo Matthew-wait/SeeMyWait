@@ -66,7 +66,6 @@ type MapsParts = {
   NativeMap: ComponentType<any>;
   NativeCircle: ComponentType<any>;
   NativeMarker: ComponentType<any>;
-  googleProvider?: string;
 };
 
 export const MapView = ({
@@ -94,7 +93,6 @@ export const MapView = ({
           NativeMap: mapsModule.default,
           NativeCircle: mapsModule.Circle,
           NativeMarker: mapsModule.Marker,
-          googleProvider: mapsModule.PROVIDER_GOOGLE,
         });
       })
       .catch(() => {
