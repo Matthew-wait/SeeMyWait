@@ -37,6 +37,13 @@ jobs:
         env:
           DB_URL_RAW: ${{ secrets.DB_CONNECTION_STRING }}
         run: |
+          # Fail fast with a readable message instead of letting pg_dump fall
+          # back to a local socket connection when the secret is unset.
+          if [ -z "$DB_URL_RAW" ]; then
+            echo "::error::DB_CONNECTION_STRING repo secret is not set (Settings > Secrets and variables > Actions). See the comment at the top of this workflow for where to find the value in Supabase."
+            exit 1
+          fi
+
           # Strip any stray whitespace/newlines that can sneak in when pasting
           # the secret (a trailing newline makes the dbname "postgres\n").
           DB_URL="$(printf '%s' "$DB_URL_RAW" | tr -d '[:space:]')"
