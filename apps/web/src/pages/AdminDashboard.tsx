@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +52,18 @@ type Clinic = {
   google_place_id: string | null;
   is_active: boolean;
   created_at: string;
+};
+
+type ClinicSuggestionRow = Database["public"]["Tables"]["clinic_suggestions"]["Row"];
+type AppSettingRow = Database["public"]["Tables"]["app_settings"]["Row"];
+type WaitTimeReportRow = Database["public"]["Tables"]["wait_time_reports"]["Row"] & {
+  clinics: { name: string } | null;
+};
+type AddressPrediction = {
+  description?: unknown;
+  place_id?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
 };
 
 type ClinicFormData = {
@@ -142,7 +155,7 @@ function ClinicFormDialog({
         const predictions = Array.isArray(data?.predictions) ? data.predictions : [];
         setAddressSuggestions(
           predictions
-            .map((p: any) => ({
+            .map((p: AddressPrediction) => ({
               description: String(p?.description ?? ""),
               place_id: String(p?.place_id ?? ""),
               latitude: typeof p?.latitude === "number" ? p.latitude : null,
@@ -662,8 +675,8 @@ export default function AdminDashboard() {
   // Load settings into state
   useEffect(() => {
     if (appSettings) {
-      const radius = appSettings.find((s: any) => s.key === "nearby_radius_miles");
-      const cooldown = appSettings.find((s: any) => s.key === "report_cooldown_minutes");
+      const radius = appSettings.find((s: AppSettingRow) => s.key === "nearby_radius_miles");
+      const cooldown = appSettings.find((s: AppSettingRow) => s.key === "report_cooldown_minutes");
       if (radius) setNearbyRadius(radius.value);
       if (cooldown) setCooldownMinutes(cooldown.value);
     }
@@ -674,7 +687,7 @@ export default function AdminDashboard() {
 
   const filteredReports = useMemo(() => {
     if (!recentReports) return [];
-    return recentReports.filter((r: any) => {
+    return recentReports.filter((r: WaitTimeReportRow) => {
       const reportTime = new Date(r.reported_at).getTime();
       const isActive = reportTime > expiryCutoffTime;
       return showActiveReports ? isActive : !isActive;
@@ -683,7 +696,7 @@ export default function AdminDashboard() {
 
   const activeReportCount = useMemo(() => {
     if (!recentReports) return 0;
-    return recentReports.filter((r: any) => new Date(r.reported_at).getTime() > expiryCutoffTime && !r.is_flagged).length;
+    return recentReports.filter((r: WaitTimeReportRow) => new Date(r.reported_at).getTime() > expiryCutoffTime && !r.is_flagged).length;
   }, [recentReports, expiryCutoffTime]);
 
 
@@ -861,7 +874,7 @@ export default function AdminDashboard() {
   ]);
 
   const approveSuggestion = useMutation({
-    mutationFn: async (suggestion: any) => {
+    mutationFn: async (suggestion: ClinicSuggestionRow) => {
       const name = String(suggestion.doctor_name ?? "").trim();
       const address = String(suggestion.address ?? "").trim();
       const { data: existing, error: loadErr } = await supabase
@@ -1371,7 +1384,7 @@ export default function AdminDashboard() {
 
           <TabsContent value="suggestions" className="space-y-3">
             {suggestions && suggestions.length > 0 ? (
-              suggestions.map((s: any, i: number) => (
+              suggestions.map((s: ClinicSuggestionRow, i: number) => (
                 <Card key={s.id} className="border-border/50 animate-in fade-in slide-in-from-bottom-1" style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}>
                   <CardContent className="flex items-center justify-between gap-2 p-3 sm:p-4">
                     <div className="min-w-0 flex-1">
@@ -1437,7 +1450,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredReports.map((r: any) => {
+                  {filteredReports.map((r: WaitTimeReportRow) => {
                     const waitCategory = r.wait_time as WaitTimeCategory;
                     return (
                       <TableRow key={r.id} className={r.is_flagged ? "opacity-40" : "transition-colors"}>

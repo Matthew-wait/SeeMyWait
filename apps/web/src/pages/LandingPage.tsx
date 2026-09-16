@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { getErrorCode, getErrorMessage } from "@/lib/utils";
 import { Menu, X as XIcon } from "lucide-react";
 import {
   MapPin,
@@ -356,12 +357,12 @@ export default function LandingPage() {
       setContactName("");
       setContactEmail("");
       setContactMessage("");
-    } catch (err: any) {
-      const code = err?.code || err?.cause?.code;
+    } catch (err: unknown) {
+      const code = getErrorCode(err);
       if (code === "42P01") {
         toast.error("Feedback storage is not set up yet. Please run the latest Supabase migration.");
       } else {
-        toast.error(err?.message || "Failed to send message. Please try again.");
+        toast.error(getErrorMessage(err, "Failed to send message. Please try again."));
       }
     }
   };

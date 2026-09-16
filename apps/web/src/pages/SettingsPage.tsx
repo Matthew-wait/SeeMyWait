@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { getErrorCode, getErrorMessage } from "@/lib/utils";
 import {
   Settings, Heart, Moon, Sun, Bell, BellOff,
   Globe, ChevronRight, Sparkles,
@@ -82,9 +83,9 @@ export default function SettingsPage() {
       setFeedbackMessage("");
       setFeedbackEmail("");
       setFeedbackOpen(false);
-    } catch (err: any) {
-      const code = err?.code || err?.cause?.code;
-      const message = err?.message || "Failed to send feedback. Please try again.";
+    } catch (err: unknown) {
+      const code = getErrorCode(err);
+      const message = getErrorMessage(err, "Failed to send feedback. Please try again.");
       if (code === "42P01") {
         toast.error("Feedback storage is not set up yet. Please run the latest Supabase migration.");
       } else {

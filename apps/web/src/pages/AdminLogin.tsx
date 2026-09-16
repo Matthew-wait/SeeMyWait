@@ -40,8 +40,8 @@ export default function AdminLogin() {
 
       toast.success("Welcome, Admin!");
       navigate("/admin");
-    } catch (err: any) {
-      toast.error(err.message || "Login failed.");
+    } catch (err: unknown) {
+      toast.error((err instanceof Error && err.message) || "Login failed.");
     } finally {
       setLoading(false);
     }
