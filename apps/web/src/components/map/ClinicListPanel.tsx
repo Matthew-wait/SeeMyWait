@@ -17,6 +17,11 @@ interface ClinicListPanelProps {
   clinics: ClinicWithWaitTime[];
   nearbyClinics: ClinicWithWaitTime[];
   isSearching: boolean;
+  /** True while the user is actively typing/picking from the results dropdown
+   *  — collapse to keep the map in focus. False again once they've picked a
+   *  result (or cleared the search), so the match shows automatically instead
+   *  of staying hidden behind a "Show Results" tap. */
+  autoCollapse: boolean;
   searchQuery: string;
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
 }
@@ -27,6 +32,7 @@ export function ClinicListPanel({
   clinics,
   nearbyClinics,
   isSearching,
+  autoCollapse,
   searchQuery,
   onClinicClick,
 }: ClinicListPanelProps) {
@@ -34,12 +40,12 @@ export function ClinicListPanel({
   const [expanded, setExpanded] = useState(false);
   const [expandedHistory, setExpandedHistory] = useState<Set<string>>(new Set());
 
-  // Auto-collapse the panel whenever the search bar becomes active so the
-  // map keeps focus, and re-open it when the search is cleared. The user
-  // can still manually expand/collapse during an active search.
+  // Collapse while the user is actively typing/browsing the dropdown so the
+  // map keeps focus, then auto-expand as soon as they pick a result (or clear
+  // the search) so a match shows immediately instead of needing an extra tap.
   useEffect(() => {
-    setCollapsed(isSearching);
-  }, [isSearching]);
+    setCollapsed(autoCollapse);
+  }, [autoCollapse]);
 
   const toggleHistory = (id: string) => {
     setExpandedHistory((prev) => {

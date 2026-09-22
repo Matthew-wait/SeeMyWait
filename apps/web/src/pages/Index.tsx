@@ -18,6 +18,7 @@ import {
   AddedClinic,
   NpiSearchResult,
   MedicalSearchResult,
+  DbSearchResult,
 } from "@/lib/medical-search";
 import { reverseGeocode } from "@/lib/google-places-client";
 import { AddDoctorPrefill } from "@/lib/add-doctor-prefill";
@@ -110,6 +111,29 @@ const Index = () => {
 
   const isSearching = Boolean(search.trim());
 
+  /**
+   * A `db` search hit is already saved server-side, but may not be in the
+   * local `clinics` snapshot yet (e.g. it's outside the nearby-radius query
+   * that snapshot was fetched with). Build a displayable clinic straight from
+   * the search result so the map pin and detail sheet never depend on that
+   * snapshot happening to include it.
+   */
+  const dbResultToClinic = useCallback(
+    (result: DbSearchResult): ClinicWithWaitTime => ({
+      id: result.id,
+      name: result.name,
+      address: result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      phone: null,
+      google_place_id: null,
+      specialty: null,
+      waitTime: { category: "on_time", label: "On Time", lastReported: null },
+      recentReports: [],
+    }),
+    []
+  );
+
   // Map markers:
   //  - while searching, show exactly the offices the server matched;
   //  - otherwise show EVERY active clinic (item 8) so a pin appears wherever the
@@ -120,21 +144,10 @@ const Index = () => {
     if (!dbSearchResults.length) return [];
 
     const byId = new Map((clinics ?? []).map((clinic) => [clinic.id, clinic]));
-    return dbSearchResults.map((result): ClinicWithWaitTime =>
-      byId.get(result.id) ?? {
-        id: result.id,
-        name: result.name,
-        address: result.address,
-        latitude: result.latitude,
-        longitude: result.longitude,
-        phone: null,
-        google_place_id: null,
-        specialty: null,
-        waitTime: { category: "on_time", label: "On Time", lastReported: null },
-        recentReports: [],
-      }
+    return dbSearchResults.map(
+      (result) => byId.get(result.id) ?? dbResultToClinic(result)
     );
-  }, [clinics, dbSearchResults, isSearching]);
+  }, [clinics, dbSearchResults, isSearching, dbResultToClinic]);
 
   // Frame the map on the search hits (only when no candidate pin owns the view).
   const matchedLocationsKey = dbSearchResults
@@ -195,14 +208,13 @@ const Index = () => {
           latitude: result.latitude,
           longitude: result.longitude,
         });
+        setCandidate(null);
+        // Open immediately from the search result itself — don't depend on
+        // the separately fetched nearby-clinics snapshot happening to
+        // include it, which silently did nothing when it didn't.
         const clinic = clinics?.find((c) => c.id === result.id);
-        if (clinic) {
-          setCandidate(null);
-          setSelectedClinic(clinic);
-        } else {
-          // Saved server-side but not in the local snapshot yet.
-          refetch();
-        }
+        setSelectedClinic(clinic ?? dbResultToClinic(result));
+        if (!clinic) refetch(); // top up the snapshot for report/refresh actions
         return;
       }
 
@@ -210,7 +222,7 @@ const Index = () => {
       setFocusedPlace(null);
       setCandidate(result);
     },
-    [clinics, refetch]
+    [clinics, refetch, dbResultToClinic]
   );
 
   const handleVerified = useCallback(
@@ -299,6 +311,7 @@ const Index = () => {
                   setSearch(e.target.value);
                   setFocusedPlace(null);
                   setDropdownOpen(true);
+                  setPendingPoint(null);
                 }}
                 onFocus={() => {
                   if (search.trim()) setDropdownOpen(true);
@@ -365,7 +378,10 @@ const Index = () => {
             userLocation={userLocation}
             onClinicClick={handleClinicClick}
             onEmptyClick={handleEmptyClick}
-            onMapPointClick={handleMapPointClick}
+            // "Tap empty map to add a missing place" is only for the browse
+            // state. With a search active, an empty-space tap must never be
+            // mistaken for "add a new one" — clear the search first.
+            onMapPointClick={isSearching ? undefined : handleMapPointClick}
             centerOn={centerOn}
             candidate={
               candidate
@@ -438,6 +454,7 @@ const Index = () => {
           clinics={displayedClinics}
           nearbyClinics={nearbyClinics}
           isSearching={isSearching}
+          autoCollapse={isSearching && dropdownOpen}
           searchQuery={search.trim()}
           onClinicClick={handleClinicClick}
         />
