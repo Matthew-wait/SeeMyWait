@@ -37,7 +37,7 @@ const INITIAL_COUNT = 5;
 function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
   const radiusLabel = radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`;
   return (
-    <p className="px-3 pb-2 text-[11px] leading-relaxed text-muted-foreground">
+    <p className="px-3 pt-3 pb-2 text-[11px] leading-relaxed text-muted-foreground">
       You're seeing doctor offices within <span className="font-medium text-foreground">{radiusLabel}</span> of your location.
       Use search to find a specific one further away — and{" "}
       <button
@@ -85,11 +85,22 @@ export function ClinicListPanel({
   const listToShow = isSearching ? clinics : nearbyClinics;
   const displayList = expanded ? listToShow : listToShow.slice(0, INITIAL_COUNT);
   const canExpandList = listToShow.length > INITIAL_COUNT;
+  // The browse view now also carries the radius notice above the list, so its
+  // scroll area gets a smaller cap than search results (which don't show that
+  // notice) — otherwise the extra height pushed "Explore More" far enough
+  // down to be clipped by the page's overflow-hidden root, behind BottomNav.
+  const listMaxHeightClass = isSearching
+    ? expanded
+      ? "max-h-[55vh]"
+      : "max-h-[40vh]"
+    : expanded
+      ? "max-h-[49vh]"
+      : "max-h-[34vh]";
 
   // Collapsed state - just show a toggle bar
   if (collapsed) {
     return (
-      <div className="bg-background border-t border-border/30 pb-24 sm:pb-20">
+      <div className="bg-background border-t border-border/30 pb-28 sm:pb-24">
         <button
           onClick={() => setCollapsed(false)}
           className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
@@ -105,12 +116,12 @@ export function ClinicListPanel({
 
   if (listToShow.length === 0) {
     return (
-      <div className="bg-background border-t border-border/30 pb-24 sm:pb-20 text-center">
+      <div className="bg-background border-t border-border/30 pb-28 sm:pb-24 text-center">
         <p className="px-3 pt-4 text-xs text-muted-foreground">
           {isSearching ? `No results for "${searchQuery}"` : "No nearby doctor offices found."}
         </p>
         {!isSearching && (
-          <div className="pt-1 text-left">
+          <div className="text-left">
             <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />
           </div>
         )}
@@ -119,7 +130,7 @@ export function ClinicListPanel({
   }
 
   return (
-    <div className="bg-background border-t border-border/30 pb-24 sm:pb-20">
+    <div className="bg-background border-t border-border/30 pb-28 sm:pb-24">
       {!isSearching && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
       <div className="flex items-start justify-between gap-2 px-3 pb-1 pt-3">
         <h3 className="min-w-0 text-sm font-semibold text-foreground">
@@ -136,7 +147,7 @@ export function ClinicListPanel({
         </button>
       </div>
       <div
-        className={`px-3 pb-2 space-y-2 overflow-y-auto ${expanded ? "max-h-[55vh]" : "max-h-[40vh]"}`}
+        className={`px-3 pb-2 space-y-2 overflow-y-auto ${listMaxHeightClass}`}
       >
         {displayList.map((clinic) => {
           const historyOpen = expandedHistory.has(clinic.id);
