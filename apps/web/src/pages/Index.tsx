@@ -37,8 +37,7 @@ const Index = () => {
   } | null>(null);
   /** NPPES result awaiting explicit verification — pinned on the map, not saved. */
   const [candidate, setCandidate] = useState<NpiSearchResult | null>(null);
-  /** Clinic ids returned by the current search, in server order. */
-  const [matchedClinicIds, setMatchedClinicIds] = useState<string[]>([]);
+
   /** Whether the results dropdown is expanded (click-outside collapses it). */
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
@@ -83,17 +82,14 @@ const Index = () => {
     })();
   }, []);
 
-  // Mirror the search's DB hits onto the map.
-  useEffect(() => {
-    if (!searchState.searched) {
-      setMatchedClinicIds([]);
-      return;
-    }
-    const ids = searchState.results
-      .filter((r): r is Extract<MedicalSearchResult, { source: "db" }> => r.source === "db")
-      .map((r) => r.id);
-    setMatchedClinicIds(ids);
-  }, [searchState.results, searchState.searched]);
+  const dbSearchResults = useMemo(
+    () =>
+      searchState.results.filter(
+        (result): result is Extract<MedicalSearchResult, { source: "db" }> =>
+          result.source === "db"
+      ),
+    [searchState.results]
+  );
 
   // Clinics visible to user based on admin nearby radius setting
   const clinicsWithinNearbyRadius = useMemo(() => {
@@ -120,32 +116,42 @@ const Index = () => {
   //    map is panned, independent of the nearby-radius filter (which only
   //    governs the list below). MapView guards non-finite coordinates.
   const displayedClinics = useMemo(() => {
-    if (!clinics?.length) return [];
-    if (isSearching && matchedClinicIds.length > 0) {
-      const byId = new Map(clinics.map((c) => [c.id, c]));
-      return matchedClinicIds
-        .map((id) => byId.get(id))
-        .filter((c): c is ClinicWithWaitTime => Boolean(c));
-    }
-    if (isSearching) return [];
-    return clinics;
-  }, [clinics, isSearching, matchedClinicIds]);
+    if (!isSearching) return clinics ?? [];
+    if (!dbSearchResults.length) return [];
+
+    const byId = new Map((clinics ?? []).map((clinic) => [clinic.id, clinic]));
+    return dbSearchResults.map((result): ClinicWithWaitTime =>
+      byId.get(result.id) ?? {
+        id: result.id,
+        name: result.name,
+        address: result.address,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        phone: null,
+        google_place_id: null,
+        specialty: null,
+        waitTime: { category: "on_time", label: "On Time", lastReported: null },
+        recentReports: [],
+      }
+    );
+  }, [clinics, dbSearchResults, isSearching]);
 
   // Frame the map on the search hits (only when no candidate pin owns the view).
-  const matchedIdsKey = matchedClinicIds.join(",");
+  const matchedLocationsKey = dbSearchResults
+    .map((result) => `${result.id}:${result.latitude}:${result.longitude}`)
+    .join(",");
   useEffect(() => {
-    if (candidate || !matchedClinicIds.length || !clinics?.length) return;
-    const byId = new Map(clinics.map((c) => [c.id, c]));
-    const matched = matchedClinicIds.map((id) => byId.get(id)).filter(Boolean) as ClinicWithWaitTime[];
-    if (!matched.length) return;
+    if (candidate || !dbSearchResults.length) return;
     setCenterOn({
-      lat: matched.reduce((s, c) => s + c.latitude, 0) / matched.length,
-      lng: matched.reduce((s, c) => s + c.longitude, 0) / matched.length,
-      zoom: matched.length === 1 ? 15 : 12,
+      lat:
+        dbSearchResults.reduce((sum, result) => sum + result.latitude, 0) /
+        dbSearchResults.length,
+      lng:
+        dbSearchResults.reduce((sum, result) => sum + result.longitude, 0) /
+        dbSearchResults.length,
+      zoom: dbSearchResults.length === 1 ? 15 : 12,
     });
-    // `clinics` is intentionally omitted: it gets a new identity on every
-    // background refetch, which would re-centre the map under the user.
-  }, [matchedIdsKey, candidate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [matchedLocationsKey, candidate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Nearby clinics for "Explore" list — show all sorted by distance, or all if no location
   const nearbyClinics = useMemo(() => {
