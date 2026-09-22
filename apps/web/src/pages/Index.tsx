@@ -30,6 +30,11 @@ const Index = () => {
   const [locating, setLocating] = useState(true);
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
+  const [focusedPlace, setFocusedPlace] = useState<{
+    name: string;
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   /** NPPES result awaiting explicit verification — pinned on the map, not saved. */
   const [candidate, setCandidate] = useState<NpiSearchResult | null>(null);
   /** Clinic ids returned by the current search, in server order. */
@@ -179,10 +184,11 @@ const Index = () => {
     (result: MedicalSearchResult) => {
       setDropdownOpen(false);
       if (result.source === "db") {
-        // Selecting a saved search result should focus its pin, just like an
-        // unsaved candidate. Previously the normal DB path only opened the
-        // detail sheet, leaving the map centred on the full result set.
-        setCenterOn({ lat: result.latitude, lng: result.longitude, zoom: 16 });
+        setFocusedPlace({
+          name: result.name,
+          latitude: result.latitude,
+          longitude: result.longitude,
+        });
         const clinic = clinics?.find((c) => c.id === result.id);
         if (clinic) {
           setCandidate(null);
@@ -195,6 +201,7 @@ const Index = () => {
       }
 
       setSelectedClinic(null);
+      setFocusedPlace(null);
       setCandidate(result);
     },
     [clinics, refetch]
@@ -284,6 +291,7 @@ const Index = () => {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
+                  setFocusedPlace(null);
                   setDropdownOpen(true);
                 }}
                 onFocus={() => {
@@ -296,6 +304,7 @@ const Index = () => {
                   onClick={() => {
                     setSearch("");
                     setCandidate(null);
+                    setFocusedPlace(null);
                     setDropdownOpen(false);
                   }}
                   className="shrink-0 text-muted-foreground hover:text-foreground"
@@ -361,6 +370,7 @@ const Index = () => {
                   }
                 : null
             }
+            focusedPlace={focusedPlace}
             pendingPoint={pendingPoint}
             nearbyRadiusMiles={nearbyRadiusMiles}
           />

@@ -103,6 +103,8 @@ interface MapViewProps {
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
   nearbyRadiusMiles?: number;
   candidate?: CandidatePlace | null;
+  /** A saved search result selected by the user. Always gets its own pin. */
+  focusedPlace?: CandidatePlace | null;
   /** A tapped empty point awaiting "Add here" — drops a pin + coordinate popup. */
   pendingPoint?: { lat: number; lng: number } | null;
   /** Inert on web (kept so callers don't need to change); see {@link PoiTap}. */
@@ -119,6 +121,7 @@ function MapViewInner({
   centerOn,
   nearbyRadiusMiles = 100,
   candidate = null,
+  focusedPlace = null,
   pendingPoint = null,
   onMapPointClick,
 }: MapViewProps) {
@@ -127,6 +130,7 @@ function MapViewInner({
   const clinicLayerRef = useRef<L.LayerGroup | null>(null);
   const userLayerRef = useRef<L.LayerGroup | null>(null);
   const candidateMarkerRef = useRef<L.Marker | null>(null);
+  const focusedMarkerRef = useRef<L.Marker | null>(null);
   const pendingMarkerRef = useRef<L.Marker | null>(null);
   const prevClinicKeyRef = useRef("");
 
@@ -183,6 +187,7 @@ function MapViewInner({
       clinicLayerRef.current = null;
       userLayerRef.current = null;
       candidateMarkerRef.current = null;
+      focusedMarkerRef.current = null;
       pendingMarkerRef.current = null;
       prevClinicKeyRef.current = "";
     };
@@ -306,6 +311,34 @@ function MapViewInner({
       centerOn.zoom ?? mapRef.current.getZoom()
     );
   }, [centerOn, status]);
+
+  // A selected saved result owns an explicit pin instead of depending on the
+  // separately fetched clinic snapshot. Offset it upward so the details sheet
+  // cannot cover the location the user just selected.
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current) return;
+    const map = mapRef.current;
+
+    focusedMarkerRef.current?.remove();
+    focusedMarkerRef.current = null;
+
+    if (!focusedPlace || !hasValidCoords(focusedPlace.latitude, focusedPlace.longitude)) return;
+
+    focusedMarkerRef.current = L.marker([focusedPlace.latitude, focusedPlace.longitude], {
+      icon: pinIcon(CANDIDATE_COLOR),
+      title: focusedPlace.name,
+      zIndexOffset: 1200,
+      keyboard: false,
+    }).addTo(map);
+
+    map.setView([focusedPlace.latitude, focusedPlace.longitude], 16);
+    requestAnimationFrame(() => {
+      if (!mapRef.current) return;
+      mapRef.current.panBy([0, Math.min(120, mapRef.current.getSize().y * 0.28)], {
+        animate: false,
+      });
+    });
+  }, [focusedPlace, status]);
 
   const handleZoomIn = useCallback(() => {
     mapRef.current?.zoomIn();
