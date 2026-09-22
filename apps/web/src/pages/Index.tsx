@@ -179,6 +179,10 @@ const Index = () => {
     (result: MedicalSearchResult) => {
       setDropdownOpen(false);
       if (result.source === "db") {
+        // Selecting a saved search result should focus its pin, just like an
+        // unsaved candidate. Previously the normal DB path only opened the
+        // detail sheet, leaving the map centred on the full result set.
+        setCenterOn({ lat: result.latitude, lng: result.longitude, zoom: 16 });
         const clinic = clinics?.find((c) => c.id === result.id);
         if (clinic) {
           setCandidate(null);
@@ -186,7 +190,6 @@ const Index = () => {
         } else {
           // Saved server-side but not in the local snapshot yet.
           refetch();
-          setCenterOn({ lat: result.latitude, lng: result.longitude, zoom: 16 });
         }
         return;
       }
