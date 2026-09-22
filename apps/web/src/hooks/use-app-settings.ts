@@ -20,13 +20,22 @@ export function useAppSettings() {
         .select("key, value");
       if (error) throw error;
 
+      // parseInt truncates "0.621371" to 0, and `0 || fallback` then silently
+      // discards it since 0 is falsy — any radius under 1 mile got replaced
+      // by the 100-mile default. parseFloat preserves decimals; an explicit
+      // finite/positive check (not `||`) is what should decide the fallback.
+      const parseSetting = (raw: string | undefined, fallback: number): number => {
+        const parsed = parseFloat(raw ?? "");
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+      };
+
       const settings = { ...DEFAULTS };
       (data || []).forEach((row: { key: string; value: string }) => {
         if (row.key === "nearby_radius_miles") {
-          settings.nearby_radius_miles = parseInt(row.value, 10) || DEFAULTS.nearby_radius_miles;
+          settings.nearby_radius_miles = parseSetting(row.value, DEFAULTS.nearby_radius_miles);
         }
         if (row.key === "report_cooldown_minutes") {
-          settings.report_cooldown_minutes = parseInt(row.value, 10) || DEFAULTS.report_cooldown_minutes;
+          settings.report_cooldown_minutes = parseSetting(row.value, DEFAULTS.report_cooldown_minutes);
         }
       });
       return settings;
