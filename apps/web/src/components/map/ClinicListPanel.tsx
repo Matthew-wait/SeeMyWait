@@ -23,10 +23,34 @@ interface ClinicListPanelProps {
    *  of staying hidden behind a "Show Results" tap. */
   autoCollapse: boolean;
   searchQuery: string;
+  /** Admin-configured nearby radius, shown so users understand why the
+   *  browse list is limited and know to search instead of assuming a doctor
+   *  office just isn't in the directory. */
+  radiusMiles: number;
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
+  onSuggestClinic: () => void;
 }
 
 const INITIAL_COUNT = 5;
+
+/** Shared "why is the list limited" note for the default (non-search) browse view. */
+function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
+  const radiusLabel = radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`;
+  return (
+    <p className="px-3 pb-2 text-[11px] leading-relaxed text-muted-foreground">
+      You're seeing doctor offices within <span className="font-medium text-foreground">{radiusLabel}</span> of your location.
+      Use search to find a specific one further away — and{" "}
+      <button
+        type="button"
+        onClick={onSuggestClinic}
+        className="font-medium text-primary underline-offset-2 hover:underline"
+      >
+        suggest it to the admin
+      </button>{" "}
+      if it isn't listed yet.
+    </p>
+  );
+}
 
 export function ClinicListPanel({
   clinics,
@@ -34,7 +58,9 @@ export function ClinicListPanel({
   isSearching,
   autoCollapse,
   searchQuery,
+  radiusMiles,
   onClinicClick,
+  onSuggestClinic,
 }: ClinicListPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -79,16 +105,22 @@ export function ClinicListPanel({
 
   if (listToShow.length === 0) {
     return (
-      <div className="bg-background border-t border-border/30 px-3 py-4 pb-24 sm:pb-20 text-center">
-        <p className="text-xs text-muted-foreground">
-          {isSearching ? `No results for "${searchQuery}"` : "No nearby doctor offices found. Try searching for a location."}
+      <div className="bg-background border-t border-border/30 pb-24 sm:pb-20 text-center">
+        <p className="px-3 pt-4 text-xs text-muted-foreground">
+          {isSearching ? `No results for "${searchQuery}"` : "No nearby doctor offices found."}
         </p>
+        {!isSearching && (
+          <div className="pt-1 text-left">
+            <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="bg-background border-t border-border/30 pb-24 sm:pb-20">
+      {!isSearching && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
       <div className="flex items-start justify-between gap-2 px-3 pb-1 pt-3">
         <h3 className="min-w-0 text-sm font-semibold text-foreground">
           {isSearching

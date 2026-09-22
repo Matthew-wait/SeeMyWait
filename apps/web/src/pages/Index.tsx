@@ -457,7 +457,9 @@ const Index = () => {
           isSearching={isSearching}
           autoCollapse={isSearching && dropdownOpen}
           searchQuery={search.trim()}
+          radiusMiles={nearbyRadiusMiles}
           onClinicClick={handleClinicClick}
+          onSuggestClinic={() => navigate("/suggest")}
         />
       </div>
 

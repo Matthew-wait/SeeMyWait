@@ -1,5 +1,9 @@
 import { MapPin, Navigation, ShieldAlert, Clock, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  REPORT_WAIT_GEOFENCE_METERS,
+  REPORT_MAX_GPS_ACCURACY_METERS,
+} from "@/lib/report-geofence";
 
 type ErrorType = "gps_off" | "too_far" | "low_accuracy" | "rate_limited" | "spoofing";
 
@@ -35,7 +39,7 @@ const errorConfig: Record<
     gradient: "from-blue-500/20 to-cyan-500/10",
     glow: "shadow-[0_0_60px_hsl(200_98%_39%/0.15)]",
     title: "You're Too Far Away",
-    message: "To keep wait times accurate, you must be physically at or near the doctor office to submit a report.",
+    message: `To keep wait times accurate, you must be within ${REPORT_WAIT_GEOFENCE_METERS} meters of the doctor office to submit a report.`,
     hint: "Move closer to the doctor office entrance and try again.",
     emoji: "🗺️",
   },
@@ -44,7 +48,7 @@ const errorConfig: Record<
     gradient: "from-yellow-500/20 to-amber-500/10",
     glow: "shadow-[0_0_60px_hsl(45_93%_47%/0.15)]",
     title: "Weak GPS Signal",
-    message: "Your location accuracy is too low to verify your position. This can happen indoors or in areas with poor signal.",
+    message: `Your location accuracy needs to be within ${REPORT_MAX_GPS_ACCURACY_METERS} meters to verify your position. This can happen indoors or in areas with poor signal.`,
     hint: "Step closer to a window or entrance for a better GPS signal.",
     emoji: "📡",
   },

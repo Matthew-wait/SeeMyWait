@@ -101,7 +101,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
         REPORT_WAIT_GEOFENCE_METERS
       );
       if (!withinRange) {
-        setError("You must be within range of this doctor office to report.");
+        setError(`You must be within ${REPORT_WAIT_GEOFENCE_METERS} meters of this doctor office to report.`);
         setSubmitting(false);
         setSelectedOption(null);
         setEligibility("too_far");
@@ -170,9 +170,9 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
   const eligibilityMessage = (): string => {
     switch (eligibility) {
       case "too_far":
-        return "You are not close enough to submit a wait report for this doctor office right now.";
+        return `You need to be within ${REPORT_WAIT_GEOFENCE_METERS} meters of this doctor office to report a wait time.`;
       case "low_accuracy":
-        return "Your GPS accuracy is too low to report right now. Move outdoors or closer to an entrance and try again.";
+        return `Your GPS accuracy needs to be within ${REPORT_MAX_GPS_ACCURACY_METERS} meters to report. Move outdoors or closer to an entrance and try again.`;
       case "gps_off":
         return "Location is required to verify reporting. Enable GPS and try again.";
       default:

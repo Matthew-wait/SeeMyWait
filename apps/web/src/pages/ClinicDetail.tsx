@@ -414,12 +414,12 @@ export default function ClinicDetail() {
             )}
             {locationState === "low_accuracy" && (
               <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
-                Location accuracy is too low. Move to an open area and try again.
+                Location accuracy needs to be within {REPORT_MAX_GPS_ACCURACY_METERS} meters. Move to an open area and try again.
               </div>
             )}
             {locationState === "too_far" && (
               <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
-                You need to be within about 0.6 miles of this doctor office to submit a report.
+                You need to be within {REPORT_WAIT_GEOFENCE_METERS} meters of this doctor office to submit a report.
               </div>
             )}
             <div className="grid grid-cols-2 gap-2.5">
