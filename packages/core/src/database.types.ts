@@ -262,6 +262,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      nearby_clinics: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_miles?: number
+          p_limit?: number
+        }
+        Returns: {
+          id: string
+          name: string
+          address: string
+          city: string | null
+          state: string | null
+          postal_code: string | null
+          latitude: number
+          longitude: number
+          phone: string | null
+          google_place_id: string | null
+          npi: string | null
+          specialty: string | null
+          distance_miles: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

@@ -33,28 +33,52 @@ export interface ClinicWithWaitTime extends Clinic {
 
 const HISTORY_WINDOW_MINUTES = 180; // last 3 hours
 
+/** Row shape returned by the `nearby_clinics` RPC (adds real distance_miles). */
+type NearbyClinicRow = Clinic & { distance_miles: number };
+
 export function useClinics(
   searchQuery?: string,
   userLat?: number,
   userLon?: number,
-  reportExpiryMinutes: number = 180
+  reportExpiryMinutes: number = 180,
+  radiusMiles: number = 100
 ) {
   return useQuery({
-    queryKey: ["clinics", searchQuery, userLat, userLon, reportExpiryMinutes],
+    queryKey: ["clinics", searchQuery, userLat, userLon, reportExpiryMinutes, radiusMiles],
     // Re-evaluate periodically so a pin reverts to the default once its
     // report ages out of the expiry window, even if the user hasn't acted.
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<ClinicWithWaitTime[]> => {
-      let query = supabase.from("clinics").select("*");
+      const hasLocation = userLat !== undefined && userLon !== undefined;
 
-      if (searchQuery) {
-        query = query.ilike("name", `%${searchQuery}%`);
+      // With a known location, use the server-side geo filter: real distance,
+      // computed and sorted in SQL, capped to a sane row count. The old plain
+      // `select("*")` had no LIMIT and no distance filter at all, so it
+      // silently relied on PostgREST's default 1000-row cap, ordered
+      // alphabetically by name — completely unrelated to the user's actual
+      // location, and unaffected by moving. See migration
+      // 20260922120000_nearby_clinics_geo_query.sql.
+      let clinics: (Clinic & { distance_miles?: number })[];
+      if (hasLocation && !searchQuery) {
+        const { data, error } = await supabase.rpc("nearby_clinics", {
+          p_lat: userLat,
+          p_lng: userLon,
+          p_radius_miles: radiusMiles,
+          p_limit: 500,
+        });
+        if (error) throw error;
+        clinics = (data ?? []) as NearbyClinicRow[];
+      } else {
+        // No location yet (e.g. permission denied), or a text search: bound
+        // the fetch explicitly instead of leaning on the implicit API cap.
+        let query = supabase.from("clinics").select("*").eq("is_active", true).limit(500);
+        if (searchQuery) query = query.ilike("name", `%${searchQuery}%`);
+        const { data, error } = await query.order("name");
+        if (error) throw error;
+        clinics = data ?? [];
       }
 
-      const { data: clinics, error } = await query.order("name");
-
-      if (error) throw error;
       if (!clinics) return [];
 
       // Fetch a window large enough to cover both the wait-time aggregation
@@ -99,15 +123,17 @@ export function useClinics(
           ...c,
           waitTime: getAverageWaitTime(allReports, reportExpiryMinutes),
           recentReports,
+          // Prefer the RPC's real SQL-computed distance; fall back to a JS
+          // haversine calc for the non-geo (search/no-location) fetch path.
           distance:
-            userLat !== undefined && userLon !== undefined
-              ? getDistanceMiles(userLat, userLon, c.latitude, c.longitude)
-              : undefined,
+            c.distance_miles ??
+            (hasLocation ? getDistanceMiles(userLat!, userLon!, c.latitude, c.longitude) : undefined),
         };
       });
 
-      // Sort by distance if location available
-      if (userLat !== undefined && userLon !== undefined) {
+      // Sort by distance if location available (the RPC path is already
+      // sorted server-side; this is a no-op there and covers the fallback).
+      if (hasLocation) {
         result.sort((a, b) => (a.distance || 999) - (b.distance || 999));
       }
 

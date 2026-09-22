@@ -54,7 +54,8 @@ const Index = () => {
     undefined,
     userLocation?.lat,
     userLocation?.lng,
-    reportCooldownMinutes
+    reportCooldownMinutes,
+    nearbyRadiusMiles
   );
 
   // Single search path: the `medical-search` edge function does DB-first
