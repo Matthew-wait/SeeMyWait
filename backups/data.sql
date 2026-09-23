@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 026aftmnJ2FoVWIVZmN2o3GWmebccnr9hJObfACLgQSsWnVzgcBJ6APo7E7XXVd
+\restrict 2gemO3rgvublo0vV49FJa3BfR3B3Kyoc7LTffjdB4u7oDh5bBuxMfSOLoJVrkzK
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.11 (Ubuntu 17.11-1.pgdg24.04+2)
@@ -23,8 +23,8 @@ SET row_security = off;
 -- Data for Name: app_settings; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.app_settings (id, key, value, description, updated_at) VALUES ('c4e6f44e-36e7-4542-b964-22d4d3f2a18f', 'nearby_radius_miles', '100', 'Radius in miles for nearby clinics display', '2026-09-07 10:32:38.757197+00');
 INSERT INTO public.app_settings (id, key, value, description, updated_at) VALUES ('7b5e9286-fcb8-4f8b-9b7c-c82c7e25cbc4', 'report_cooldown_minutes', '60', 'Minutes before a user can report again for the same clinic', '2026-09-07 10:32:38.757197+00');
+INSERT INTO public.app_settings (id, key, value, description, updated_at) VALUES ('c4e6f44e-36e7-4542-b964-22d4d3f2a18f', 'nearby_radius_miles', '25', 'Radius in miles for nearby clinics display', '2026-09-07 10:32:38.757197+00');
 
 
 --
@@ -26090,5 +26090,5 @@ INSERT INTO public.user_roles (id, user_id, role) VALUES ('3e2c6e60-7e1c-40de-b9
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 026aftmnJ2FoVWIVZmN2o3GWmebccnr9hJObfACLgQSsWnVzgcBJ6APo7E7XXVd
+\unrestrict 2gemO3rgvublo0vV49FJa3BfR3B3Kyoc7LTffjdB4u7oDh5bBuxMfSOLoJVrkzK
 
