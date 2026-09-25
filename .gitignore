@@ -55,3 +55,6 @@ apps/mobile/android/
 **/.cxx/
 *.apk
 *.aab
+
+# NPPES bulk data dissemination file (multi-GB, downloaded locally, never committed)
+/NPI_Data/

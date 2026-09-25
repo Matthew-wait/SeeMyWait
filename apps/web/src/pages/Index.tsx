@@ -66,22 +66,28 @@ const Index = () => {
     userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : null
   );
 
+  /** Fetches location once, on mount and again from the panel's "Try Again"
+   *  action — kept as one function so both paths behave identically. */
+  const requestLocation = useCallback(async () => {
+    setLocating(true);
+    try {
+      const pos = await getCurrentPosition();
+      const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setUserLocation(loc);
+      setCenterOn({ ...loc, zoom: 14 });
+    } catch {
+      toast("Location access helps find nearby doctor offices.", {
+        description: "Enable GPS for the best experience.",
+        icon: "📍",
+      });
+    } finally {
+      setLocating(false);
+    }
+  }, []);
+
   useEffect(() => {
-    (async () => {
-      try {
-        const pos = await getCurrentPosition();
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(loc);
-        setCenterOn({ ...loc, zoom: 14 });
-      } catch {
-        toast("Location access helps find nearby doctor offices.", {
-          description: "Enable GPS for the best experience.",
-          icon: "📍",
-        });
-      } finally {
-        setLocating(false);
-      }
-    })();
+    requestLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const dbSearchResults = useMemo(
@@ -93,10 +99,13 @@ const Index = () => {
     [searchState.results]
   );
 
-  // Clinics visible to user based on admin nearby radius setting
+  // Clinics visible to user based on admin nearby radius setting.
+  // Without a known location, `clinics` is an unfiltered, name-ordered
+  // fallback from anywhere in the database (see useClinics) — it must never
+  // be shown as if it were a real "nearby" list, or a user in Miami can see
+  // offices in Texas with no indication they aren't actually close by.
   const clinicsWithinNearbyRadius = useMemo(() => {
-    if (!clinics) return [];
-    if (!userLocation) return clinics;
+    if (!clinics || !userLocation) return [];
     return clinics.filter((c) => (c.distance || 999) <= nearbyRadiusMiles);
   }, [clinics, userLocation, nearbyRadiusMiles]);
 
@@ -104,7 +113,7 @@ const Index = () => {
   // distance via Google Distance Matrix was removed in the cost-reduction plan.
   const isWithinConfiguredRadius = useCallback(
     (clinic: ClinicWithWaitTime) => {
-      if (!userLocation) return true;
+      if (!userLocation) return false;
       return (clinic.distance ?? 999) <= nearbyRadiusMiles;
     },
     [userLocation, nearbyRadiusMiles]
@@ -167,14 +176,15 @@ const Index = () => {
     });
   }, [matchedLocationsKey, candidate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Nearby clinics for "Explore" list — show all sorted by distance, or all if no location
+  // Nearby clinics for "Explore" list, sorted by distance. Empty whenever
+  // location isn't known yet — clinicsWithinNearbyRadius already enforces
+  // that, this just orders what's left.
   const nearbyClinics = useMemo(() => {
-    if (!userLocation) return clinicsWithinNearbyRadius;
     return clinicsWithinNearbyRadius
       .filter((c) => isWithinConfiguredRadius(c))
       .slice()
       .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-  }, [clinicsWithinNearbyRadius, userLocation, isWithinConfiguredRadius]);
+  }, [clinicsWithinNearbyRadius, isWithinConfiguredRadius]);
 
   const handleFindMe = useCallback(() => {
     if (userLocation) {
@@ -458,8 +468,11 @@ const Index = () => {
           autoCollapse={isSearching && dropdownOpen}
           searchQuery={search.trim()}
           radiusMiles={nearbyRadiusMiles}
+          hasLocation={!!userLocation}
+          locating={locating}
           onClinicClick={handleClinicClick}
           onSuggestClinic={() => navigate("/suggest")}
+          onRetryLocation={requestLocation}
         />
       </div>
 
