@@ -38,8 +38,17 @@ run_one() {
     --batch-size 9000 \
     --push \
     --checkpoint "NPI_Data/staged/$code.checkpoint.json" \
-    > "NPI_Data/logs/$code.log" 2>&1
-  echo "$code done $(date)" >> NPI_Data/logs/_completed.txt
+    >> "NPI_Data/logs/$code.log" 2>&1
+
+  # Only back up if the run actually finished all its batches (not killed
+  # or errored partway) — a restore point that isn't real is worse than none.
+  if grep -aq "^Done with" "NPI_Data/logs/$code.log"; then
+    echo "$code done $(date)" >> NPI_Data/logs/_completed.txt
+    node scripts/backup-state.mjs "$code" >> "NPI_Data/logs/${code}_backup.log" 2>&1
+    echo "$code backed up $(date)" >> NPI_Data/logs/_completed.txt
+  else
+    echo "$code did NOT finish cleanly, skipping backup $(date)" >> NPI_Data/logs/_completed.txt
+  fi
 }
 export -f run_one
 

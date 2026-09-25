@@ -143,17 +143,28 @@ export async function pushToDb(records, { supabaseUrl, supabaseKey, onProgress }
   // that batch too. Halving on a 409/23505 isolates the actual offender
   // instead of discarding everyone sharing its batch, down to single-row
   // inserts where a genuine duplicate is finally just skipped by itself.
-  async function postWithRetry(batch) {
+  async function postWithRetry(batch, timeoutRetriesLeft = 3) {
     if (!batch.length) return 0;
     const res = await postBatch(batch);
     if (res.ok) return batch.length;
 
     const text = await res.text();
     const isConflict = res.status === 409 || /23505/.test(text);
-    if (!isConflict || batch.length === 1) {
-      if (!isConflict) onProgress?.(`  upsert ${res.status}: ${text}`);
-      else onProgress?.(`  skipped duplicate (name+address already exists): ${batch[0].npi} ${batch[0].name}`);
-      return isConflict ? 0 : 0;
+    // Statement timeout under heavy concurrent write load (many parallel
+    // states hitting the DB at once) — not a data problem, a load one. A
+    // short backoff-and-retry at the same size often clears it once load
+    // eases; if it keeps timing out, a smaller batch completes faster and
+    // is less likely to hit the same ceiling.
+    const isTimeout = res.status === 500 && /57014|statement timeout/i.test(text);
+    if (isTimeout && timeoutRetriesLeft > 0) {
+      await sleep(2000);
+      return postWithRetry(batch, timeoutRetriesLeft - 1);
+    }
+
+    if ((!isConflict && !isTimeout) || batch.length === 1) {
+      if (isConflict) onProgress?.(`  skipped duplicate (name+address already exists): ${batch[0].npi} ${batch[0].name}`);
+      else onProgress?.(`  upsert ${res.status}: ${text}`);
+      return 0;
     }
 
     const mid = Math.ceil(batch.length / 2);
