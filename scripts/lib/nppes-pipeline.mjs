@@ -143,41 +143,55 @@ export async function pushToDb(records, { supabaseUrl, supabaseKey, onProgress }
   // that batch too. Halving on a 409/23505 isolates the actual offender
   // instead of discarding everyone sharing its batch, down to single-row
   // inserts where a genuine duplicate is finally just skipped by itself.
-  async function postWithRetry(batch, timeoutRetriesLeft = 3) {
-    if (!batch.length) return 0;
+  // Distinguishes *resolved* outcomes (genuine success, or a real
+  // name+address duplicate that should never be retried) from *unresolved*
+  // ones (still timing out after every retry). Only resolved NPIs are safe
+  // for the caller to checkpoint — an unresolved one must stay eligible for
+  // a future run, or a timeout blip permanently and silently drops that
+  // clinic's data (this happened: 9 FL rows lost this way before this
+  // fix, since the caller checkpointed the whole geocode chunk regardless
+  // of per-record push outcome).
+  async function postWithRetry(batch, timeoutRetriesLeft = 6) {
+    if (!batch.length) return { ok: 0, failed: [] };
     const res = await postBatch(batch);
-    if (res.ok) return batch.length;
+    if (res.ok) return { ok: batch.length, failed: [] };
 
     const text = await res.text();
     const isConflict = res.status === 409 || /23505/.test(text);
     // Statement timeout under heavy concurrent write load (many parallel
     // states hitting the DB at once) — not a data problem, a load one. A
-    // short backoff-and-retry at the same size often clears it once load
-    // eases; if it keeps timing out, a smaller batch completes faster and
-    // is less likely to hit the same ceiling.
+    // backoff-and-retry at the same size often clears it once load eases;
+    // if it keeps timing out, a smaller batch completes faster and is less
+    // likely to hit the same ceiling.
     const isTimeout = res.status === 500 && /57014|statement timeout/i.test(text);
     if (isTimeout && timeoutRetriesLeft > 0) {
-      await sleep(2000);
+      await sleep(2000 * (7 - timeoutRetriesLeft)); // 2s,4s,6s,8s,10s,12s
       return postWithRetry(batch, timeoutRetriesLeft - 1);
     }
 
-    if ((!isConflict && !isTimeout) || batch.length === 1) {
-      if (isConflict) onProgress?.(`  skipped duplicate (name+address already exists): ${batch[0].npi} ${batch[0].name}`);
-      else onProgress?.(`  upsert ${res.status}: ${text}`);
-      return 0;
+    if (isConflict && batch.length === 1) {
+      onProgress?.(`  skipped duplicate (name+address already exists): ${batch[0].npi} ${batch[0].name}`);
+      return { ok: 0, failed: [] };
+    }
+    if (batch.length === 1) {
+      onProgress?.(`  upsert ${res.status} for ${batch[0].npi} ${batch[0].name} — will retry next run: ${text}`);
+      return { ok: 0, failed: [batch[0]] };
     }
 
     const mid = Math.ceil(batch.length / 2);
     const left = await postWithRetry(batch.slice(0, mid));
     const right = await postWithRetry(batch.slice(mid));
-    return left + right;
+    return { ok: left.ok + right.ok, failed: [...left.failed, ...right.failed] };
   }
 
   let ok = 0;
+  const failed = [];
   for (let i = 0; i < records.length; i += 500) {
     const batch = records.slice(i, i + 500);
-    ok += await postWithRetry(batch);
+    const r = await postWithRetry(batch);
+    ok += r.ok;
+    failed.push(...r.failed);
     onProgress?.(`  upserted ${Math.min(i + 500, records.length)}/${records.length}`);
   }
-  return ok;
+  return { ok, failedNpis: new Set(failed.map((r) => r.npi)) };
 }

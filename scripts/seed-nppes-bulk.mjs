@@ -291,13 +291,24 @@ async function processState(args) {
         };
       })
       .filter((r) => !args.geocode || (r.latitude != null && r.longitude != null));
+    const attempted = new Set(records.map((r) => r.npi));
 
+    let failedNpis = new Set();
     if (args.push && records.length) {
-      const n = await pushToDb(records, { onProgress: (m) => console.log(m) });
-      console.log(`  pushed ${n}/${records.length}`);
+      const result = await pushToDb(records, { onProgress: (m) => console.log(m) });
+      failedNpis = result.failedNpis;
+      console.log(`  pushed ${result.ok}/${records.length}`);
+      if (failedNpis.size) console.log(`  ${failedNpis.size} still unresolved (timeout) — left un-checkpointed for retry next run`);
     }
 
-    for (const r of chunk) done.add(r.npi);
+    // Only checkpoint NPIs that actually resolved: pushed successfully, or a
+    // genuine duplicate skip. A row that failed geocoding (never made it
+    // into `records`) or hit an unresolved push timeout stays OUT of the
+    // checkpoint, so a future run of this same state picks it back up
+    // instead of silently losing that clinic forever.
+    const ungeocodedCount = chunk.length - records.length;
+    if (ungeocodedCount > 0) console.log(`  ${ungeocodedCount} rows failed geocoding — left un-checkpointed for retry next run`);
+    for (const r of chunk) if (attempted.has(r.npi) && !failedNpis.has(r.npi)) done.add(r.npi);
     await saveCheckpoint(args.checkpoint, done);
     console.log(`  checkpoint saved (${done.size} total done for this state)`);
   }

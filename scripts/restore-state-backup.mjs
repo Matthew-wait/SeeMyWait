@@ -18,5 +18,6 @@ if (!KEY) { console.error("SUPABASE_SECRET_KEY must be set"); process.exit(1); }
 
 const rows = JSON.parse(await readFile(path, "utf8"));
 console.log(`Restoring ${rows.length} rows from ${path}…`);
-const n = await pushToDb(rows, { supabaseUrl: URL, supabaseKey: KEY, onProgress: (m) => console.log(m) });
-console.log(`Restored ${n}/${rows.length} rows.`);
+const result = await pushToDb(rows, { supabaseUrl: URL, supabaseKey: KEY, onProgress: (m) => console.log(m) });
+console.log(`Restored ${result.ok}/${rows.length} rows.`);
+if (result.failedNpis.size) console.log(`${result.failedNpis.size} rows still unresolved — re-run this restore to retry them.`);
