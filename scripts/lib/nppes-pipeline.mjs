@@ -53,13 +53,22 @@ export async function geocodeCensusBatch(rows, { onProgress } = {}) {
     form.set("addressFile", new Blob([csv], { type: "text/csv" }), "addresses.csv");
 
     onProgress?.(`Census batch ${idx + 1}/${chunks.length} (${chunk.length} rows)…`);
+    // A failed request used to `continue`, returning no coordinates for the
+    // whole chunk — the caller then dropped every row and still checkpointed
+    // them, silently losing up to 9,000 rows. Retry with backoff, and if the
+    // geocoder stays down, throw so the run stops before checkpointing.
     let text;
-    try {
-      const res = await fetch(CENSUS_BATCH, { method: "POST", body: form });
-      text = await res.text();
-    } catch (e) {
-      onProgress?.(`  Census request failed: ${e.message}`);
-      continue;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetch(CENSUS_BATCH, { method: "POST", body: form });
+        if (!res.ok && res.status >= 500) throw new Error(`HTTP ${res.status}`);
+        text = await res.text();
+        break;
+      } catch (e) {
+        if (attempt >= 5) throw new Error(`Census geocoder unavailable after 6 attempts: ${e.cause?.code || e.message}`);
+        onProgress?.(`  Census request failed (${e.cause?.code || e.message}), retry ${attempt + 1}/5`);
+        await sleep(10000 * 2 ** Math.min(attempt, 3));
+      }
     }
     if (/Request Rejected|<html/i.test(text)) {
       onProgress?.("  Census rejected the request (firewall/WAF). Falling back to Nominatim for this batch.");
@@ -153,7 +162,20 @@ export async function pushToDb(records, { supabaseUrl, supabaseKey, onProgress }
   // of per-record push outcome).
   async function postWithRetry(batch, timeoutRetriesLeft = 6) {
     if (!batch.length) return { ok: 0, failed: [] };
-    const res = await postBatch(batch);
+    // A network-level failure (connect timeout, reset) throws instead of
+    // returning a response. Back off and retry for ~3 minutes; if it still
+    // fails, rethrow so the run stops *before* checkpointing this batch.
+    let res;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        res = await postBatch(batch);
+        break;
+      } catch (err) {
+        if (attempt >= 6) throw err;
+        onProgress?.(`  network error (${err.cause?.code || err.message}), retry ${attempt + 1}/6`);
+        await sleep(4000 * 2 ** Math.min(attempt, 4));
+      }
+    }
     if (res.ok) return { ok: batch.length, failed: [] };
 
     const text = await res.text();
@@ -162,8 +184,13 @@ export async function pushToDb(records, { supabaseUrl, supabaseKey, onProgress }
     // states hitting the DB at once) — not a data problem, a load one. A
     // backoff-and-retry at the same size often clears it once load eases;
     // if it keeps timing out, a smaller batch completes faster and is less
-    // likely to hit the same ceiling.
-    const isTimeout = res.status === 500 && /57014|statement timeout/i.test(text);
+    // likely to hit the same ceiling. 502/503/504 (API gateway) and 520–524
+    // (Cloudflare edge) are the same overloaded DB seen from further out —
+    // it may even have committed server-side; the upsert is idempotent by
+    // NPI, so retry those the same way.
+    const isTimeout =
+      (res.status === 500 && /57014|statement timeout/i.test(text)) ||
+      res.status >= 502;
     if (isTimeout && timeoutRetriesLeft > 0) {
       await sleep(2000 * (7 - timeoutRetriesLeft)); // 2s,4s,6s,8s,10s,12s
       return postWithRetry(batch, timeoutRetriesLeft - 1);

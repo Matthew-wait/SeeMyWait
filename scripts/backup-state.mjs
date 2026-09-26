@@ -15,24 +15,31 @@ const URL = process.env.SUPABASE_URL || "https://ziisjgtvqmturpljnvfh.supabase.c
 const KEY = process.env.SUPABASE_SECRET_KEY;
 if (!KEY) { console.error("SUPABASE_SECRET_KEY must be set"); process.exit(1); }
 
+// Keyset pagination (npi > last seen) rather than OFFSET: an offset deep
+// into a 200k-row state makes Postgres walk and discard every earlier row
+// on each page, which got slow enough to drop the connection.
 const rows = [];
-let from = 0;
+let lastNpi = "";
 const PAGE = 1000;
 for (;;) {
-  let res;
-  for (let attempt = 0; attempt < 4; attempt++) {
-    res = await fetch(`${URL}/rest/v1/clinics?select=*&state=eq.${code}&order=npi`, {
-      headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, Range: `${from}-${from + PAGE - 1}` },
-    });
-    if (res.ok) break;
-    await new Promise((r) => setTimeout(r, 2000));
+  const after = lastNpi ? `&npi=gt.${lastNpi}` : "";
+  let page;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(`${URL}/rest/v1/clinics?select=*&state=eq.${code}${after}&order=npi&limit=${PAGE}`, {
+        headers: { apikey: KEY, Authorization: `Bearer ${KEY}` },
+      });
+      if (res.ok) { page = await res.json(); break; }
+      if (attempt >= 6) { console.error(`${code}: giving up after npi ${lastNpi || "(start)"}, HTTP ${res.status}`); process.exit(1); }
+    } catch (err) {
+      if (attempt >= 6) { console.error(`${code}: giving up after npi ${lastNpi || "(start)"}: ${err.cause?.code || err.message}`); process.exit(1); }
+    }
+    await new Promise((r) => setTimeout(r, 2000 * 2 ** Math.min(attempt, 4)));
   }
-  if (!res.ok) { console.error(`${code}: giving up at offset ${from}, HTTP ${res.status}`); process.exit(1); }
-  const page = await res.json();
   if (!Array.isArray(page) || page.length === 0) break;
   rows.push(...page);
   if (page.length < PAGE) break;
-  from += PAGE;
+  lastNpi = page[page.length - 1].npi;
 }
 
 const { mkdir, writeFile } = await import("node:fs/promises");
