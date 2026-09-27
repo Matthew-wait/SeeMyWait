@@ -44,8 +44,11 @@ run_one() {
   # or errored partway) — a restore point that isn't real is worse than none.
   if grep -aq "^Done with" "NPI_Data/logs/$code.log"; then
     echo "$code done $(date)" >> NPI_Data/logs/_completed.txt
-    node scripts/backup-state.mjs "$code" >> "NPI_Data/logs/${code}_backup.log" 2>&1
-    echo "$code backed up $(date)" >> NPI_Data/logs/_completed.txt
+    if node scripts/backup-state.mjs "$code" >> "NPI_Data/logs/${code}_backup.log" 2>&1; then
+      echo "$code backed up $(date)" >> NPI_Data/logs/_completed.txt
+    else
+      echo "$code BACKUP FAILED, see ${code}_backup.log $(date)" >> NPI_Data/logs/_completed.txt
+    fi
   else
     echo "$code did NOT finish cleanly, skipping backup $(date)" >> NPI_Data/logs/_completed.txt
   fi
