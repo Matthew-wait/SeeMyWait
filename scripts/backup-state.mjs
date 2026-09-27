@@ -15,9 +15,21 @@ const URL = process.env.SUPABASE_URL || "https://ziisjgtvqmturpljnvfh.supabase.c
 const KEY = process.env.SUPABASE_SECRET_KEY;
 if (!KEY) { console.error("SUPABASE_SECRET_KEY must be set"); process.exit(1); }
 
-const rows = [];
+// Streams the JSON array to disk one page at a time instead of building the
+// whole dataset as a single in-memory array + one giant JSON.stringify call
+// — large states (California, 1M+ rows) blow past V8's max string length
+// (~512MB) if you try to stringify everything at once.
+const { mkdir, open } = await import("node:fs/promises");
+const dir = "NPI_Data/backups";
+await mkdir(dir, { recursive: true });
+const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+const path = `${dir}/${code}_${stamp}.json`;
+const fh = await open(path, "w");
+
+let total = 0;
 let from = 0;
 const PAGE = 1000;
+await fh.write("[");
 for (;;) {
   let res;
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -27,18 +39,21 @@ for (;;) {
     if (res.ok) break;
     await new Promise((r) => setTimeout(r, 2000));
   }
-  if (!res.ok) { console.error(`${code}: giving up at offset ${from}, HTTP ${res.status}`); process.exit(1); }
+  if (!res.ok) {
+    await fh.write("]");
+    await fh.close();
+    console.error(`${code}: giving up at offset ${from}, HTTP ${res.status} (partial backup saved: ${total} rows)`);
+    process.exit(1);
+  }
   const page = await res.json();
   if (!Array.isArray(page) || page.length === 0) break;
-  rows.push(...page);
+  for (const row of page) {
+    await fh.write((total > 0 ? "," : "") + JSON.stringify(row));
+    total++;
+  }
   if (page.length < PAGE) break;
   from += PAGE;
 }
-
-const { mkdir, writeFile } = await import("node:fs/promises");
-const dir = "NPI_Data/backups";
-await mkdir(dir, { recursive: true });
-const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-const path = `${dir}/${code}_${stamp}.json`;
-await writeFile(path, JSON.stringify(rows));
-console.log(`${code}: backed up ${rows.length} rows -> ${path}`);
+await fh.write("]");
+await fh.close();
+console.log(`${code}: backed up ${total} rows -> ${path}`);
