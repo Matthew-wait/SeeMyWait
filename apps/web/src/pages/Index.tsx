@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Search, Loader2, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { BottomNav } from "@/components/BottomNav";
-import { useClinics } from "@/hooks/use-clinics";
+import { useNearbyClinicsProgressive } from "@/hooks/use-clinics";
 import { getCurrentPosition } from "@/lib/geolocation";
 import { MapView } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
@@ -50,8 +50,11 @@ const Index = () => {
   const nearbyRadiusMiles = appSettings?.nearby_radius_miles ?? 100;
   const reportCooldownMinutes = appSettings?.report_cooldown_minutes ?? 60;
 
-  const { data: clinics, isLoading, refetch } = useClinics(
-    undefined,
+  // Progressive load: a 5-mile pass lands almost immediately so the map/list
+  // isn't blank while the full-radius query (now PostGIS-indexed, but still
+  // a network round trip) resolves. `isLoadingMore` covers that gap — the
+  // list panel shows a "finding more nearby…" row instead of looking done.
+  const { data: clinics, isInitialLoading: isLoading, isLoadingMore, refetch } = useNearbyClinicsProgressive(
     userLocation?.lat,
     userLocation?.lng,
     reportCooldownMinutes,
@@ -470,6 +473,7 @@ const Index = () => {
           radiusMiles={nearbyRadiusMiles}
           hasLocation={!!userLocation}
           locating={locating}
+          isLoadingMore={!isSearching && isLoadingMore}
           onClinicClick={handleClinicClick}
           onSuggestClinic={() => navigate("/suggest")}
           onRetryLocation={requestLocation}

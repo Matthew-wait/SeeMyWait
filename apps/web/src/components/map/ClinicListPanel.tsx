@@ -32,6 +32,10 @@ interface ClinicListPanelProps {
    *  location prompt instead of an unfiltered, non-nearby fallback list. */
   hasLocation: boolean;
   locating: boolean;
+  /** True while the quick 5-mile pass is shown but the full-radius fetch is
+   *  still in flight — shows a small "finding more nearby offices" row so
+   *  the initial short list doesn't look like the final result. */
+  isLoadingMore?: boolean;
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
   onSuggestClinic: () => void;
   onRetryLocation: () => void;
@@ -67,6 +71,7 @@ export function ClinicListPanel({
   radiusMiles,
   hasLocation,
   locating,
+  isLoadingMore = false,
   onClinicClick,
   onSuggestClinic,
   onRetryLocation,
@@ -147,6 +152,19 @@ export function ClinicListPanel({
   }
 
   if (listToShow.length === 0) {
+    // The quick 5-mile pass came back empty, but the full-radius fetch is
+    // still running — don't tell the user "none found" when more could
+    // still show up any second.
+    if (!isSearching && isLoadingMore) {
+      return (
+        <div className="bg-background border-t border-border/30 pb-28 sm:pb-24 text-center">
+          <div className="flex items-center justify-center gap-2 px-3 pt-4 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Looking for nearby doctor offices…
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="bg-background border-t border-border/30 pb-28 sm:pb-24 text-center">
         <p className="px-3 pt-4 text-xs text-muted-foreground">
@@ -165,11 +183,19 @@ export function ClinicListPanel({
     <div className="bg-background border-t border-border/30 pb-28 sm:pb-24">
       {!isSearching && hasLocation && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
       <div className="flex items-start justify-between gap-2 px-3 pb-1 pt-3">
-        <h3 className="min-w-0 text-sm font-semibold text-foreground">
-          {isSearching
-            ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
-            : `Nearby Doctor Offices (${nearbyClinics.length})`}
-        </h3>
+        <div className="min-w-0">
+          <h3 className="min-w-0 text-sm font-semibold text-foreground">
+            {isSearching
+              ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
+              : `Nearby Doctor Offices (${nearbyClinics.length})`}
+          </h3>
+          {!isSearching && isLoadingMore && (
+            <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Finding more within {radiusMiles} {radiusMiles === 1 ? "mile" : "miles"}…
+            </p>
+          )}
+        </div>
         <button
           onClick={() => setCollapsed(true)}
           className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
