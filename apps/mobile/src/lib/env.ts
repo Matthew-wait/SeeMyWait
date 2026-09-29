@@ -7,9 +7,12 @@ export const ENV = {
     getEnv(process.env.VITE_SUPABASE_PUBLISHABLE_KEY),
   supabaseProjectId:
     getEnv(process.env.EXPO_PUBLIC_SUPABASE_PROJECT_ID) || getEnv(process.env.VITE_SUPABASE_PROJECT_ID),
-  // Android's react-native-maps base map still uses the (free, unlimited) Google
-  // Maps SDK. iOS uses Apple Maps and needs no key. No Places/Geocoding key —
-  // all of that goes through the medical-search edge function now.
+  // Map tiles are free OpenStreetMap raster tiles (react-native-maps UrlTile,
+  // mapType="none") on both platforms — no Google tile billing. Android's
+  // react-native-maps widget still needs a Maps SDK for Android key to host
+  // the native view at all (that SDK itself is free/unlimited, unrelated to
+  // the OSM tiles actually shown). No Places/Geocoding key anywhere in this
+  // app — nothing in the codebase calls those paid APIs.
   googleMapsApiKey:
     getEnv(process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY) || getEnv(process.env.GOOGLE_MAPS_API_KEY),
 };

@@ -1,0 +1,18 @@
+-- ============================================================================
+-- Backup of dropped duplicate (latitude, longitude) indexes.
+-- ============================================================================
+-- Dropped 2026-09-28 via migration 20260928000005_drop_duplicate_lat_lng_indexes.sql
+-- Reason: idx_clinics_location and clinics_lat_lng_idx were exact duplicates
+-- (same table, same columns, same index type) — an accidental double-migration.
+-- Superseded by the GiST `geog` spatial index (clinics_geog_gist_idx) which
+-- nearby_clinics() now uses for all radius search. Dropping them reclaimed
+-- disk space on a project that was near its disk cap.
+--
+-- No data was stored in these indexes beyond (latitude, longitude) pointers —
+-- there is nothing to lose. If ever needed again (e.g. some future query
+-- needs a plain lat/lng range scan instead of geog), recreate with either
+-- of the exact original definitions below:
+-- ============================================================================
+
+-- CREATE INDEX idx_clinics_location ON public.clinics USING btree (latitude, longitude);
+-- CREATE INDEX clinics_lat_lng_idx ON public.clinics USING btree (latitude, longitude);

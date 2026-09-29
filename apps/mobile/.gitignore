@@ -53,3 +53,7 @@ app-example
 # Logs / crash dumps
 *.log
 tombstone_*.txt
+
+# Secrets — never commit service account keys / credentials
+google-play-service-account.json
+*-service-account.json

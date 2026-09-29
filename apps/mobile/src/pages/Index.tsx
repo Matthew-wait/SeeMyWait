@@ -60,14 +60,22 @@ export const IndexPage = () => {
   const router = useRouter();
   const { isDark } = useTheme();
   const { settings } = useAppSettings();
-  const { clinics, loading: clinicsLoading, refresh: refreshClinics } = useClinics(
-    settings.reportCooldownMinutes
-  );
 
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [cityFilter] = useState<CityFilter>('all');
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const {
+    clinics,
+    loading: clinicsLoading,
+    isLoadingMore: clinicsLoadingMore,
+    refresh: refreshClinics,
+  } = useClinics(
+    settings.reportCooldownMinutes,
+    userLocation?.latitude,
+    userLocation?.longitude,
+    settings.nearbyRadiusMiles
+  );
   const [locating, setLocating] = useState(false);
   const [centerOn, setCenterOn] = useState<LatLng | null>(null);
   const [nearbyClinic, setNearbyClinic] = useState<ClinicWithMeta | null>(null);
@@ -563,6 +571,7 @@ export const IndexPage = () => {
         collapsed={listPanelCollapsed}
         onToggleCollapsed={isPopupActive ? () => {} : () => setListPanelCollapsed((v) => !v)}
         onClinicPress={isPopupActive ? undefined : openClinicPopup}
+        isLoadingMore={clinicsLoadingMore}
       />
       <View pointerEvents={isPopupActive ? 'none' : 'auto'}>
         <BottomNav />

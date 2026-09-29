@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { ClinicWithMeta } from '@/src/hooks/use-clinics';
 import { useTheme } from '@/src/hooks/use-theme';
@@ -19,6 +19,8 @@ type Props = {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onClinicPress?: (clinic: ClinicWithMeta) => void;
+  /** True while the quick nearby results are shown but the full-radius load is still in flight. */
+  isLoadingMore?: boolean;
 };
 
 const COLLAPSED_PREVIEW_COUNT = 6;
@@ -33,6 +35,7 @@ export const ClinicListPanel = ({
   collapsed,
   onToggleCollapsed,
   onClinicPress,
+  isLoadingMore = false,
 }: Props) => {
   const { isDark } = useTheme();
   const clinicsToShow = expanded ? clinics : clinics.slice(0, COLLAPSED_PREVIEW_COUNT);
@@ -81,6 +84,14 @@ export const ClinicListPanel = ({
             <Feather name="chevron-down" size={20} color="#000000" />
           </Pressable>
         </View>
+        {isLoadingMore ? (
+          <View style={styles.loadingMoreRow}>
+            <ActivityIndicator size="small" color={isDark ? '#38bdf8' : '#0284c7'} />
+            <Text style={[styles.loadingMoreText, { color: isDark ? '#94a3b8' : '#475569' }]}>
+              Finding more nearby offices…
+            </Text>
+          </View>
+        ) : null}
       </View>
       <ScrollView contentContainerStyle={styles.listContent} scrollEnabled>
         {clinicsToShow.map((clinic, index) => {
@@ -189,6 +200,15 @@ export const ClinicListPanel = ({
 };
 
 const styles = StyleSheet.create({
+  loadingMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 6,
+  },
+  loadingMoreText: {
+    fontSize: 11,
+  },
   collapsedBar: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import {
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +12,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+const PRIVACY_POLICY_URL = 'https://seemywait.com/privacy';
+const TERMS_OF_SERVICE_URL = 'https://seemywait.com/terms';
 
 import { BottomNav } from '@/src/components/navigation/BottomNav';
 import { useTheme } from '@/src/hooks/use-theme';
@@ -254,6 +258,44 @@ export const SettingsPage = () => {
             <View style={styles.settingTextWrap}>
               <Text style={[styles.label, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>Send Feedback</Text>
               <Text style={[styles.helpText, { color: isDark ? '#94a3b8' : '#475569' }]}>Help us improve the app</Text>
+            </View>
+            <Feather name="chevron-right" size={16} color="#64748b" />
+          </Pressable>
+        </View>
+        <View style={[styles.section, { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#e2e8f0' }]}>
+          <View style={styles.sectionHeader}>
+            <View
+              style={[
+                styles.sectionIconWrap,
+                isDark && { backgroundColor: '#0f2a44', borderColor: '#1e3a5f', borderWidth: 1 },
+              ]}>
+              <Ionicons name="document-text-outline" size={14} color={isDark ? '#38bdf8' : '#0284c7'} />
+            </View>
+            <Text style={[styles.sectionTitle, { color: isDark ? '#f1f5f9' : '#111827' }]}>Legal</Text>
+          </View>
+          <Pressable style={styles.feedbackRow} onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)}>
+            <View
+              style={[
+                styles.settingIcon,
+                isDark && { backgroundColor: '#0f2a44', borderColor: '#1e3a5f', borderWidth: 1 },
+              ]}>
+              <Ionicons name="shield-checkmark-outline" size={14} color={isDark ? '#38bdf8' : '#0284c7'} />
+            </View>
+            <View style={styles.settingTextWrap}>
+              <Text style={[styles.label, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>Privacy Policy</Text>
+            </View>
+            <Feather name="chevron-right" size={16} color="#64748b" />
+          </Pressable>
+          <Pressable style={styles.feedbackRow} onPress={() => void Linking.openURL(TERMS_OF_SERVICE_URL)}>
+            <View
+              style={[
+                styles.settingIcon,
+                isDark && { backgroundColor: '#0f2a44', borderColor: '#1e3a5f', borderWidth: 1 },
+              ]}>
+              <Ionicons name="document-outline" size={14} color={isDark ? '#38bdf8' : '#0284c7'} />
+            </View>
+            <View style={styles.settingTextWrap}>
+              <Text style={[styles.label, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>Terms of Service</Text>
             </View>
             <Feather name="chevron-right" size={16} color="#64748b" />
           </Pressable>

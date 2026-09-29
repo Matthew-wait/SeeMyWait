@@ -19,18 +19,12 @@ type Props = {
   candidate?: LatLng | null;
   /** Tap on an empty map point (for "add a place here"). */
   onMapPress?: (coord: LatLng) => void;
-  /** Tap on a Google POI icon (medical only, since non-medical POIs are hidden). */
+  /**
+   * Tap on a native POI icon. Dead with OSM tiles (mapType="none" has no
+   * clickable POI layer) — kept optional so existing callers don't break.
+   */
   onPoiPress?: (poi: { placeId?: string; name?: string; coordinate: LatLng }) => void;
 };
-
-// Hide non-medical POIs (shops, restaurants, landmarks) while keeping medical
-// facilities visible + tappable (needed for the tap-to-add flow). Google style.
-const MEDICAL_ONLY_MAP_STYLE = [
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.medical', stylers: [{ visibility: 'on' }] },
-  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-];
 
 const DEFAULT_REGION = {
   latitude: 25.7617,
@@ -66,7 +60,12 @@ type MapsParts = {
   NativeMap: ComponentType<any>;
   NativeCircle: ComponentType<any>;
   NativeMarker: ComponentType<any>;
+  NativeUrlTile: ComponentType<any>;
 };
+
+// Free OpenStreetMap raster tiles (matches web's Leaflet+OSM setup) instead of
+// Google's/Apple's native map tiles — no Maps API billing for the base layer.
+const OSM_TILE_URL_TEMPLATE = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 export const MapView = ({
   clinics,
@@ -88,11 +87,12 @@ export const MapView = ({
     let mounted = true;
     void import('react-native-maps')
       .then((mapsModule) => {
-        if (!mounted || !mapsModule.default || !mapsModule.Circle || !mapsModule.Marker) return;
+        if (!mounted || !mapsModule.default || !mapsModule.Circle || !mapsModule.Marker || !mapsModule.UrlTile) return;
         setMapsParts({
           NativeMap: mapsModule.default,
           NativeCircle: mapsModule.Circle,
           NativeMarker: mapsModule.Marker,
+          NativeUrlTile: mapsModule.UrlTile,
         });
       })
       .catch(() => {
@@ -185,10 +185,11 @@ export const MapView = ({
     );
   }
 
-  const { NativeMap, NativeCircle, NativeMarker } = mapsParts;
+  const { NativeMap, NativeCircle, NativeMarker, NativeUrlTile } = mapsParts;
 
-  // PROVIDER_DEFAULT: Apple Maps on iOS (no key, no cost), Google Maps SDK on
-  // Android (free/unlimited). Avoids needing a "Maps SDK for iOS" key. All
+  // mapType="none" hides the native Apple/Google base layer; the UrlTile
+  // overlay below renders free OpenStreetMap raster tiles instead, so the
+  // base map itself never calls Google's or Apple's tile APIs. All
   // Places/Geocoding calls go through the medical-search edge function, not here.
   const provider = undefined;
 
@@ -200,31 +201,16 @@ export const MapView = ({
         }}
         style={StyleSheet.absoluteFill}
         provider={provider}
-        mapType="standard"
+        mapType="none"
         userInterfaceStyle="light"
-        customMapStyle={MEDICAL_ONLY_MAP_STYLE}
         initialRegion={region}
         onRegionChangeComplete={(nextRegion: Region) => {
           currentRegionRef.current = nextRegion;
         }}
         onPress={(e: any) => {
           const c = e?.nativeEvent?.coordinate;
-          // A POI tap also fires onPress with an action of 'marker'/'poi-click';
-          // ignore those here so onPoiPress owns POI taps.
-          if (e?.nativeEvent?.action === 'poi-click' || e?.nativeEvent?.placeId) return;
           if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
             onMapPress?.({ latitude: c.latitude, longitude: c.longitude });
-          }
-        }}
-        onPoiClick={(e: any) => {
-          const n = e?.nativeEvent;
-          const c = n?.coordinate;
-          if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
-            onPoiPress?.({
-              placeId: typeof n?.placeId === 'string' ? n.placeId : undefined,
-              name: typeof n?.name === 'string' ? n.name : undefined,
-              coordinate: { latitude: c.latitude, longitude: c.longitude },
-            });
           }
         }}
         showsCompass={false}
@@ -235,6 +221,7 @@ export const MapView = ({
         zoomTapEnabled
         pitchEnabled={false}
         rotateEnabled={false}>
+        <NativeUrlTile urlTemplate={OSM_TILE_URL_TEMPLATE} maximumZ={19} flipY={false} />
         {userLocation ? (
           <>
             <NativeCircle

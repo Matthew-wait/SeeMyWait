@@ -3,9 +3,9 @@
     "name": "SeeMyWait",
     "slug": "seemywait",
     "owner": "seemywaits-team",
-    "version": "5.4",
+    "version": "5.5",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "seemywait",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -25,12 +25,12 @@
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo.png",
-        "monochromeImage": "./assets/images/logo.png"
+        "foregroundImage": "./assets/images/android-adaptive-foreground.png",
+        "monochromeImage": "./assets/images/android-adaptive-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.seeymywait.SeeMyWait",
-      "versionCode": 9,
+      "versionCode": 10,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -54,7 +54,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/logo.png",
+          "icon": "./assets/images/android-adaptive-monochrome.png",
           "color": "#0284c7"
         }
       ]

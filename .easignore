@@ -11,3 +11,7 @@ apps/*/node_modules/
 packages/*/node_modules/
 *.log
 supabase/.temp/
+# NPI_Data is gitignored (14GB+ of staged NPPES CSVs/checkpoints) but EAS's
+# archive step doesn't reliably honor .gitignore for it — list explicitly.
+# This alone was blowing the archive past EAS's 2.0GB upload limit.
+NPI_Data/

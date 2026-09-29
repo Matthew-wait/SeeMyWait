@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { supabase } from '@/src/lib/supabase';
 import { waitTimeCategoryToMinutes } from '@/src/lib/wait-time-report';
@@ -39,20 +39,94 @@ export type ClinicWithMeta = Clinic & {
     reportedAt: string;
     waitMinutes: number | null;
   }[];
+  /** Real distance from the user in miles, from the `nearby_clinics` RPC. Undefined without a known location. */
+  distance?: number;
 };
 
 type UseClinicsResult = {
   clinics: ClinicWithMeta[];
   loading: boolean;
+  /** True once a quick nearby pass has results but the full-radius pass is still loading. */
+  isLoadingMore: boolean;
   refresh: () => Promise<void>;
 };
 
-/** Loads only non-expired wait reports (`expiry_time` > now). */
-export const useClinics = (reportExpiryMinutes: number): UseClinicsResult => {
-  const [clinics, setClinics] = useState<Clinic[]>([]);
+/** Row shape returned by the `nearby_clinics` RPC (see supabase/migrations/20260929000000). */
+type NearbyClinicRow = Clinic & { distance_miles: number };
+
+const QUICK_RADIUS_MILES = 5;
+
+async function fetchClinicsAndReports(
+  userLat: number | undefined,
+  userLon: number | undefined,
+  radiusMiles: number
+): Promise<{ clinics: (Clinic & { distance_miles?: number })[]; reports: WaitTimeReport[] }> {
+  const hasLocation = userLat !== undefined && userLon !== undefined;
+
+  const clinicsPromise = hasLocation
+    ? supabase
+        .rpc('nearby_clinics', {
+          p_lat: userLat,
+          p_lng: userLon,
+          p_radius_miles: radiusMiles,
+          p_limit: 500,
+        })
+        .then(({ data, error }) => {
+          if (error) throw error;
+          return (data ?? []) as NearbyClinicRow[];
+        })
+    : supabase
+        .from('clinics')
+        .select('*')
+        .eq('is_active', true)
+        .limit(500)
+        .then(({ data, error }) => {
+          if (error) throw error;
+          return (data ?? []) as Clinic[];
+        });
+
+  const windowStartIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const reportsPromise = supabase
+    .from('wait_time_reports')
+    .select('*')
+    .gte('reported_at', windowStartIso)
+    .or('is_flagged.is.null,is_flagged.eq.false')
+    .order('reported_at', { ascending: false })
+    .limit(500)
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return (data ?? []) as WaitTimeReport[];
+    });
+
+  const [clinics, reports] = await Promise.all([clinicsPromise, reportsPromise]);
+  return { clinics, reports };
+}
+
+/**
+ * Loads clinics near the user plus their non-expired wait reports. When a
+ * location is known, uses the server-side `nearby_clinics` RPC (PostGIS GiST
+ * index — real distance, sorted in SQL) via a progressive two-pass load: a
+ * quick 5-mile pass so the map/list has something almost immediately, then
+ * the full configured radius. Without a location, falls back to a plain
+ * bounded fetch of active clinics (no radius filtering possible).
+ */
+export const useClinics = (
+  reportExpiryMinutes: number,
+  userLat?: number,
+  userLon?: number,
+  radiusMiles: number = 100
+): UseClinicsResult => {
+  const hasLocation = userLat !== undefined && userLon !== undefined;
+  const quickRadiusMiles = Math.min(QUICK_RADIUS_MILES, radiusMiles);
+
+  const [clinics, setClinics] = useState<(Clinic & { distance_miles?: number })[]>([]);
   const [reports, setReports] = useState<WaitTimeReport[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [nowMs, setNowMs] = useState<number>(Date.now());
+  // Guards against a slow in-flight load overwriting a newer one's result
+  // (e.g. location arrives mid-fetch and re-triggers this effect).
+  const loadTokenRef = useRef(0);
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 30_000);
@@ -60,24 +134,34 @@ export const useClinics = (reportExpiryMinutes: number): UseClinicsResult => {
   }, []);
 
   const load = useCallback(async () => {
+    const token = ++loadTokenRef.current;
     setLoading(true);
-    const windowStartIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    setIsLoadingMore(false);
 
-    const [clinicRes, reportRes] = await Promise.all([
-      supabase.from('clinics').select('*').eq('is_active', true),
-      supabase
-        .from('wait_time_reports')
-        .select('*')
-        .gte('reported_at', windowStartIso)
-        .or('is_flagged.is.null,is_flagged.eq.false')
-        .order('reported_at', { ascending: false })
-        .limit(500),
-    ]);
+    if (!hasLocation) {
+      const { clinics: fetched, reports: fetchedReports } = await fetchClinicsAndReports(undefined, undefined, radiusMiles);
+      if (loadTokenRef.current !== token) return;
+      setClinics(fetched);
+      setReports(fetchedReports);
+      setLoading(false);
+      return;
+    }
 
-    setClinics((clinicRes.data ?? []) as Clinic[]);
-    setReports((reportRes.data ?? []) as WaitTimeReport[]);
+    // Quick pass: small radius, shows results almost immediately.
+    const quick = await fetchClinicsAndReports(userLat, userLon, quickRadiusMiles);
+    if (loadTokenRef.current !== token) return;
+    setClinics(quick.clinics);
+    setReports(quick.reports);
     setLoading(false);
-  }, []);
+    setIsLoadingMore(true);
+
+    // Full pass: the configured radius, replaces the quick set once it lands.
+    const full = await fetchClinicsAndReports(userLat, userLon, radiusMiles);
+    if (loadTokenRef.current !== token) return;
+    setClinics(full.clinics);
+    setReports(full.reports);
+    setIsLoadingMore(false);
+  }, [hasLocation, quickRadiusMiles, radiusMiles, userLat, userLon]);
 
   useEffect(() => {
     void load();
@@ -137,6 +221,7 @@ export const useClinics = (reportExpiryMinutes: number): UseClinicsResult => {
         latestWaitMinutes: waitTimeCategoryToMinutes(visibleLatest?.wait_time),
         latestReportAt: visibleLatest?.reported_at ?? null,
         recentReports: recentReportsByClinic.get(clinic.id) ?? [],
+        distance: clinic.distance_miles,
       };
     });
   }, [clinics, isLatestReportActive, latestReportByClinic, recentReportsByClinic]);
@@ -144,6 +229,7 @@ export const useClinics = (reportExpiryMinutes: number): UseClinicsResult => {
   return {
     clinics: clinicsWithMeta,
     loading,
+    isLoadingMore,
     refresh: load,
   };
 };
