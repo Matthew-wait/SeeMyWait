@@ -1138,9 +1138,24 @@ export default function AdminDashboard() {
 
   // Adapt admin clinic rows to the shape MapView renders (all default to the
   // green "On Time" pin; the admin map is for adding, not wait status).
+  const { data: mapCityClinics } = useQuery({
+    queryKey: ["admin-map-city", filterState, filterCity],
+    enabled: !!filterCity,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clinics")
+        .select("*")
+        .eq("state", filterState)
+        .eq("city", filterCity)
+        .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 60_000,
+  });
   const mapClinics: ClinicWithWaitTime[] = useMemo(
     () =>
-      (clinics || []).map((c) => ({
+      (mapCityClinics || []).map((c) => ({
         id: c.id,
         name: c.name,
         address: c.address,
@@ -1317,10 +1332,6 @@ export default function AdminDashboard() {
           <div className="mb-4">
             <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5 bg-primary/15">
               <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
-              <TabsTrigger value="map" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
-                <MapIcon className="h-3.5 w-3.5 sm:mr-1" />
-                <span className="hidden sm:inline">Map</span>
-              </TabsTrigger>
               <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <span className="hidden sm:inline">Suggestions</span>
               <span className="sm:hidden">Suggest</span>
@@ -1339,113 +1350,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* ── MAP TAB — add via search / POI tap / custom pin ── */}
-          <TabsContent value="map" className="space-y-3">
-            <div className="rounded-xl border border-border/40 bg-card p-3">
-              <p className="text-xs text-muted-foreground">
-                Search a place and <span className="font-medium text-foreground">Verify &amp; Add</span> it,
-                tap a medical place on the map to add it directly, or tap any empty spot to open the
-                Add form prefilled with exact coordinates.
-              </p>
-              {/* Search box + results */}
-              <div className="relative mt-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search doctor office or place…"
-                    value={mapSearch}
-                    onChange={(e) => { setMapSearch(e.target.value); setMapDropdownOpen(true); }}
-                    onFocus={() => { if (mapSearch.trim()) setMapDropdownOpen(true); }}
-                    className="pl-9"
-                    autoComplete="off"
-                  />
-                </div>
-                {mapSearch.trim() && mapDropdownOpen && !mapCandidate && (
-                  <div className="absolute z-[60] mt-1 w-full rounded-xl border border-border/40 bg-card shadow-xl">
-                    <SearchResultsDropdown
-                      results={mapSearchState.results}
-                      loading={mapSearchState.loading}
-                      limited={mapSearchState.limited}
-                      degraded={mapSearchState.degraded}
-                      searched={mapSearchState.searched}
-                      userLocation={adminLoc}
-                      onSelect={handleMapSelectResult}
-                      onSuggestClinic={() => { setMapDropdownOpen(false); setPrefillData(null); setCreateOpen(true); setActiveTab("clinics"); }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Map */}
-            <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
-              <MapView
-                clinics={mapClinics}
-                userLocation={adminLoc}
-                centerOn={mapCenterOn}
-                onClinicClick={(c) => {
-                  const row = clinics?.find((x) => x.id === c.id);
-                  if (row) setEditClinic(row);
-                }}
-                onEmptyClick={() => {}}
-                onMapPointClick={handleMapPointClick}
-                candidate={
-                  mapCandidate
-                    ? { name: mapCandidate.name, latitude: mapCandidate.latitude, longitude: mapCandidate.longitude }
-                    : null
-                }
-                pendingPoint={pendingPoint}
-                nearbyRadiusMiles={Number(nearbyRadius) > 0 ? Number(nearbyRadius) : 5}
-              />
-
-              {/* Locate-me: sits just above the zoom pill (bottom-left cluster) */}
-              <button
-                type="button"
-                onClick={handleAdminLocate}
-                title="Show my current location"
-                className="absolute bottom-[152px] left-3 z-[55] flex h-10 w-10 items-center justify-center rounded-xl border border-border/30 bg-card/90 shadow-lg backdrop-blur-xl transition-all hover:bg-card active:scale-95"
-              >
-                <Crosshair className="h-5 w-5 text-primary" />
-              </button>
-
-              {/* "Add here" affordance for a tapped empty point */}
-              {pendingPoint && !mapCandidate && (
-                <div className="absolute bottom-3 left-3 right-3 z-[60] mx-auto max-w-md">
-                  <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                      <MapPin className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-card-foreground">Add a doctor office here?</p>
-                      <p className="truncate text-[10px] text-muted-foreground tabular-nums">
-                        {pendingPoint.lat.toFixed(6)}, {pendingPoint.lng.toFixed(6)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setPendingPoint(null)}
-                      className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={confirmAddHere}
-                      className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                    >
-                      Add here
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {mapCandidate && (
-                <VerifyPlaceCard
-                  candidate={mapCandidate}
-                  userLocation={adminLoc}
-                  onCancel={() => setMapCandidate(null)}
-                  onVerified={handleMapVerified}
-                />
-              )}
-            </div>
-          </TabsContent>
 
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
@@ -1478,6 +1383,8 @@ export default function AdminDashboard() {
                 <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
               ))}
             </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="space-y-3 min-w-0">
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1598,6 +1505,117 @@ export default function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">No doctors found. Add one above!</p>
               </div>
             )}
+            </div>
+            <div className="space-y-3 min-w-0">
+
+        <div className="rounded-xl border border-border/40 bg-card p-3">
+          <p className="text-xs text-muted-foreground">
+            Search a place and <span className="font-medium text-foreground">Verify &amp; Add</span> it,
+            tap a medical place on the map to add it directly, or tap any empty spot to open the
+            Add form prefilled with exact coordinates.
+          </p>
+          {/* Search box + results */}
+          <div className="relative mt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search doctor office or place…"
+                value={mapSearch}
+                onChange={(e) => { setMapSearch(e.target.value); setMapDropdownOpen(true); }}
+                onFocus={() => { if (mapSearch.trim()) setMapDropdownOpen(true); }}
+                className="pl-9"
+                autoComplete="off"
+              />
+            </div>
+            {mapSearch.trim() && mapDropdownOpen && !mapCandidate && (
+              <div className="absolute z-[60] mt-1 w-full rounded-xl border border-border/40 bg-card shadow-xl">
+                <SearchResultsDropdown
+                  results={mapSearchState.results}
+                  loading={mapSearchState.loading}
+                  limited={mapSearchState.limited}
+                  degraded={mapSearchState.degraded}
+                  searched={mapSearchState.searched}
+                  userLocation={adminLoc}
+                  onSelect={handleMapSelectResult}
+                  onSuggestClinic={() => { setMapDropdownOpen(false); setPrefillData(null); setCreateOpen(true); setActiveTab("clinics"); }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
+          <MapView
+            clinics={mapClinics}
+            userLocation={adminLoc}
+            centerOn={mapCenterOn}
+            onClinicClick={(c) => {
+              const row = (mapCityClinics || []).find((x) => x.id === c.id) ?? clinics?.find((x) => x.id === c.id);
+              if (row) setEditClinic(row);
+            }}
+            onEmptyClick={() => {}}
+            onMapPointClick={handleMapPointClick}
+            candidate={
+              mapCandidate
+                ? { name: mapCandidate.name, latitude: mapCandidate.latitude, longitude: mapCandidate.longitude }
+                : null
+            }
+            pendingPoint={pendingPoint}
+            nearbyRadiusMiles={Number(nearbyRadius) > 0 ? Number(nearbyRadius) : 5}
+          />
+
+          {/* Locate-me: sits just above the zoom pill (bottom-left cluster) */}
+          <button
+            type="button"
+            onClick={handleAdminLocate}
+            title="Show my current location"
+            className="absolute bottom-[152px] left-3 z-[55] flex h-10 w-10 items-center justify-center rounded-xl border border-border/30 bg-card/90 shadow-lg backdrop-blur-xl transition-all hover:bg-card active:scale-95"
+          >
+            <Crosshair className="h-5 w-5 text-primary" />
+          </button>
+
+          {/* "Add here" affordance for a tapped empty point */}
+          {pendingPoint && !mapCandidate && (
+            <div className="absolute bottom-3 left-3 right-3 z-[60] mx-auto max-w-md">
+              <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                  <MapPin className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-card-foreground">Add a doctor office here?</p>
+                  <p className="truncate text-[10px] text-muted-foreground tabular-nums">
+                    {pendingPoint.lat.toFixed(6)}, {pendingPoint.lng.toFixed(6)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPendingPoint(null)}
+                  className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAddHere}
+                  className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  Add here
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mapCandidate && (
+            <VerifyPlaceCard
+              candidate={mapCandidate}
+              userLocation={adminLoc}
+              onCancel={() => setMapCandidate(null)}
+              onVerified={handleMapVerified}
+            />
+          )}
+        </div>
+      
+            </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="suggestions" className="space-y-3">
