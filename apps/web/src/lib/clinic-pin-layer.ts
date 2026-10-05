@@ -31,6 +31,12 @@ export class ClinicPinLayer extends L.Layer {
     return this;
   }
   setPins(pins: CanvasClinicPin[]): void { this.pins = pins; this.schedule(); }
+  locate(point: L.Point): { pin: CanvasClinicPin; x: number; y: number } | undefined {
+    for (let i = this.drawn.length - 1; i >= 0; i--) {
+      const p = this.drawn[i];
+      if (Math.abs(point.x - p.x) <= 18 && point.y >= p.y - 48 && point.y <= p.y) return p;
+    }
+  }
   pick(point: L.Point): CanvasClinicPin | undefined {
     for (let i = this.drawn.length - 1; i >= 0; i--) {
       const p = this.drawn[i];

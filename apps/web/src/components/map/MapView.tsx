@@ -142,6 +142,8 @@ function MapViewInner({
   const pendingMarkerRef = useRef<L.Marker | null>(null);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const hoverIdRef = useRef<string | null>(null);
 
   // Keep the latest callbacks reachable from stable map listeners.
   const onClinicClickRef = useRef(onClinicClick);
@@ -181,6 +183,17 @@ function MapViewInner({
         }
       });
 
+      map.on("mousemove", (e: L.LeafletMouseEvent) => {
+        const hit = clinicLayerRef.current?.locate(e.containerPoint);
+        const id = hit ? hit.pin.id : null;
+        if (id === hoverIdRef.current) {
+          if (hit) setHover((h) => (h ? { ...h, x: hit.x, y: hit.y } : h));
+          return;
+        }
+        hoverIdRef.current = id;
+        setHover(hit ? { id, x: hit.x, y: hit.y } : null);
+      });
+      map.on("mouseout", () => { hoverIdRef.current = null; setHover(null); });
       clinicLayerRef.current = new ClinicPinLayer().addTo(map);
       // Dedicated pane above the pins so the user's own location is never hidden.
       map.createPane("userLocationPane");
@@ -382,6 +395,20 @@ function MapViewInner({
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} className="h-full w-full bg-muted" />
+
+      {hover && clinicsByIdRef.current.get(hover.id) && (() => {
+        const c = clinicsByIdRef.current.get(hover.id)!;
+        return (
+          <div
+            className="pointer-events-none absolute z-[80] w-56 -translate-x-1/2 -translate-y-full rounded-lg border border-border/40 bg-card/95 px-2.5 py-2 shadow-xl backdrop-blur-sm"
+            style={{ left: hover.x, top: hover.y - 52 }}
+          >
+            <p className="truncate text-xs font-semibold text-foreground">{c.name}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{c.address}</p>
+            {c.specialty && <p className="truncate text-[11px] text-muted-foreground">{c.specialty}</p>}
+          </div>
+        );
+      })()}
 
       {status === "error" && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/95 p-6 text-center">
