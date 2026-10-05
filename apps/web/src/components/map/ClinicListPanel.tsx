@@ -53,7 +53,7 @@ const INITIAL_COUNT = 50;
 function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
   const radiusLabel = radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`;
   return (
-    <p className="px-3 pt-0.5 pb-1 text-[11px] leading-snug text-muted-foreground">
+    <p className="pt-0 pb-0 text-[11px] leading-snug text-muted-foreground">
       You're seeing doctor offices within <span className="font-medium text-foreground">{radiusLabel}</span> of your location.
       Use search to find a specific one further away — and{" "}
       <button
@@ -198,7 +198,7 @@ export function ClinicListPanel({
 
   return (
     <div className="flex min-h-0 max-h-[60dvh] flex-col bg-background border-t border-border/30">
-      <div className="shrink-0 flex items-start justify-between gap-2 px-3 pb-0.5 pt-2">
+      <div className="shrink-0 flex items-start justify-between gap-2 px-3 pb-0 pt-1.5">
         <div className="min-w-0">
           <h3 className="min-w-0 text-sm font-semibold text-foreground">
             {isSearching
