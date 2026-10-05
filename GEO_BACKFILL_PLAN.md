@@ -7,13 +7,24 @@ Project: ziisjgtvqmturpljnvfh. Inventory: October 4, 2026.
 3. Fill only missing geog with valid latitude/longitude, using committed batches of 500 and the existing state/city index. Preserve existing geog values.
 4. Save progress after each committed batch. Verify no eligible missing rows remain before marking a state complete and moving to the next.
 5. On a confirmed statement timeout, reduce batch size and allow more time, with at most three attempts. Stop on uncertain errors, preserving the checkpoint.
-6. After all 56 jurisdictions, process the 46 eligible rows with no state separately. Recheck all states for rows added during the run.
+6. After all 56 jurisdictions, process eligible rows with no state separately (46 at inventory; 19 in the latest live count). Recheck all states for rows added during the run.
 
 The database global UUID cursor does not describe state completion and will remain unchanged. State progress is saved in geog-state-backfill-status.json; events are in geog-state-backfill-progress.jsonl. Completion describes rows present at verification time; future imports require another pass.
 
-Progress as of 2026-10-05 11:27:13 PKT (UTC+05:00): 29/56 jurisdictions completed and independently reverified against the live database on October 5. All 29 have zero eligible rows without geog; missing coordinates and invalid coordinates were counted separately and both were zero in these states. Florida remains complete: all 589,657 tagged FL clinics have geog. Current state: AL (running), with 41500 committed rows in its current pass and 1320234 cumulative recorded committed rows. The sole existing state runner was safely resumed as PID 25808 at 2026-10-05 11:25:51 PKT after confirming old PID 8304 was absent and no database backfill session was active. The saved AL/Lincoln checkpoint row was confirmed to have geog, with no eligible missing rows before that city. Checkpoint values and resume position were preserved. Confirmed new commits since resume: 8000 rows across 16 batches, totaling 81.599 seconds of measured request time (individual 500-row batches: 3.319-12.945 seconds). Database activity confirmed one active AL batch with no blocking PIDs; worker stderr was empty. The worker continues the remaining 27 jurisdictions sequentially, followed by the no-state pass and final eligibility sweep. No overall completion is claimed. Before resume AL had exactly 29,278 eligible missing rows; current remaining work changes with commits. Per-state live counts and coordinate exceptions are recorded in geog-state-verification.json. Historical counters alone are not completion evidence.
+Progress as of 2026-10-05 17:11:46 PKT (UTC+05:00): 41/56 jurisdictions completed and independently live-verified; 15 jurisdictions remain including current state OR, followed by the no-state pass and final eligibility sweep. Sole worker PID 8280 is confirmed running with saved adaptive settings (current batch 250 rows / 60 seconds) after safe recovery at 2026-10-05 17:10 PKT. Current-state recorded commits: 18,750; cumulative recorded runner commits: 2,541,909. Recorded counters may omit commits whose checkpoint/log writes were corrupted; live counts below are authoritative coverage measurements. New confirmed commits since recovery: 3750 rows in 14 batches, totaling 60.31 seconds of measured request time. Worker stderr is empty. Last intact OR/Canby cursor was live-verified with geog and zero eligible missing at or before the cursor before resuming; existing geog is preserved. A fresh full-table snapshot confirms all 41 completed jurisdictions have zero eligible missing geog, and there are zero coordinate exceptions globally. No overall completion is claimed.
 
-Florida runner update: completed and verified after the checkpoint restarts. The runner has returned to the remaining state queue.
+
+| Live database totals at 2026-10-05 17:10:35 PKT | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog already populated | 4,629,607 |
+| Still left: valid eligible rows missing geog | 3,889,656 |
+| Of remaining, rows with no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+These are live snapshot counts, distinct from the October 4 inventory estimates and the cumulative recorded runner counter. Existing geog includes values populated before this state runner. The bounded read-only count query took 22.27 seconds with a 120-second statement timeout. Remaining rows decrease with subsequent commits; no-state rows are included in the still-left total.
+Florida runner history: completed and verified after the checkpoint restarts. It returned to the remaining state queue before the later authentication stop.
 
 Performance update (October 4): non-null and null city candidates now use separate index scans, allowing the existing (state, city) index to seek from the saved city. Resumed with 500-row batches; the first two committed NY batches took 15.1 and 13.6 seconds, compared with approximately 100 seconds per 50 rows previously. These timings are observations, not a guarantee for every state.
 
@@ -50,19 +61,19 @@ Islamabad/Rawalpindi update (October 5): all 27 manually added clinics were inde
 | 27 | KS | 67493 | Done (verified) |
 | 28 | WV | 73327 | Done (verified) |
 | 29 | AR | 76612 | Done (verified) |
-| 30 | AL | 77778 | In progress |
-| 31 | UT | 83091 | Pending |
-| 32 | NE | 84487 | Pending |
-| 33 | CT | 94928 | Pending |
-| 34 | KY | 96080 | Pending |
-| 35 | OK | 102348 | Pending |
-| 36 | SC | 104003 | Pending |
-| 37 | LA | 110292 | Pending |
-| 38 | NV | 116637 | Pending |
-| 39 | MO | 119243 | Pending |
-| 40 | WI | 131356 | Pending |
-| 41 | IN | 139182 | Pending |
-| 42 | OR | 139583 | Pending |
+| 30 | AL | 77778 | Done (verified) |
+| 31 | UT | 83091 | Done (verified) |
+| 32 | NE | 84487 | Done (verified) |
+| 33 | CT | 94928 | Done (verified) |
+| 34 | KY | 96080 | Done (verified) |
+| 35 | OK | 102348 | Done (verified) |
+| 36 | SC | 104003 | Done (verified) |
+| 37 | LA | 110292 | Done (verified) |
+| 38 | NV | 116637 | Done (verified) |
+| 39 | MO | 119243 | Done (verified) |
+| 40 | WI | 131356 | Done (verified) |
+| 41 | IN | 139182 | Done (verified) |
+| 42 | OR | 139583 | In progress |
 | 43 | MN | 141187 | Pending |
 | 44 | TN | 141643 | Pending |
 | 45 | AZ | 159051 | Pending |
@@ -83,4 +94,21 @@ Islamabad/Rawalpindi update (October 5): all 27 manually added clinics were inde
 
 
 Location testing update (2026-10-05, PKT): the separate location-testing agent rechecked public REST responses at 5 and 25 miles. Islamabad returned 17/27 offices, Rawalpindi 4/27, Miami 500/500, and Orlando 500/500; all calls returned HTTP 200 with valid coordinates and distances within the requested radius (0.33-0.97 seconds). The live app returned HTTP 200. Browser geolocation verification remains blocked by the local browser automation startup ACL error.
+
+
+Recovery (2026-10-05 13:42 PKT): PID 25808 stopped at 13:14:53 PKT because the progress log was briefly locked by another process. The SC batch of 250 was already committed and saved in the checkpoint (84,500 rows), although its batch event was absent from the log (last event 84,250). Live verification confirmed the saved SC/Pawleys Island UUID has geog and no eligible missing rows at or before the cursor; no local or database backfill worker remained. Preserved the checkpoint and resumed without replaying that batch. Write-Event now retries only Windows sharing/lock IOException codes 32/33, with at most five delays totaling 3.1 seconds; other errors still stop safely. A real isolated exclusive-read-lock test appended exactly one event after 1.617 seconds; PowerShell parsing passed. Confirmed fresh commits and only PID 30860 running; no worker stderr. Read active logs with FileShare.ReadWrite to avoid blocking appends.
+
+
+
+
+
+
+Access retry at 2026-10-05 16:11:32 PKT (UTC+05:00): re-read SUPABASE_Token_URL from apps/web/.env and retried the authorized read-only live verification request. It still returned HTTP 401 Unauthorized. No local state-runner process was found, no worker was launched, and the IN/Fort Wayne checkpoint remains 38,000 state rows / 2,421,977 cumulative committed rows. A valid refreshed token is still required before live database activity/cursor validation and safe resume.
+
+
+Authentication recovery (2026-10-05 16:25 PKT): replacement authorized access passed read-only live verification. The prior 401 stop is resolved; preserved IN cursor was validated before launching sole worker PID 23388. Existing sequential state runner continues remaining jurisdictions; no global runner was launched.
+
+
+Checkpoint recovery (2026-10-05 17:10 PKT): previous worker PID 23388 was absent and no database backfill session remained. Status JSON consisted of 1,883 NUL bytes, and the event log had 205 trailing NUL bytes; cause is consistent with interrupted filesystem writes but is not established. Preserved both originals as geog-state-backfill-status.corrupt-20261005-120951.json and geog-state-backfill-progress.backup-20261005-120951.jsonl. Trimmed only the trailing NUL corruption and rebuilt the last intact OR/Canby cursor from committed events (15,000 logged state rows, 2,538,159 cumulative recorded rows). Live OR coverage was 1,000 rows ahead of logged commits relative to inventory, so counters are conservative; existing geog rows are skipped safely, and completion uses live eligibility checks. IN independently verified complete at 141,394 rows, all with geog. Resumed sole runner PID 8280 without resetting progress or replaying geog writes.
+
 
