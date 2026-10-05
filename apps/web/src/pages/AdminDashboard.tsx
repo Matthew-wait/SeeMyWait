@@ -1372,18 +1372,23 @@ export default function AdminDashboard() {
       </header>
 
       {/* Stats */}
-      <div className="mx-auto w-full max-w-[1440px] grid grid-cols-3 gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3">
+      <div className={`mx-auto w-full max-w-[1440px] grid gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3 ${filterCity ? "grid-cols-4" : "grid-cols-3"}`}>
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">
-              {activeTab === "clinics" && filterCity ? cityTotal.toLocaleString("en-US") : (totalClinics ?? 0).toLocaleString("en-US")}
-            </p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">
-              {activeTab === "clinics" && filterCity ? `${filterCity} offices` : "Doctor Offices"}
-            </p>
+            <p className="text-xl font-bold text-foreground sm:text-2xl">{(totalClinics ?? 0).toLocaleString("en-US")}</p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Doctor Offices</p>
           </CardContent>
         </Card>
+        {filterCity && (
+          <Card className="border-border/50">
+            <CardContent className="p-2 text-center sm:p-3">
+              <MapPin className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
+              <p className="text-xl font-bold text-foreground sm:text-2xl">{cityTotal.toLocaleString("en-US")}</p>
+              <p className="text-[9px] text-muted-foreground sm:text-[10px]">{filterCity} offices</p>
+            </CardContent>
+          </Card>
+        )}
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <Users className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
