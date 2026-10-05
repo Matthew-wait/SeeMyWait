@@ -1405,6 +1405,7 @@ export default function AdminDashboard() {
           <div className="mb-4">
             <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5 bg-primary/15">
               <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
+              <TabsTrigger value="map" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Map</TabsTrigger>
               <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <span className="hidden sm:inline">Suggestions</span>
               <span className="sm:hidden">Suggest</span>
@@ -1586,7 +1587,12 @@ export default function AdminDashboard() {
               </div>
             )}
             </div>
-            <div className="space-y-3 min-w-0 lg:flex lg:flex-col">
+
+            </div>
+          </TabsContent>
+
+          <TabsContent value="map" className="space-y-3">
+            <div className="space-y-3 min-w-0">
 
         <div className="rounded-xl border border-border/40 bg-card p-3">
           {/* Search box + results */}
@@ -1620,7 +1626,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Map */}
-        <div className="relative h-[320px] lg:min-h-0 lg:flex-1 overflow-hidden rounded-xl border border-border/50">
+        <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
           <MapView
             clinics={mapClinics}
             userLocation={adminLoc}
@@ -1689,7 +1695,6 @@ export default function AdminDashboard() {
           )}
         </div>
       
-            </div>
             </div>
           </TabsContent>
 
