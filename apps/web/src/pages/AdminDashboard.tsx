@@ -634,17 +634,21 @@ export default function AdminDashboard() {
     checkAuth();
   }, [navigate]);
 
+  // Only ever fetch one page: the table is too large to sort or load whole.
+  // Browsing uses the primary-key index; search uses the name trigram index.
+  const [clinicsLimit, setClinicsLimit] = useState(50);
+  useEffect(() => { setClinicsLimit(50); }, [searchQuery]);
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
-    queryKey: ["admin-clinics", searchQuery],
+    queryKey: ["admin-clinics", searchQuery, clinicsLimit],
     queryFn: async () => {
-      // Most recently added first.
-      let q = supabase.from("clinics").select("*").order("created_at", { ascending: false });
-      if (searchQuery) q = q.ilike("name", `%${searchQuery}%`);
+      let q = supabase.from("clinics").select("*").limit(clinicsLimit);
+      q = searchQuery ? q.ilike("name", `%${searchQuery}%`) : q.order("id");
       const { data, error } = await q;
       if (error) throw error;
       return (data || []) as Clinic[];
     },
   });
+  const clinicsHasMore = (clinics?.length ?? 0) === clinicsLimit;
 
   const { data: suggestions } = useQuery({
     queryKey: ["admin-suggestions"],
@@ -1384,6 +1388,13 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+                {clinicsHasMore && (
+                  <div className="flex justify-center p-2">
+                    <Button variant="outline" size="sm" onClick={() => setClinicsLimit((n) => n + 50)}>
+                      Load 50 more
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center py-12 gap-3">
