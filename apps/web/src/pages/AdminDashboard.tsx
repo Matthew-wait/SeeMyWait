@@ -1376,8 +1376,12 @@ export default function AdminDashboard() {
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">{(totalClinics ?? 0).toLocaleString("en-US")}</p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Doctor Offices</p>
+            <p className="text-xl font-bold text-foreground sm:text-2xl">
+              {activeTab === "clinics" && filterCity ? cityTotal.toLocaleString("en-US") : (totalClinics ?? 0).toLocaleString("en-US")}
+            </p>
+            <p className="text-[9px] text-muted-foreground sm:text-[10px]">
+              {activeTab === "clinics" && filterCity ? `${filterCity} offices` : "Doctor Offices"}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -1447,10 +1451,6 @@ export default function AdminDashboard() {
               />
               </div>
             </div>
-            <h2 className="text-base font-semibold text-foreground">
-              {filterCity ? filterCity : "Choose a state and city"}{" "}
-              {filterCity && <span className="font-normal text-muted-foreground">· {cityTotal.toLocaleString("en-US")} offices</span>}
-            </h2>
             <div className="flex flex-wrap items-center gap-1">
               <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
               {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
