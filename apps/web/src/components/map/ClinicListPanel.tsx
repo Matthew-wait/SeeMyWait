@@ -47,7 +47,7 @@ interface ClinicListPanelProps {
   onRetryLocation: () => void;
 }
 
-const INITIAL_COUNT = 5;
+const INITIAL_COUNT = 50;
 
 /** Shared "why is the list limited" note for the default (non-search) browse view. */
 function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
@@ -334,6 +334,14 @@ export function ClinicListPanel({
         })}
         </div>
         <div style={{ height: windowed.bottom }} />
+        {!isSearching && hasMore && expanded && listToShow.length === displayList.length && (
+          <div className="pt-1 pb-1 text-center">
+            <button type="button" disabled={isLoadingMore} onClick={() => onLoadMore?.()}
+              className="h-7 px-3 rounded-lg text-[11px] font-semibold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50">
+              {isLoadingMore ? "Loading…" : "Load more (next 1,000)"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/*
@@ -352,14 +360,6 @@ export function ClinicListPanel({
             {expanded
               ? "Show Less"
               : `Explore More (${listToShow.length - INITIAL_COUNT} more)`}
-          </button>
-        </div>
-      )}
-      {!isSearching && hasMore && (
-        <div className="shrink-0 border-t border-border/20 px-3">
-          <button type="button" disabled={isLoadingMore} onClick={() => { setExpanded(true); onLoadMore?.(); }}
-            className="h-8 w-full text-center text-[11px] font-semibold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50">
-            {isLoadingMore ? "Loading…" : "Load more (up to 1,000)"}
           </button>
         </div>
       )}
