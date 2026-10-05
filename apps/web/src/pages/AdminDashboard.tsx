@@ -851,7 +851,7 @@ export default function AdminDashboard() {
   const [clinicsLimit, setClinicsLimit] = useState(50);
   const [specialtyFilter, setSpecialtyFilter] = useState("");
   const [letterFilter, setLetterFilter] = useState("");
-  const [radiusMiles, setRadiusMiles] = useState("5");
+  const [radiusMiles, setRadiusMiles] = useState("");
   useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter, letterFilter]);
   useEffect(() => { setClinicsLimit(50); }, [filterState, filterCity]);
   const { data: clinics, isLoading: clinicsLoading, isFetching: clinicsFetching } = useQuery({
@@ -1477,6 +1477,34 @@ export default function AdminDashboard() {
                 onChange={setFilterCity}
               />
               </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">Specialty</span>
+                <select
+                aria-label="Specialty"
+                value={specialtyFilter}
+                onChange={(e) => setSpecialtyFilter(e.target.value)}
+                className="h-9 w-56 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">All specialties</option>
+                {(specialtyOptions || []).map((sp) => (
+                  <option key={sp.specialty} value={sp.specialty}>{sp.specialty} ({sp.n.toLocaleString("en-US")})</option>
+                ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">Radius (mi)</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.5"
+                  aria-label="Radius in miles"
+                  placeholder="All"
+                  value={radiusMiles}
+                  onChange={(e) => setRadiusMiles(e.target.value)}
+                  title={adminLoc ? "Radius from your location" : "Locate yourself (map locate button) to apply the radius"}
+                  className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </div>
               <div className="ml-auto">
                 <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
                 <button type="button" onClick={() => setDoctorsView("list")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>List</button>
@@ -1502,28 +1530,7 @@ export default function AdminDashboard() {
                   className="pl-9"
                 />
               </div>
-              <div className="flex flex-col gap-0.5" title={adminLoc ? "Radius from your location" : "Locate yourself (map locate button) to apply the radius"}>
-                <input
-                  type="number"
-                  min={0}
-                  step="0.5"
-                  aria-label="Radius in miles"
-                  value={radiusMiles}
-                  onChange={(e) => setRadiusMiles(e.target.value)}
-                  className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm"
-                />
-              </div>
-              <select
-                aria-label="Specialty"
-                value={specialtyFilter}
-                onChange={(e) => setSpecialtyFilter(e.target.value)}
-                className="h-9 w-56 rounded-md border border-input bg-background px-2 text-sm"
-              >
-                <option value="">All specialties</option>
-                {(specialtyOptions || []).map((sp) => (
-                  <option key={sp.specialty} value={sp.specialty}>{sp.specialty} ({sp.n.toLocaleString("en-US")})</option>
-                ))}
-              </select>
+
               <Button size="sm" onClick={() => { setPrefillData(null); setCreateOpen(true); }} className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add</span>
