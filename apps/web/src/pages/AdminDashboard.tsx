@@ -3,7 +3,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -855,6 +855,8 @@ export default function AdminDashboard() {
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
     queryKey: ["admin-clinics", filterState, filterCity, searchQuery, specialtyFilter, letterFilter, clinicsLimit],
     enabled: !!filterState && !!filterCity,
+    // Keep the rows on screen while Load more fetches the bigger page.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       let q = supabase.from("clinics").select("*").eq("state", filterState).eq("city", filterCity).limit(clinicsLimit);
       const term = searchQuery.trim().replace(/[,()]/g, " ");
