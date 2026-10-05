@@ -181,6 +181,18 @@ export function useNearbyClinicsProgressive(
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   });
+  const count = useQuery({
+    queryKey: ["nearby-count", userLat, userLon, fullRadiusMiles],
+    enabled: hasLocation && settingsReady,
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase.rpc("nearby_clinic_count", {
+        p_lat: userLat!, p_lng: userLon!, p_radius_miles: fullRadiusMiles,
+      }).abortSignal(signal);
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+    staleTime: 5 * 60_000,
+  });
   const rows = useMemo(() => mergeNearbyPages(nearby.data?.pages ?? []), [nearby.data]);
   const data = useMemo((): ClinicWithWaitTime[] => {
     const byClinic = new Map<string, ClinicReport[]>();
@@ -205,6 +217,7 @@ export function useNearbyClinicsProgressive(
     data, isInitialLoading, isLoading: isInitialLoading,
     isLoadingMore: hasLocation && settingsReady && nearby.isFetching && !isError,
     hasMore: Boolean(hasNextPage),
+    total: count.data,
     loadMore: () => { if (hasNextPage && !nearby.isFetching) void fetchNextPage(); },
     error: nearby.error,
     refetch: async () => {

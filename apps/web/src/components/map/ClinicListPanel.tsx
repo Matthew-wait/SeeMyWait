@@ -39,6 +39,8 @@ interface ClinicListPanelProps {
    *  the initial short list doesn't look like the final result. */
   isLoadingMore?: boolean;
   hasMore?: boolean;
+  /** Exact count of offices in the radius, from the server (not the loaded rows). */
+  total?: number;
   onLoadMore?: () => void;
   loadError?: boolean;
   onRetryLoad?: () => void;
@@ -80,6 +82,7 @@ export function ClinicListPanel({
   locating,
   isLoadingMore = false,
   hasMore = false,
+  total,
   onLoadMore,
   loadError = false,
   onRetryLoad,
@@ -205,7 +208,7 @@ export function ClinicListPanel({
           <h3 className="min-w-0 text-sm font-semibold text-foreground">
             {isSearching
               ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
-              : `Nearby Doctor Offices (${nearbyCountLabel(nearbyClinics.length, hasMore)})`}
+              : `Nearby Doctor Offices (${total !== undefined ? total.toLocaleString("en-US") : nearbyCountLabel(nearbyClinics.length, hasMore)})`}
           </h3>
           {!isSearching && hasLocation && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
           {!isSearching && isLoadingMore && (

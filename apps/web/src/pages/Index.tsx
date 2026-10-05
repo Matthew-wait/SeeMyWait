@@ -52,7 +52,7 @@ const Index = () => {
 
   // Load the nearest 1,000; load more only when requested.
   // Keep the existing loading indicator until every geographic page finishes.
-  const { data: clinics, isInitialLoading: isLoading, isLoadingMore, hasMore, loadMore, error: nearbyError, refetch } = useNearbyClinicsProgressive(
+  const { data: clinics, isInitialLoading: isLoading, isLoadingMore, hasMore, total: nearbyTotal, loadMore, error: nearbyError, refetch } = useNearbyClinicsProgressive(
     userLocation?.lat,
     userLocation?.lng,
     reportCooldownMinutes,
@@ -473,6 +473,7 @@ const Index = () => {
           locating={locating}
           isLoadingMore={!isSearching && isLoadingMore}
           hasMore={!isSearching && hasMore}
+          total={isSearching ? undefined : nearbyTotal}
           onLoadMore={loadMore}
           loadError={!isSearching && Boolean(nearbyError)}
           onRetryLoad={() => { void refetch(); }}

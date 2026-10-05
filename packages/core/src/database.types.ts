@@ -255,6 +255,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      nearby_clinic_count: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_miles?: number
+        }
+        Returns: number
+      }
       nearby_clinics_batch: {
         Args: {
           p_lat: number
