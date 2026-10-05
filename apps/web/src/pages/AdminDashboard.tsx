@@ -775,6 +775,7 @@ export default function AdminDashboard() {
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [mapFocus, setMapFocus] = useState<Clinic | null>(null);
+  const [doctorsView, setDoctorsView] = useState<"list" | "map">("list");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -1373,7 +1374,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Stats */}
-      <div className={`mx-auto w-full max-w-[1440px] grid gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3 ${filterCity ? "grid-cols-4" : "grid-cols-3"}`}>
+      <div className={`mx-auto w-full max-w-[1440px] grid gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3 ${({ 3: "grid-cols-3", 4: "grid-cols-4", 5: "grid-cols-5" } as Record<number, string>)[3 + (filterState ? 1 : 0) + (filterCity ? 1 : 0)]}`}>
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
@@ -1381,6 +1382,19 @@ export default function AdminDashboard() {
             <p className="text-[9px] text-muted-foreground sm:text-[10px]">Doctor Offices</p>
           </CardContent>
         </Card>
+        {filterState && (
+          <Card className="border-border/50">
+            <CardContent className="p-2 text-center sm:p-3">
+              <MapPin className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
+              <p className="text-xl font-bold text-foreground sm:text-2xl">
+                {(cityOptions || []).reduce((sum, c) => sum + c.n, 0).toLocaleString("en-US")}
+              </p>
+              <p className="text-[9px] text-muted-foreground sm:text-[10px]">
+                {US_JURISDICTIONS.find((j) => j.code === filterState)?.name ?? filterState} offices
+              </p>
+            </CardContent>
+          </Card>
+        )}
         {filterCity && (
           <Card className="border-border/50">
             <CardContent className="p-2 text-center sm:p-3">
@@ -1411,7 +1425,6 @@ export default function AdminDashboard() {
           <div className="mb-4">
             <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5 bg-primary/15">
               <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
-              <TabsTrigger value="map" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Map</TabsTrigger>
               <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <span className="hidden sm:inline">Suggestions</span>
               <span className="sm:hidden">Suggest</span>
@@ -1458,6 +1471,12 @@ export default function AdminDashboard() {
               />
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
+                <button type="button" onClick={() => setDoctorsView("list")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>List</button>
+                <button type="button" onClick={() => setDoctorsView("map")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "map" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>Map</button>
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-1">
               <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
               {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
@@ -1497,6 +1516,7 @@ export default function AdminDashboard() {
               </Button>
             </div>
 
+            {doctorsView === "list" && (<>
             {clinicsLoading ? (
               <div className="flex justify-center py-8">
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
@@ -1549,7 +1569,7 @@ export default function AdminDashboard() {
                               onClick={() => {
                                 setMapFocus(c);
                                 setMapCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 17 });
-                                setActiveTab("map");
+                                setDoctorsView("map");
                               }}
                               title="View on map"
                             >
@@ -1606,12 +1626,8 @@ export default function AdminDashboard() {
                 </p>
               </div>
             )}
-            </div>
-
-            </div>
-          </TabsContent>
-
-          <TabsContent value="map" className="space-y-3">
+            </>)}
+            {doctorsView === "map" && (
             <div className="space-y-3 min-w-0">
 
         <div className="rounded-xl border border-border/40 bg-card p-3">
@@ -1734,7 +1750,12 @@ export default function AdminDashboard() {
         </div>
       
             </div>
+            )}
+            </div>
+
+            </div>
           </TabsContent>
+
 
           <TabsContent value="suggestions" className="space-y-3">
             {suggestions && suggestions.length > 0 ? (
