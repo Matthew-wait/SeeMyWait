@@ -52,7 +52,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     },
     android: {
       package: 'com.seeymywait.SeeMyWait',
-      versionCode: config.android?.versionCode ?? 11,
+      versionCode: config.android?.versionCode ?? 12,
       googleServicesFile: config.android?.googleServicesFile,
       permissions: [
         'ACCESS_COARSE_LOCATION',
