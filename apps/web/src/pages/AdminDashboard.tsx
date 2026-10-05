@@ -1,3 +1,6 @@
+import { ChevronDown } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -670,6 +673,57 @@ function CsvUploadDialog({
   );
 }
 
+
+function SearchableSelect({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+  className,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  ariaLabel: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={ariaLabel}
+          className={`flex h-9 items-center justify-between gap-2 rounded-md border border-input bg-background px-2 text-left text-sm ${className ?? ""}`}
+        >
+          <span className="truncate">{selected?.label ?? "Select…"}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={`Search ${ariaLabel.toLowerCase()}…`} />
+          <CommandList>
+            <CommandEmpty>No match.</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => (
+                <CommandItem
+                  key={o.value}
+                  value={o.label}
+                  onSelect={() => { onChange(o.value); setOpen(false); }}
+                >
+                  {o.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const US_JURISDICTIONS: { code: string; name: string }[] = [
   { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
   { code: "AR", name: "Arkansas" }, { code: "CA", name: "California" }, { code: "CO", name: "Colorado" },
@@ -731,12 +785,7 @@ export default function AdminDashboard() {
 
   const [filterState, setFilterState] = useState("FL");
   const [filterCity, setFilterCity] = useState("Miami");
-  const [stateText, setStateText] = useState("Florida");
-  const [cityText, setCityText] = useState("Miami");
-  useEffect(() => {
-    setStateText(US_JURISDICTIONS.find((j) => j.code === filterState)?.name ?? filterState);
-  }, [filterState]);
-  useEffect(() => { setCityText(filterCity); }, [filterCity]);
+
   const { data: cityOptions } = useQuery({
     queryKey: ["city-summary", filterState],
     queryFn: async () => {
@@ -1361,46 +1410,20 @@ export default function AdminDashboard() {
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <input
-                list="admin-state-options"
-                aria-label="State"
-                placeholder="Type a state…"
-                value={stateText}
-                onChange={(e) => {
-                  const typed = e.target.value;
-                  setStateText(typed);
-                  const match = US_JURISDICTIONS.find((j) => j.name.toLowerCase() === typed.trim().toLowerCase());
-                  if (match && match.code !== filterState) {
-                    setFilterState(match.code);
-                    setFilterCity("");
-                    setSpecialtyFilter("");
-                  }
-                }}
-                className="h-9 w-56 rounded-md border border-input bg-background px-2 text-sm"
+              <SearchableSelect
+                ariaLabel="State"
+                className="w-56"
+                value={filterState}
+                options={US_JURISDICTIONS.map((j) => ({ value: j.code, label: j.name }))}
+                onChange={(code) => { setFilterState(code); setFilterCity(""); setSpecialtyFilter(""); }}
               />
-              <datalist id="admin-state-options">
-                {US_JURISDICTIONS.map((j) => (
-                  <option key={j.code} value={j.name} />
-                ))}
-              </datalist>
-              <input
-                list="admin-city-options"
-                aria-label="City"
-                placeholder="Type a city…"
-                value={cityText}
-                onChange={(e) => {
-                  const typed = e.target.value;
-                  setCityText(typed);
-                  const match = (cityOptions || []).find((c) => c.city.toLowerCase() === typed.trim().toLowerCase());
-                  if (match && match.city !== filterCity) setFilterCity(match.city);
-                }}
-                className="h-9 w-64 rounded-md border border-input bg-background px-2 text-sm"
+              <SearchableSelect
+                ariaLabel="City"
+                className="w-64"
+                value={filterCity}
+                options={(cityOptions || []).map((c) => ({ value: c.city, label: `${c.city} (${c.n.toLocaleString("en-US")})` }))}
+                onChange={setFilterCity}
               />
-              <datalist id="admin-city-options">
-                {(cityOptions || []).map((c) => (
-                  <option key={c.city} value={c.city}>{c.n.toLocaleString("en-US")} offices</option>
-                ))}
-              </datalist>
             </div>
             <h2 className="text-base font-semibold text-foreground">
               {filterCity || "Select a city"}{" "}
