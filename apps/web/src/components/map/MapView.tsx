@@ -176,6 +176,9 @@ function MapViewInner({
       });
 
       clinicLayerRef.current = new ClinicPinLayer().addTo(map);
+      // Dedicated pane above the pins so the user's own location is never hidden.
+      map.createPane("userLocationPane");
+      map.getPane("userLocationPane")!.style.zIndex = "750";
       userLayerRef.current = L.layerGroup().addTo(map);
 
       mapRef.current = map;
@@ -235,6 +238,7 @@ function MapViewInner({
     const center: L.LatLngTuple = [userLocation.lat, userLocation.lng];
 
     L.circle(center, {
+      pane: "userLocationPane",
       radius: nearbyRadiusMiles * 1609.34,
       color: "#0284c7",
       opacity: 0.25,
@@ -245,7 +249,8 @@ function MapViewInner({
     }).addTo(layer);
 
     L.circleMarker(center, {
-      radius: 7,
+      pane: "userLocationPane",
+      radius: 8,
       fillColor: "#0284c7",
       fillOpacity: 1,
       color: "#ffffff",
