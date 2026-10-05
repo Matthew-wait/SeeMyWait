@@ -11,17 +11,21 @@ Git: local commits only, not pushed, unless the user says otherwise.
 - Office sheet (user site): "View on map" draws the driving route; "Get Directions" opens Google Maps from current location (local commit 91ceee1).
 - Admin layout: full width, capped at 1440px, 40px side padding (local commits 677f80c, d89af5b).
 
-## In progress
-- Specialty dropdown in the top row of the Doctors tab. The summary table is built; the dropdown UI is not wired yet. Options come from clinic_specialty_summary for the selected state; default "All specialties".
+## Done (latest)
+- Specialty dropdown (top row) and A-Z letter filter on the Doctors tab (local commit 7bff780).
+- Admin add and edit forms: state and city dropdowns, with "+ Add new city" (local commit aad39e6).
+- Doctors and Map merged into one screen; map markers from the city, capped at 500; row click centres the map (local commits d5b39b6, e394107).
+- City clean-up proposal written for review, no data changed (docs/CITY-CLEANUP-PROPOSED.md, local commit ea00f8d).
 
-## Next
-1. Merge the Doctors and Map tabs into one screen: state and city dropdowns, search, specialty dropdown, then a split view with the list and the map.
-   - Map markers come from the same city query, capped at 500, with a note if there are more.
-   - Clicking a list row centres the map on that office.
-2. Letter filter (A, B, C...) within the selected city (name range scan).
-3. Admin add and edit forms use the same state and city dropdowns. A new city needs an explicit admin "add new city" option.
-4. City name clean-up (for example "Miami Gradens" -> "Miami Gardens"), starting with the big cities. Review the rest with the user.
-5. Index on (state, city, name), to be built when the NY import is finished (heavy build on the live database).
+## In progress
+- Nothing in progress.
+
+## Waiting on the user
+1. Approve the city clean-up rule and the typo mappings (docs/CITY-CLEANUP-PROPOSED.md), then apply and rebuild the city summary.
+2. Index on (state, city, name): build when the NY import is finished (heavy build on the live database).
+
+## Notes
+- Newly added cities appear in the dropdown only after the city summary is rebuilt.
 
 ## Known limits
 - Browsing order is by name within a city; search matches name, address, NPI, specialty.
