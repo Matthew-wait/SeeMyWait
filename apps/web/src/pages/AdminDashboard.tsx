@@ -73,6 +73,8 @@ type ClinicFormData = {
   specialty: string;
   latitude: string;
   longitude: string;
+  state: string;
+  city: string;
 };
 
 type AddressSuggestion = {
@@ -89,7 +91,77 @@ const emptyForm: ClinicFormData = {
   specialty: "",
   latitude: "",
   longitude: "",
+  state: "FL",
+  city: "Miami",
 };
+
+
+function ClinicLocationFields({
+  form,
+  setForm,
+}: {
+  form: ClinicFormData;
+  setForm: React.Dispatch<React.SetStateAction<ClinicFormData>>;
+}) {
+  const [addingCity, setAddingCity] = useState(false);
+  const { data: cities } = useQuery({
+    queryKey: ["city-summary", form.state],
+    queryFn: async () => {
+      const summary = supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => { eq: (k: string, v: string) => { order: (k: string, o: { ascending: boolean }) => Promise<{ data: { city: string; n: number }[] | null; error: Error | null }> } };
+        };
+      };
+      const { data, error } = await summary.from("clinic_city_summary").select("city, n").eq("state", form.state).order("n", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10 * 60_000,
+  });
+  const known = (cities || []).some((c) => c.city === form.city);
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1.5">
+        <Label className="text-xs">State *</Label>
+        <select
+          aria-label="State"
+          value={form.state}
+          onChange={(e) => { setForm((f) => ({ ...f, state: e.target.value, city: "" })); setAddingCity(false); }}
+          className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+        >
+          {US_JURISDICTIONS.map((j) => (
+            <option key={j.code} value={j.code}>{j.name}</option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">City *</Label>
+        {addingCity ? (
+          <div className="flex gap-1">
+            <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="New city name" className="h-9" />
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAddingCity(false)}>Back</Button>
+          </div>
+        ) : (
+          <select
+            aria-label="City"
+            value={known ? form.city : ""}
+            onChange={(e) => {
+              if (e.target.value === "__new__") { setAddingCity(true); setForm((f) => ({ ...f, city: "" })); return; }
+              setForm((f) => ({ ...f, city: e.target.value }));
+            }}
+            className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="">Select a city…</option>
+            {(cities || []).map((c) => (
+              <option key={c.city} value={c.city}>{c.city}</option>
+            ))}
+            <option value="__new__">+ Add new city…</option>
+          </select>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ClinicFormDialog({
   open,
@@ -286,6 +358,7 @@ function ClinicFormDialog({
               </p>
             )}
           </div>
+          <ClinicLocationFields form={form} setForm={setForm} />
           <div className="space-y-1.5">
             <Label htmlFor="phone" className="text-xs">Phone</Label>
             <Input id="phone" value={form.phone} onChange={set("phone")} placeholder="e.g. (305) 555-0100" className="placeholder:text-muted-foreground/50" />
@@ -849,6 +922,8 @@ export default function AdminDashboard() {
         address: form.address.trim(),
         phone: form.phone.trim() || null,
         specialty: form.specialty.trim() || null,
+        state: form.state,
+        city: form.city.trim(),
         latitude: coords.latitude,
         longitude: coords.longitude,
       });
@@ -890,6 +965,8 @@ export default function AdminDashboard() {
         address: form.address.trim(),
         phone: form.phone.trim() || null,
         specialty: form.specialty.trim() || null,
+        state: form.state,
+        city: form.city.trim(),
         latitude: coords.latitude,
         longitude: coords.longitude,
       }).eq("id", id);
@@ -1170,6 +1247,8 @@ export default function AdminDashboard() {
         specialty: editClinic.specialty || "",
         latitude: String(editClinic.latitude),
         longitude: String(editClinic.longitude),
+        state: (editClinic as { state?: string | null }).state || "FL",
+        city: (editClinic as { city?: string | null }).city || "",
       }
     : undefined;
 
