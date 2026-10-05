@@ -1620,9 +1620,9 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
                 {clinicsHasMore && (
-                  <div className="sticky bottom-0 flex items-center justify-end gap-1.5 border-t border-border/50 bg-card/95 px-2 py-0.5 backdrop-blur-sm">
-                    {loadingMore && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-                    {!loadingMore && loadedMore && <Check className="h-3 w-3 text-primary" />}
+                  <div className="sticky bottom-0 flex items-center justify-center border-t border-border/50 bg-card/95 px-2 py-0.5 backdrop-blur-sm">
+                    {loadingMore && <Loader2 className="absolute right-2 h-3 w-3 animate-spin text-primary" />}
+                    {!loadingMore && loadedMore && <Check className="absolute right-2 h-3 w-3 text-primary" />}
                     <button
                       type="button"
                       disabled={loadingMore}
