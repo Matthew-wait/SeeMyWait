@@ -1423,7 +1423,7 @@ export default function AdminDashboard() {
       <main className="mx-auto w-full max-w-[1440px] px-10 pb-8 animate-in fade-in duration-500">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-4">
-            <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5 bg-primary/15">
+            <TabsList className="grid w-full grid-cols-4 gap-1 p-1 bg-primary/15">
               <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
               <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
               <span className="hidden sm:inline">Suggestions</span>
