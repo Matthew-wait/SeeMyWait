@@ -39,18 +39,18 @@
                       "KY",
                       "OK"
                   ],
-    "last_city":  "Conway",
+    "last_city":  "Dalzell",
     "current_state":  "SC",
     "timeout_seconds":  60,
     "pid":  25808,
-    "updated_at":  "2026-10-05T08:02:06.8245620Z",
+    "updated_at":  "2026-10-05T08:02:21.4431001Z",
     "resumed_at":  "2026-10-05T06:25:51.8731041Z",
-    "state_rows_updated":  36000,
+    "state_rows_updated":  37250,
     "running":  true,
     "batch_size":  250,
     "previous_state":  "AL",
     "started_at":  "2026-10-04T06:57:37.6827476Z",
-    "rows_updated":  1838446,
-    "last_id":  "2d20bcd3-cd5f-4222-88fc-55e1e23f814d",
+    "rows_updated":  1839696,
+    "last_id":  "3f9a134c-35fa-4f85-a64a-af37e4ba2f4f",
     "previous_state_rows_updated":  13500
 }

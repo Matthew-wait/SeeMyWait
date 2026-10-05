@@ -4140,3 +4140,8 @@
 {"pid":25808,"state_rows_updated":35500,"time":"2026-10-05T08:02:00.8404318Z","state":"SC","elapsed_ms":2868,"rows_updated":250,"last_id":"fab10180-331e-4b71-8c9a-a65caab3e381","event":"batch_committed"}
 {"pid":25808,"state_rows_updated":35750,"time":"2026-10-05T08:02:03.5338293Z","state":"SC","elapsed_ms":2692,"rows_updated":250,"last_id":"ff8d39e3-1c0e-4818-8d36-82ac51422219","event":"batch_committed"}
 {"pid":25808,"state_rows_updated":36000,"time":"2026-10-05T08:02:06.8266102Z","state":"SC","elapsed_ms":3291,"rows_updated":250,"last_id":"2d20bcd3-cd5f-4222-88fc-55e1e23f814d","event":"batch_committed"}
+{"pid":25808,"state_rows_updated":36250,"time":"2026-10-05T08:02:09.7184638Z","state":"SC","elapsed_ms":2891,"rows_updated":250,"last_id":"58d76804-e23d-48c3-9f6c-738827f33a8c","event":"batch_committed"}
+{"pid":25808,"state_rows_updated":36500,"time":"2026-10-05T08:02:12.7323528Z","state":"SC","elapsed_ms":3013,"rows_updated":250,"last_id":"897874f6-ff58-4e01-b435-6b2a6d4f34a5","event":"batch_committed"}
+{"pid":25808,"state_rows_updated":36750,"time":"2026-10-05T08:02:15.7168525Z","state":"SC","elapsed_ms":2983,"rows_updated":250,"last_id":"b6838686-c6d5-4956-8d8f-4c6d4f348b08","event":"batch_committed"}
+{"pid":25808,"state_rows_updated":37000,"time":"2026-10-05T08:02:18.4663679Z","state":"SC","elapsed_ms":2748,"rows_updated":250,"last_id":"e150661c-1094-476f-a58c-74ee76d8e5d8","event":"batch_committed"}
+{"pid":25808,"state_rows_updated":37250,"time":"2026-10-05T08:02:21.4451494Z","state":"SC","elapsed_ms":2978,"rows_updated":250,"last_id":"3f9a134c-35fa-4f85-a64a-af37e4ba2f4f","event":"batch_committed"}
