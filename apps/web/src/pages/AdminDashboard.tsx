@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { getDistanceMiles } from "@/lib/geolocation";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -850,6 +851,7 @@ export default function AdminDashboard() {
   const [clinicsLimit, setClinicsLimit] = useState(50);
   const [specialtyFilter, setSpecialtyFilter] = useState("");
   const [letterFilter, setLetterFilter] = useState("");
+  const [radiusMiles, setRadiusMiles] = useState("5");
   useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter, letterFilter]);
   useEffect(() => { setClinicsLimit(50); }, [filterState, filterCity]);
   const { data: clinics, isLoading: clinicsLoading, isFetching: clinicsFetching } = useQuery({
@@ -870,6 +872,11 @@ export default function AdminDashboard() {
     },
   });
   const clinicsHasMore = (clinics?.length ?? 0) === clinicsLimit;
+  const visibleClinics = useMemo(() => {
+    const r = Number(radiusMiles);
+    if (!clinics || !adminLoc || !(r > 0)) return clinics;
+    return clinics.filter((c) => getDistanceMiles(adminLoc.lat, adminLoc.lng, c.latitude, c.longitude) <= r);
+  }, [clinics, adminLoc, radiusMiles]);
   const listScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     listScrollRef.current?.scrollTo({ top: 0 });
@@ -1226,7 +1233,7 @@ export default function AdminDashboard() {
   // green "On Time" pin; the admin map is for adding, not wait status).
   const mapClinics: ClinicWithWaitTime[] = useMemo(
     () =>
-      (clinics || []).map((c) => ({
+      (visibleClinics || []).map((c) => ({
         id: c.id,
         name: c.name,
         address: c.address,
@@ -1238,7 +1245,7 @@ export default function AdminDashboard() {
         waitTime: { category: "on_time", label: "On Time", lastReported: null },
         recentReports: [],
       })),
-    [clinics]
+    [visibleClinics]
   );
 
   /** Open the create dialog on the Doctors tab, seeded from a map tap. */
@@ -1495,6 +1502,17 @@ export default function AdminDashboard() {
                   className="pl-9"
                 />
               </div>
+              <div className="flex flex-col gap-0.5" title={adminLoc ? "Radius from your location" : "Locate yourself (map locate button) to apply the radius"}>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.5"
+                  aria-label="Radius in miles"
+                  value={radiusMiles}
+                  onChange={(e) => setRadiusMiles(e.target.value)}
+                  className="h-9 w-20 rounded-md border border-input bg-background px-2 text-sm"
+                />
+              </div>
               <select
                 aria-label="Specialty"
                 value={specialtyFilter}
@@ -1521,7 +1539,7 @@ export default function AdminDashboard() {
               <div className="flex justify-center py-8">
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
               </div>
-            ) : clinics && clinics.length > 0 ? (
+            ) : visibleClinics && visibleClinics.length > 0 ? (
               <div ref={listScrollRef} className="lg:flex-1 lg:min-h-0 min-h-[260px] max-h-[70vh] lg:max-h-none overflow-auto rounded-lg border border-border/50">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
@@ -1533,7 +1551,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {clinics.map((c) => (
+                    {visibleClinics.map((c) => (
                       <TableRow
                         key={c.id}
                         className="cursor-pointer transition-colors hover:bg-primary/5"
