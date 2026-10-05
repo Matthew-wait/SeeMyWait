@@ -22,6 +22,9 @@ type Props = {
   isLoadingMore?: boolean;
   /** Exact count inside the nearby radius from the server; falls back to the loaded length. */
   totalCount?: number | null;
+  /** Nearby radius in miles, shown in the notice under the header (same wording as the web list). */
+  radiusMiles?: number;
+  onSuggestClinic?: () => void;
   /** Admin report radius (metres); decides which offices show the Report action. */
   reportGeofenceMeters: number;
 };
@@ -42,6 +45,8 @@ export const ClinicListPanel = ({
   onClinicPress,
   isLoadingMore = false,
   totalCount = null,
+  radiusMiles,
+  onSuggestClinic,
   reportGeofenceMeters,
 }: Props) => {
   const { isDark } = useTheme();
@@ -93,6 +98,22 @@ export const ClinicListPanel = ({
             <Feather name="chevron-down" size={20} color="#000000" />
           </Pressable>
         </View>
+        {radiusMiles !== undefined && userLocation ? (
+          <Text style={[styles.radiusNotice, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            You're seeing doctor offices within{' '}
+            <Text style={{ fontWeight: '600', color: isDark ? '#e2e8f0' : '#0f172a' }}>
+              {radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`}
+            </Text>{' '}
+            of your location. Use search to find a specific one further away, and{' '}
+            <Text
+              style={{ fontWeight: '600', color: isDark ? '#7dd3fc' : '#0369a1' }}
+              onPress={onSuggestClinic}
+              accessibilityRole="link">
+              suggest it to the admin
+            </Text>
+            .
+          </Text>
+        ) : null}
         {isLoadingMore ? (
           <View style={styles.loadingMoreRow}>
             <ActivityIndicator size="small" color={isDark ? '#38bdf8' : '#0284c7'} />
@@ -216,6 +237,12 @@ export const ClinicListPanel = ({
 };
 
 const styles = StyleSheet.create({
+  radiusNotice: {
+    fontSize: 11,
+    lineHeight: 15,
+    paddingHorizontal: 16,
+    paddingBottom: 6,
+  },
   loadingMoreRow: {
     flexDirection: 'row',
     alignItems: 'center',

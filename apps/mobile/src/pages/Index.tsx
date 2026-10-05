@@ -574,6 +574,8 @@ export const IndexPage = () => {
         onClinicPress={isPopupActive ? undefined : openClinicPopup}
         isLoadingMore={clinicsLoadingMore}
         totalCount={clinicsTotalCount}
+        radiusMiles={settings.nearbyRadiusMiles}
+        onSuggestClinic={() => router.push('/suggest-clinic')}
         reportGeofenceMeters={settings.reportGeofenceMeters}
       />
       <View pointerEvents={isPopupActive ? 'none' : 'auto'}>

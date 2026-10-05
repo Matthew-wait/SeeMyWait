@@ -26,6 +26,9 @@ type Props = {
   onPoiPress?: (poi: { placeId?: string; name?: string; coordinate: LatLng }) => void;
 };
 
+/** Same cap as the web viewport query (clinics_in_view). */
+const MAX_VISIBLE_PINS = 1000;
+
 const DEFAULT_REGION = {
   latitude: 25.7617,
   longitude: -80.1918,
@@ -81,6 +84,9 @@ export const MapView = ({
 }: Props) => {
   const mapRef = useRef<MapHandle | null>(null);
   const currentRegionRef = useRef<Region>(DEFAULT_REGION);
+  // Pins are drawn only for the visible area (same idea as the web map's viewport query),
+  // so the full nearby radius never becomes thousands of native markers at once.
+  const [viewport, setViewport] = useState<Region | null>(null);
   const [mapsParts, setMapsParts] = useState<MapsParts | null>(null);
 
   useEffect(() => {
@@ -187,6 +193,21 @@ export const MapView = ({
 
   const { NativeMap, NativeCircle, NativeMarker, NativeUrlTile } = mapsParts;
 
+  const visibleClinics = useMemo(() => {
+    const valid = clinics.filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
+    if (!viewport) return valid.slice(0, MAX_VISIBLE_PINS);
+    const halfLat = viewport.latitudeDelta / 2;
+    const halfLng = viewport.longitudeDelta / 2;
+    const out: typeof valid = [];
+    for (const c of valid) {
+      if (Math.abs(c.latitude - viewport.latitude) > halfLat) continue;
+      if (Math.abs(c.longitude - viewport.longitude) > halfLng) continue;
+      out.push(c);
+      if (out.length >= MAX_VISIBLE_PINS) break;
+    }
+    return out;
+  }, [clinics, viewport]);
+
   // mapType="none" hides the native Apple/Google base layer; the UrlTile
   // overlay below renders free OpenStreetMap raster tiles instead, so the
   // base map itself never calls Google's or Apple's tile APIs. All
@@ -206,6 +227,7 @@ export const MapView = ({
         initialRegion={region}
         onRegionChangeComplete={(nextRegion: Region) => {
           currentRegionRef.current = nextRegion;
+          setViewport(nextRegion);
         }}
         onPress={(e: any) => {
           const c = e?.nativeEvent?.coordinate;
@@ -253,9 +275,7 @@ export const MapView = ({
             strokeWidth={1.8}
           />
         ) : null}
-        {clinics
-          .filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude))
-          .map((clinic) => {
+        {visibleClinics.map((clinic) => {
             const tier = waitTierVisual(clinic.latestWaitMinutes);
             // NativeMarker sometimes doesn't repaint pinColor if key doesn't change.
             return (

@@ -13,7 +13,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     ...config,
     name: 'SeeMyWait',
     slug: 'seemywait',
-    version: config.version ?? '5.5',
+    version: config.version ?? '5.6',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'seemywait',
@@ -52,7 +52,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     },
     android: {
       package: 'com.seeymywait.SeeMyWait',
-      versionCode: config.android?.versionCode ?? 2,
+      versionCode: config.android?.versionCode ?? 11,
       googleServicesFile: config.android?.googleServicesFile,
       permissions: [
         'ACCESS_COARSE_LOCATION',

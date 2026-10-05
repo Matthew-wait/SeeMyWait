@@ -3,7 +3,7 @@
     "name": "SeeMyWait",
     "slug": "seemywait",
     "owner": "seemywaits-team",
-    "version": "5.5",
+    "version": "5.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "seemywait",
@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.seeymywait.SeeMyWait",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show nearby doctor offices and calculate wait times.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to show nearby doctor offices and calculate wait times.",
@@ -30,7 +30,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.seeymywait.SeeMyWait",
-      "versionCode": 10,
+      "versionCode": 11,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
