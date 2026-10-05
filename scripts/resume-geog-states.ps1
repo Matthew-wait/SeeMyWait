@@ -36,7 +36,25 @@ function Save-Status {
 function Write-Event($entry) {
     $entry.time = [DateTime]::UtcNow.ToString('o')
     $entry.pid = $PID
-    $entry | ConvertTo-Json -Compress -Depth 8 | Add-Content -LiteralPath $taskLog
+    $taskEventJson = $entry | ConvertTo-Json -Compress -Depth 8
+    for ($taskLogAttempt = 0; ; $taskLogAttempt++) {
+        try {
+            Add-Content -LiteralPath $taskLog -Value $taskEventJson -ErrorAction Stop
+            return
+        } catch {
+            # A reader can briefly hold a Windows sharing lock. Retry only that
+            # failure; preserve the saved DB checkpoint and never replay the batch.
+            $taskLogException = $_.Exception
+            while ($taskLogException.InnerException) { $taskLogException = $taskLogException.InnerException }
+            $taskLogErrorCode = $taskLogException.HResult -band 0xffff
+            if ($taskLogException -is [System.IO.IOException] -and
+                $taskLogErrorCode -in @(32,33) -and $taskLogAttempt -lt 5) {
+                Start-Sleep -Milliseconds (100 * [Math]::Pow(2, $taskLogAttempt))
+                continue
+            }
+            throw
+        }
+    }
 }
 function Invoke-Database([string]$query) {
     $taskBody = @{ query = $query } | ConvertTo-Json

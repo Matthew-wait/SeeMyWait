@@ -1,5 +1,4 @@
 {
-    "previous_state_last_id":  "79ff50af-d858-4fad-92cc-e3d970d4c9c6",
     "recovered_from_logs":  true,
     "complete":  false,
     "completed":  [
@@ -37,20 +36,28 @@
                       "NE",
                       "CT",
                       "KY",
-                      "OK"
+                      "OK",
+                      "SC",
+                      "LA",
+                      "NV",
+                      "MO",
+                      "WI",
+                      "IN",
+                      "OR",
+                      "MN",
+                      "TN"
                   ],
-    "last_city":  "Dalzell",
-    "current_state":  "SC",
-    "timeout_seconds":  60,
-    "pid":  25808,
-    "updated_at":  "2026-10-05T08:02:21.4431001Z",
-    "resumed_at":  "2026-10-05T06:25:51.8731041Z",
-    "state_rows_updated":  37250,
+    "last_city":  "Phoenix",
+    "current_state":  "AZ",
+    "timeout_seconds":  120,
+    "pid":  8280,
+    "updated_at":  "2026-10-05T15:00:47.0328326Z",
+    "resumed_at":  "2026-10-05T12:10:13.6453967Z",
+    "state_rows_updated":  92000,
     "running":  true,
-    "batch_size":  250,
-    "previous_state":  "AL",
+    "batch_size":  125,
     "started_at":  "2026-10-04T06:57:37.6827476Z",
-    "rows_updated":  1839696,
-    "last_id":  "3f9a134c-35fa-4f85-a64a-af37e4ba2f4f",
-    "previous_state_rows_updated":  13500
+    "recovery_note":  "Recovered last intact committed cursor after all-NUL status and trailing-NUL log. Recorded counters may omit unlogged committed rows; live OR pending verification, not counters, determines completion.",
+    "rows_updated":  3036572,
+    "last_id":  "cb237950-450e-493f-aac8-44bf2254cf55"
 }
