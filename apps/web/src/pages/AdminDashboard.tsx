@@ -870,6 +870,10 @@ export default function AdminDashboard() {
     },
   });
   const clinicsHasMore = (clinics?.length ?? 0) === clinicsLimit;
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    listScrollRef.current?.scrollTo({ top: 0 });
+  }, [filterState, filterCity, letterFilter, searchQuery, specialtyFilter]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadedMore, setLoadedMore] = useState(false);
   useEffect(() => {
@@ -1533,7 +1537,7 @@ export default function AdminDashboard() {
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
               </div>
             ) : clinics && clinics.length > 0 ? (
-              <div className="lg:flex-1 lg:min-h-0 min-h-[260px] max-h-[70vh] lg:max-h-none overflow-auto rounded-lg border border-border/50">
+              <div ref={listScrollRef} className="lg:flex-1 lg:min-h-0 min-h-[260px] max-h-[70vh] lg:max-h-none overflow-auto rounded-lg border border-border/50">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
