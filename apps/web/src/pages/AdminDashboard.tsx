@@ -1513,17 +1513,12 @@ export default function AdminDashboard() {
             <div className="space-y-3 min-w-0 lg:flex lg:flex-col">
 
         <div className="rounded-xl border border-border/40 bg-card p-3">
-          <p className="text-xs text-muted-foreground">
-            Search a place and <span className="font-medium text-foreground">Verify &amp; Add</span> it,
-            tap a medical place on the map to add it directly, or tap any empty spot to open the
-            Add form prefilled with exact coordinates.
-          </p>
           {/* Search box + results */}
           <div className="relative mt-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search doctor office or place…"
+                placeholder="Search doctor office or place…" title="Search a place and Verify & Add it, tap a medical place on the map to add it, or tap an empty spot to add with exact coordinates"
                 value={mapSearch}
                 onChange={(e) => { setMapSearch(e.target.value); setMapDropdownOpen(true); }}
                 onFocus={() => { if (mapSearch.trim()) setMapDropdownOpen(true); }}
