@@ -679,12 +679,14 @@ function SearchableSelect({
   options,
   onChange,
   ariaLabel,
+  placeholder = "Select…",
   className,
 }: {
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
   ariaLabel: string;
+  placeholder?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -697,7 +699,7 @@ function SearchableSelect({
           aria-label={ariaLabel}
           className={`flex h-9 items-center justify-between gap-2 rounded-md border border-input bg-background px-2 text-left text-sm ${className ?? ""}`}
         >
-          <span className="truncate">{selected?.label ?? "Select…"}</span>
+          <span className={`truncate ${selected ? "" : "text-muted-foreground"}`}>{selected?.label ?? placeholder}</span>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
@@ -783,11 +785,12 @@ export default function AdminDashboard() {
     checkAuth();
   }, [navigate]);
 
-  const [filterState, setFilterState] = useState("FL");
-  const [filterCity, setFilterCity] = useState("Miami");
+  const [filterState, setFilterState] = useState("");
+  const [filterCity, setFilterCity] = useState("");
 
   const { data: cityOptions } = useQuery({
     queryKey: ["city-summary", filterState],
+    enabled: !!filterState,
     queryFn: async () => {
       // Table is newer than the generated types; typed locally.
       const summary = supabase as unknown as {
@@ -808,6 +811,7 @@ export default function AdminDashboard() {
   const cityTotal = cityOptions?.find((c) => c.city === filterCity)?.n ?? 0;
   const { data: specialtyOptions } = useQuery({
     queryKey: ["specialty-summary", filterState],
+    enabled: !!filterState,
     queryFn: async () => {
       const summary = supabase as unknown as {
         from: (t: string) => {
@@ -832,13 +836,10 @@ export default function AdminDashboard() {
   const [specialtyFilter, setSpecialtyFilter] = useState("");
   const [letterFilter, setLetterFilter] = useState("");
   useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter, letterFilter]);
-  useEffect(() => {
-    if (!cityOptions || cityOptions.length === 0) return;
-    if (!cityOptions.some((c) => c.city === filterCity)) setFilterCity(cityOptions[0].city);
-  }, [cityOptions, filterCity]);
   useEffect(() => { setClinicsLimit(50); }, [filterState, filterCity]);
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
     queryKey: ["admin-clinics", filterState, filterCity, searchQuery, specialtyFilter, letterFilter, clinicsLimit],
+    enabled: !!filterState && !!filterCity,
     queryFn: async () => {
       let q = supabase.from("clinics").select("*").eq("state", filterState).eq("city", filterCity).limit(clinicsLimit);
       const term = searchQuery.trim().replace(/[,()]/g, " ");
@@ -1195,7 +1196,7 @@ export default function AdminDashboard() {
   // green "On Time" pin; the admin map is for adding, not wait status).
   const { data: mapCityClinics } = useQuery({
     queryKey: ["admin-map-city", filterState, filterCity],
-    enabled: !!filterCity,
+    enabled: !!filterState && !!filterCity,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clinics")
@@ -1410,24 +1411,32 @@ export default function AdminDashboard() {
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">State <span className="text-destructive">*</span></span>
               <SearchableSelect
                 ariaLabel="State"
+                placeholder="Choose a state"
                 className="w-56"
                 value={filterState}
                 options={US_JURISDICTIONS.map((j) => ({ value: j.code, label: j.name }))}
                 onChange={(code) => { setFilterState(code); setFilterCity(""); setSpecialtyFilter(""); }}
               />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">City <span className="text-destructive">*</span></span>
               <SearchableSelect
                 ariaLabel="City"
+                placeholder={filterState ? "Choose a city" : "Choose a state first"}
                 className="w-64"
                 value={filterCity}
                 options={(cityOptions || []).map((c) => ({ value: c.city, label: `${c.city} (${c.n.toLocaleString("en-US")})` }))}
                 onChange={setFilterCity}
               />
+              </div>
             </div>
             <h2 className="text-base font-semibold text-foreground">
-              {filterCity || "Select a city"}{" "}
-              <span className="font-normal text-muted-foreground">· {cityTotal.toLocaleString("en-US")} offices</span>
+              {filterCity ? filterCity : "Choose a state and city"}{" "}
+              {filterCity && <span className="font-normal text-muted-foreground">· {cityTotal.toLocaleString("en-US")} offices</span>}
             </h2>
             <div className="flex flex-wrap items-center gap-1">
               <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
@@ -1558,7 +1567,9 @@ export default function AdminDashboard() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <Users className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm text-muted-foreground">No doctors found. Add one above!</p>
+                <p className="text-sm text-muted-foreground">
+                  {!filterState || !filterCity ? "Choose a state and a city to see doctor offices." : "No doctors found. Add one above!"}
+                </p>
               </div>
             )}
             </div>
