@@ -876,7 +876,7 @@ export default function AdminDashboard() {
     if (!loadingMore || clinicsFetching) return;
     setLoadingMore(false);
     setLoadedMore(true);
-    const t = setTimeout(() => setLoadedMore(false), 1500);
+    const t = setTimeout(() => setLoadedMore(false), 2000);
     return () => clearTimeout(t);
   }, [loadingMore, clinicsFetching]);
 
@@ -1620,15 +1620,16 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
                 {clinicsHasMore && (
-                  <div className="sticky bottom-0 flex justify-center border-t border-border/50 bg-card/95 py-0.5 backdrop-blur-sm">
+                  <div className="sticky bottom-0 flex items-center justify-end gap-1.5 border-t border-border/50 bg-card/95 px-2 py-0.5 backdrop-blur-sm">
+                    {loadingMore && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                    {!loadingMore && loadedMore && <Check className="h-3 w-3 text-primary" />}
                     <button
                       type="button"
                       disabled={loadingMore}
                       onClick={() => { setLoadingMore(true); setLoadedMore(false); setClinicsLimit((n) => n + 50); }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-primary hover:underline disabled:no-underline"
+                      className="px-1 py-0.5 text-[11px] font-semibold text-primary hover:underline disabled:opacity-50"
                     >
-                      {loadingMore ? <Loader2 className="h-3 w-3 animate-spin" /> : loadedMore ? <Check className="h-3 w-3" /> : null}
-                      {loadingMore ? "Loading 50 more…" : loadedMore ? "Loaded" : "Load 50 more"}
+                      Load 50 more
                     </button>
                   </div>
                 )}
