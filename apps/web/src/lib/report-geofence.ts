@@ -2,10 +2,8 @@
 export const REPORT_WAIT_GEOFENCE_METERS = 1000;
 
 /**
- * GPS accuracy must be at or below this (meters) to report.
- * Derived from the geofence: half of it, clamped to 20–100 m.
+ * GPS accuracy must be at or below this (meters) to report. Matches the
+ * geofence: desktop and Wi-Fi-based locations are often hundreds of meters
+ * accurate, so a tighter cap blocks legitimate reports.
  */
-export const REPORT_MAX_GPS_ACCURACY_METERS = Math.min(
-  100,
-  Math.max(20, Math.floor(REPORT_WAIT_GEOFENCE_METERS / 2))
-);
+export const REPORT_MAX_GPS_ACCURACY_METERS = REPORT_WAIT_GEOFENCE_METERS;
