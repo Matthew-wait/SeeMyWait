@@ -776,15 +776,6 @@ export default function AdminDashboard() {
   const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [mapFocus, setMapFocus] = useState<Clinic | null>(null);
   const [doctorsView, setDoctorsView] = useState<"list" | "map">("list");
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadedMore, setLoadedMore] = useState(false);
-  useEffect(() => {
-    if (!loadingMore || clinicsFetching) return;
-    setLoadingMore(false);
-    setLoadedMore(true);
-    const t = setTimeout(() => setLoadedMore(false), 1500);
-    return () => clearTimeout(t);
-  }, [loadingMore, clinicsFetching]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -879,6 +870,15 @@ export default function AdminDashboard() {
     },
   });
   const clinicsHasMore = (clinics?.length ?? 0) === clinicsLimit;
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadedMore, setLoadedMore] = useState(false);
+  useEffect(() => {
+    if (!loadingMore || clinicsFetching) return;
+    setLoadingMore(false);
+    setLoadedMore(true);
+    const t = setTimeout(() => setLoadedMore(false), 1500);
+    return () => clearTimeout(t);
+  }, [loadingMore, clinicsFetching]);
 
   const { data: suggestions } = useQuery({
     queryKey: ["admin-suggestions"],
