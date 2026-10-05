@@ -678,26 +678,46 @@ export default function AdminDashboard() {
     staleTime: 10 * 60_000,
   });
   const cityTotal = cityOptions?.find((c) => c.city === filterCity)?.n ?? 0;
+  const { data: specialtyOptions } = useQuery({
+    queryKey: ["specialty-summary", filterState],
+    queryFn: async () => {
+      const summary = supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => { eq: (k: string, v: string) => { order: (k: string, o: { ascending: boolean }) => { limit: (n: number) => Promise<{ data: { specialty: string; n: number }[] | null; error: Error | null }> } } };
+        };
+      };
+      const { data, error } = await summary
+        .from("clinic_specialty_summary")
+        .select("specialty, n")
+        .eq("state", filterState)
+        .order("n", { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10 * 60_000,
+  });
 
   // Only ever fetch one page: the table is too large to sort or load whole.
   // Browsing uses the primary-key index; search uses the name trigram index.
   const [clinicsLimit, setClinicsLimit] = useState(50);
   const [specialtyFilter, setSpecialtyFilter] = useState("");
-  useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter]);
+  const [letterFilter, setLetterFilter] = useState("");
+  useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter, letterFilter]);
   useEffect(() => {
     if (!cityOptions || cityOptions.length === 0) return;
     if (!cityOptions.some((c) => c.city === filterCity)) setFilterCity(cityOptions[0].city);
   }, [cityOptions, filterCity]);
   useEffect(() => { setClinicsLimit(50); }, [filterState, filterCity]);
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
-    queryKey: ["admin-clinics", filterState, filterCity, searchQuery, specialtyFilter, clinicsLimit],
+    queryKey: ["admin-clinics", filterState, filterCity, searchQuery, specialtyFilter, letterFilter, clinicsLimit],
     queryFn: async () => {
       let q = supabase.from("clinics").select("*").eq("state", filterState).eq("city", filterCity).limit(clinicsLimit);
       const term = searchQuery.trim().replace(/[,()]/g, " ");
       if (term) q = q.or(`name.ilike.%${term}%,address.ilike.%${term}%,npi.eq.${term}`);
       else q = q.order("name");
-      const spec = specialtyFilter.trim().replace(/[,()]/g, " ");
-      if (spec) q = q.ilike("specialty", `%${spec}%`);
+      if (specialtyFilter) q = q.eq("specialty", specialtyFilter);
+      if (letterFilter) q = q.ilike("name", `${letterFilter}%`);
       const { data, error } = await q;
       if (error) throw error;
       return (data || []) as Clinic[];
@@ -1354,7 +1374,7 @@ export default function AdminDashboard() {
               <select
                 aria-label="State"
                 value={filterState}
-                onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
+                onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); setSpecialtyFilter(""); }}
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               >
                 {US_JURISDICTIONS.map((j) => (
@@ -1373,6 +1393,12 @@ export default function AdminDashboard() {
               </select>
               <span className="text-xs text-muted-foreground">{cityTotal.toLocaleString("en-US")} offices in {filterCity || "—"}</span>
             </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
+              {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
+                <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1383,12 +1409,17 @@ export default function AdminDashboard() {
                   className="pl-9"
                 />
               </div>
-              <Input
-                placeholder="Specialty..."
+              <select
+                aria-label="Specialty"
                 value={specialtyFilter}
                 onChange={(e) => setSpecialtyFilter(e.target.value)}
-                className="w-40"
-              />
+                className="h-9 w-56 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="">All specialties</option>
+                {(specialtyOptions || []).map((sp) => (
+                  <option key={sp.specialty} value={sp.specialty}>{sp.specialty} ({sp.n.toLocaleString("en-US")})</option>
+                ))}
+              </select>
               <Button size="sm" onClick={() => { setPrefillData(null); setCreateOpen(true); }} className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add</span>
