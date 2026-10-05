@@ -785,6 +785,19 @@ export default function AdminDashboard() {
     checkAuth();
   }, [navigate]);
 
+  const splitRef = useRef<HTMLDivElement>(null);
+  const [splitHeight, setSplitHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    const fit = () => {
+      const el = splitRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      setSplitHeight(Math.max(320, Math.floor(window.innerHeight - top - 16)));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
   const [filterState, setFilterState] = useState("FL");
   const [filterCity, setFilterCity] = useState("Miami");
 
@@ -1444,8 +1457,8 @@ export default function AdminDashboard() {
                 <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
               ))}
             </div>
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-stretch">
-            <div className="space-y-3 min-w-0">
+            <div ref={splitRef} style={{ height: splitHeight }} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-stretch">
+            <div className="space-y-3 min-w-0 lg:flex lg:min-h-0 lg:flex-col">
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1482,7 +1495,7 @@ export default function AdminDashboard() {
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
               </div>
             ) : clinics && clinics.length > 0 ? (
-              <div className="max-h-[calc(100vh-540px)] min-h-[260px] overflow-auto rounded-lg border border-border/50">
+              <div className="lg:flex-1 lg:min-h-0 min-h-[260px] max-h-[70vh] lg:max-h-none overflow-auto rounded-lg border border-border/50">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
@@ -1607,7 +1620,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Map */}
-        <div className="relative h-[320px] lg:h-[calc(100vh-600px)] lg:min-h-[260px] lg:flex-1 overflow-hidden rounded-xl border border-border/50">
+        <div className="relative h-[320px] lg:min-h-0 lg:flex-1 overflow-hidden rounded-xl border border-border/50">
           <MapView
             clinics={mapClinics}
             userLocation={adminLoc}
