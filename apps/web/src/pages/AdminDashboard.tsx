@@ -1088,22 +1088,22 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Header */}
-      <header className="relative overflow-hidden bg-secondary px-3 pb-5 pt-4 sm:px-6">
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-3 pb-5 pt-4 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/80" />
-        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-secondary-foreground/5" />
+        <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
         <div className="relative z-10 mx-auto max-w-4xl flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary-foreground/10">
-              <LayoutDashboard className="h-4 w-4 text-secondary-foreground" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
+              <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <h1 className="text-base font-bold text-secondary-foreground truncate sm:text-lg">Admin Dashboard</h1>
+            <h1 className="text-base font-bold text-primary-foreground truncate sm:text-lg">Admin Dashboard</h1>
           </div>
           <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setActiveTab("settings")}
-              className="sm:hidden h-8 w-8 shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10"
+              className="sm:hidden h-8 w-8 shrink-0 text-primary-foreground hover:bg-primary-foreground/10"
               title="Settings"
             >
               <Settings className="h-4 w-4" />
@@ -1112,7 +1112,7 @@ export default function AdminDashboard() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="shrink-0 text-secondary-foreground hover:bg-secondary-foreground/10 hover:text-secondary-foreground"
+              className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
             >
               <LogOut className="sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
             </Button>
@@ -1148,7 +1148,7 @@ export default function AdminDashboard() {
       <main className="mx-auto max-w-4xl px-3 pb-8 animate-in fade-in duration-500 sm:px-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-4">
-            <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5 bg-primary/15">
               <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
               <TabsTrigger value="map" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
                 <MapIcon className="h-3.5 w-3.5 sm:mr-1" />
@@ -1427,7 +1427,7 @@ export default function AdminDashboard() {
               value={showActiveReports ? "active" : "expired"}
               onValueChange={(v) => setShowActiveReports(v === "active")}
             >
-              <TabsList className="grid w-full grid-cols-2 gap-1 p-1 sm:w-auto sm:inline-grid">
+              <TabsList className="grid w-full grid-cols-2 gap-1 p-1 sm:w-auto sm:inline-grid bg-primary/15">
                 <TabsTrigger value="active" className="gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3">
                   Active
                   {showActiveReports && (

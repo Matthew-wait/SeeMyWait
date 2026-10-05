@@ -49,8 +49,10 @@ export function useAppSettings() {
     // re-renders that contributed to the map feeling glitchy. Five minutes
     // is plenty for admin-side tweaks to propagate, and structural sharing
     // dedupes identical values so this is mostly free.
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    // Short window so admin changes (radius, report radius, cooldown) reach
+    // users within ~30 seconds.
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
