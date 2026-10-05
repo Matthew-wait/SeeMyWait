@@ -1611,10 +1611,10 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
                 {clinicsHasMore && (
-                  <div className="sticky bottom-0 flex justify-center border-t border-border/50 bg-card/95 p-2 backdrop-blur-sm">
-                    <Button variant="outline" size="sm" onClick={() => setClinicsLimit((n) => n + 50)}>
+                  <div className="sticky bottom-0 flex justify-center border-t border-border/50 bg-card/95 py-0.5 backdrop-blur-sm">
+                    <button type="button" onClick={() => setClinicsLimit((n) => n + 50)} className="px-2 py-0.5 text-[11px] font-semibold text-primary hover:underline">
                       Load 50 more
-                    </Button>
+                    </button>
                   </div>
                 )}
               </div>
