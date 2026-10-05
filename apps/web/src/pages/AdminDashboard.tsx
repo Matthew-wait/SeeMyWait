@@ -1482,7 +1482,7 @@ export default function AdminDashboard() {
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
               </div>
             ) : clinics && clinics.length > 0 ? (
-              <div className="max-h-[calc(100vh-360px)] min-h-[320px] overflow-auto rounded-lg border border-border/50">
+              <div className="max-h-[calc(100vh-540px)] min-h-[260px] overflow-auto rounded-lg border border-border/50">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
@@ -1607,7 +1607,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Map */}
-        <div className="relative h-[320px] lg:h-[calc(100vh-430px)] lg:min-h-[320px] lg:flex-1 overflow-hidden rounded-xl border border-border/50">
+        <div className="relative h-[320px] lg:h-[calc(100vh-600px)] lg:min-h-[260px] lg:flex-1 overflow-hidden rounded-xl border border-border/50">
           <MapView
             clinics={mapClinics}
             userLocation={adminLoc}
