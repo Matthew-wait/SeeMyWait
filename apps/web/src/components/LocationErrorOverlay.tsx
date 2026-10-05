@@ -1,8 +1,8 @@
+import { REPORT_WAIT_GEOFENCE_METERS } from "@/lib/report-geofence";
+import { useAppSettings } from "@/hooks/use-app-settings";
 import { MapPin, Navigation, ShieldAlert, Clock, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  REPORT_WAIT_GEOFENCE_METERS,
-  REPORT_MAX_GPS_ACCURACY_METERS,
 } from "@/lib/report-geofence";
 
 type ErrorType = "gps_off" | "too_far" | "low_accuracy" | "rate_limited" | "spoofing";
@@ -39,7 +39,7 @@ const errorConfig: Record<
     gradient: "from-blue-500/20 to-cyan-500/10",
     glow: "shadow-[0_0_60px_hsl(200_98%_39%/0.15)]",
     title: "You're Too Far Away",
-    message: `To keep wait times accurate, you must be within ${REPORT_WAIT_GEOFENCE_METERS} meters of the doctor office to submit a report.`,
+    message: `To keep wait times accurate, you must be within __METERS__ meters of the doctor office to submit a report.`,
     hint: "Move closer to the doctor office entrance and try again.",
     emoji: "🗺️",
   },
@@ -48,7 +48,7 @@ const errorConfig: Record<
     gradient: "from-yellow-500/20 to-amber-500/10",
     glow: "shadow-[0_0_60px_hsl(45_93%_47%/0.15)]",
     title: "Weak GPS Signal",
-    message: `Your location accuracy needs to be within ${REPORT_MAX_GPS_ACCURACY_METERS} meters to verify your position. This can happen indoors or in areas with poor signal.`,
+    message: `Your location accuracy needs to be within __METERS__ meters to verify your position. This can happen indoors or in areas with poor signal.`,
     hint: "Step closer to a window or entrance for a better GPS signal.",
     emoji: "📡",
   },
@@ -74,6 +74,8 @@ const errorConfig: Record<
 
 export function LocationErrorOverlay({ type, onDismiss, clinicName }: LocationErrorOverlayProps) {
   const config = errorConfig[type];
+  const { data: appSettings } = useAppSettings();
+  const geofenceM = appSettings?.report_geofence_meters ?? REPORT_WAIT_GEOFENCE_METERS;
   const Icon = config.icon;
 
   return (
@@ -110,7 +112,7 @@ export function LocationErrorOverlay({ type, onDismiss, clinicName }: LocationEr
 
         {/* Body */}
         <div className="space-y-4 px-5 py-4">
-          <p className="text-sm leading-relaxed text-card-foreground/90">{config.message}</p>
+          <p className="text-sm leading-relaxed text-card-foreground/90">{config.message.replace("__METERS__", String(geofenceM))}</p>
 
           <div className="flex items-start gap-2.5 rounded-xl bg-muted/20 px-3.5 py-3 border border-border/30">
             <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />

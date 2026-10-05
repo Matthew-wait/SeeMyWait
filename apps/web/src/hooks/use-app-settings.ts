@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 interface AppSettings {
   nearby_radius_miles: number;
   report_cooldown_minutes: number;
+  report_geofence_meters: number;
 }
 
 const DEFAULTS: AppSettings = {
   nearby_radius_miles: 5,
   report_cooldown_minutes: 60,
+  report_geofence_meters: 1000,
 };
 
 export function useAppSettings() {
@@ -33,6 +35,9 @@ export function useAppSettings() {
       (data || []).forEach((row: { key: string; value: string }) => {
         if (row.key === "nearby_radius_miles") {
           settings.nearby_radius_miles = parseSetting(row.value, DEFAULTS.nearby_radius_miles);
+        }
+        if (row.key === "report_geofence_meters") {
+          settings.report_geofence_meters = parseSetting(row.value, DEFAULTS.report_geofence_meters);
         }
         if (row.key === "report_cooldown_minutes") {
           settings.report_cooldown_minutes = parseSetting(row.value, DEFAULTS.report_cooldown_minutes);

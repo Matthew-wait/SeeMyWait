@@ -1,3 +1,5 @@
+import { useAppSettings } from "@/hooks/use-app-settings";
+import { REPORT_WAIT_GEOFENCE_METERS } from "@/lib/report-geofence";
 import { useState, useEffect } from "react";
 import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,8 +15,6 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  REPORT_WAIT_GEOFENCE_METERS,
-  REPORT_MAX_GPS_ACCURACY_METERS,
 } from "@/lib/report-geofence";
 
 const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] = [
@@ -39,6 +39,8 @@ interface ClinicBottomSheetProps {
 }
 
 export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes = 60 }: ClinicBottomSheetProps) {
+  const { data: appSettings } = useAppSettings();
+  const geofenceM = appSettings?.report_geofence_meters ?? REPORT_WAIT_GEOFENCE_METERS;
   const [submitting, setSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<WaitTimeCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
         const pos = await getCurrentPosition();
         if (cancelled) return;
 
-        if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
+        if (pos.coords.accuracy > geofenceM) {
           setEligibility("low_accuracy");
           return;
         }
@@ -64,7 +66,7 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
           pos.coords.longitude,
           clinic.latitude,
           clinic.longitude,
-          REPORT_WAIT_GEOFENCE_METERS
+          geofenceM
         );
         setEligibility(withinRange ? "ready" : "too_far");
       } catch {
@@ -98,17 +100,17 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
         pos.coords.longitude,
         clinic.latitude,
         clinic.longitude,
-        REPORT_WAIT_GEOFENCE_METERS
+        geofenceM
       );
       if (!withinRange) {
-        setError(`You must be within ${REPORT_WAIT_GEOFENCE_METERS} meters of this doctor office to report.`);
+        setError(`You must be within ${geofenceM} meters of this doctor office to report.`);
         setSubmitting(false);
         setSelectedOption(null);
         setEligibility("too_far");
         return;
       }
 
-      if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
+      if (pos.coords.accuracy > geofenceM) {
         setError("GPS signal too weak. Try stepping outside or near a window.");
         setSubmitting(false);
         setSelectedOption(null);
@@ -170,9 +172,9 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
   const eligibilityMessage = (): string => {
     switch (eligibility) {
       case "too_far":
-        return `You need to be within ${REPORT_WAIT_GEOFENCE_METERS} meters of this doctor office to report a wait time.`;
+        return `You need to be within ${geofenceM} meters of this doctor office to report a wait time.`;
       case "low_accuracy":
-        return `Your GPS accuracy needs to be within ${REPORT_MAX_GPS_ACCURACY_METERS} meters to report. Move outdoors or closer to an entrance and try again.`;
+        return `Your GPS accuracy needs to be within ${geofenceM} meters to report. Move outdoors or closer to an entrance and try again.`;
       case "gps_off":
         return "Location is required to verify reporting. Enable GPS and try again.";
       default:

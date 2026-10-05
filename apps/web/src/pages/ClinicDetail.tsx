@@ -1,3 +1,4 @@
+import { REPORT_WAIT_GEOFENCE_METERS } from "@/lib/report-geofence";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,8 +15,6 @@ import {
   getAverageWaitTime,
 } from "@/lib/wait-time-utils";
 import {
-  REPORT_WAIT_GEOFENCE_METERS,
-  REPORT_MAX_GPS_ACCURACY_METERS,
 } from "@/lib/report-geofence";
 import { getCurrentPosition, getFreshPosition, isWithinRadius } from "@/lib/geolocation";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
@@ -42,6 +41,7 @@ export default function ClinicDetail() {
   >(null);
   const [locationState, setLocationState] = useState<"checking" | "ready" | "gps_off" | "low_accuracy" | "too_far">("checking");
   const { data: appSettings } = useAppSettings();
+  const geofenceM = appSettings?.report_geofence_meters ?? REPORT_WAIT_GEOFENCE_METERS;
   const reportWindowMinutes = appSettings?.report_cooldown_minutes ?? 60;
 
   const { data: clinic, isLoading: clinicLoading } = useQuery({
@@ -102,7 +102,7 @@ export default function ClinicDetail() {
       setLocationState("checking");
       try {
         const pos = await getCurrentPosition();
-        if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
+        if (pos.coords.accuracy > geofenceM) {
           setLocationState("low_accuracy");
           return;
         }
@@ -111,7 +111,7 @@ export default function ClinicDetail() {
           pos.coords.longitude,
           clinic.latitude,
           clinic.longitude,
-          REPORT_WAIT_GEOFENCE_METERS
+          geofenceM
         );
         setLocationState(withinRange ? "ready" : "too_far");
       } catch {
@@ -137,7 +137,7 @@ export default function ClinicDetail() {
         pos.coords.longitude,
         clinic.latitude,
         clinic.longitude,
-        REPORT_WAIT_GEOFENCE_METERS
+        geofenceM
       );
 
       if (!withinRange) {
@@ -147,7 +147,7 @@ export default function ClinicDetail() {
         return;
       }
 
-      if (pos.coords.accuracy > REPORT_MAX_GPS_ACCURACY_METERS) {
+      if (pos.coords.accuracy > geofenceM) {
         setCheckingLocation(false);
         setSelectedOption(null);
         setLocationError("low_accuracy");
@@ -414,12 +414,12 @@ export default function ClinicDetail() {
             )}
             {locationState === "low_accuracy" && (
               <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
-                Location accuracy needs to be within {REPORT_MAX_GPS_ACCURACY_METERS} meters. Move to an open area and try again.
+                Location accuracy needs to be within {geofenceM} meters. Move to an open area and try again.
               </div>
             )}
             {locationState === "too_far" && (
               <div className="mb-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-[11px] font-medium text-destructive">
-                You need to be within {REPORT_WAIT_GEOFENCE_METERS} meters of this doctor office to submit a report.
+                You need to be within {geofenceM} meters of this doctor office to submit a report.
               </div>
             )}
             <div className="grid grid-cols-2 gap-2.5">

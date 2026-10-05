@@ -606,6 +606,7 @@ export default function AdminDashboard() {
   const [showActiveReports, setShowActiveReports] = useState(true);
   const [nearbyRadius, setNearbyRadius] = useState("");
   const [cooldownMinutes, setCooldownMinutes] = useState("");
+  const [geofenceMeters, setGeofenceMeters] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
 
   // CRUD dialog state
@@ -679,6 +680,8 @@ export default function AdminDashboard() {
       const cooldown = appSettings.find((s: AppSettingRow) => s.key === "report_cooldown_minutes");
       if (radius) setNearbyRadius(radius.value);
       if (cooldown) setCooldownMinutes(cooldown.value);
+      const geofence = appSettings.find((s: AppSettingRow) => s.key === "report_geofence_meters");
+      if (geofence) setGeofenceMeters(geofence.value);
     }
   }, [appSettings]);
 
@@ -706,6 +709,7 @@ export default function AdminDashboard() {
       const updates = [
         { key: "nearby_radius_miles", value: nearbyRadius },
         { key: "report_cooldown_minutes", value: cooldownMinutes },
+        { key: "report_geofence_meters", value: geofenceMeters },
       ];
       for (const u of updates) {
         const { error } = await supabase.from("app_settings").update({ value: u.value }).eq("key", u.key);
@@ -1223,7 +1227,7 @@ export default function AdminDashboard() {
                     : null
                 }
                 pendingPoint={pendingPoint}
-                nearbyRadiusMiles={100}
+                nearbyRadiusMiles={Number(nearbyRadius) > 0 ? Number(nearbyRadius) : 5}
               />
 
               {/* Locate-me: sits just above the zoom pill (bottom-left cluster) */}
@@ -1531,6 +1535,19 @@ export default function AdminDashboard() {
                   />
                   <p className="text-[10px] text-muted-foreground">
                     Users will see doctor offices within this radius on the map. A circle will be shown around their location.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="geofence" className="text-xs">Report Radius (meters)</Label>
+                  <Input
+                    id="geofence"
+                    type="number"
+                    value={geofenceMeters}
+                    onChange={(e) => setGeofenceMeters(e.target.value)}
+                    placeholder="1000"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    How close a user must be to an office to submit a wait report. GPS accuracy must be within the same distance.
                   </p>
                 </div>
                 <div className="space-y-1.5">
