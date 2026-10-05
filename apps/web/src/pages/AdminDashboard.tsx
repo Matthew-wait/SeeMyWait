@@ -1512,14 +1512,6 @@ export default function AdminDashboard() {
               </div>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-1">
-              <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
-              {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
-                <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
-              ))}
-            </div>
-            <div ref={splitRef} style={{ height: splitHeight }} className="grid gap-3">
-            <div className="space-y-3 min-w-0 lg:flex lg:min-h-0 lg:flex-col">
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1540,6 +1532,15 @@ export default function AdminDashboard() {
                 <span className="hidden sm:inline">CSV</span>
               </Button>
             </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
+              {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
+                <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
+              ))}
+            </div>
+            <div ref={splitRef} style={{ height: splitHeight }} className="grid gap-3">
+            <div className="space-y-3 min-w-0 lg:flex lg:min-h-0 lg:flex-col">
+
 
             {doctorsView === "list" && (<>
             {clinicsLoading ? (
