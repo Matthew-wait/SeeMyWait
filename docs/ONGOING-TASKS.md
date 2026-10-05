@@ -1,6 +1,6 @@
 # Ongoing tasks (handoff)
 
-Required reading for new agents: docs/INDEXING-LOG.md (all indexes on the clinics table) and docs/MAP-AND-LISTING-RULES.md (map, listing and admin rules).
+Required reading for new agents: docs/INDEXING-LOG.md (all indexes on the clinics table), docs/MAP-AND-LISTING-RULES.md (map, listing and admin rules), and docs/NPI-GAP-LOG.md (which states are missing offices and how to fill them).
 
 Last updated 2026-10-05. Local dev server: http://127.0.0.1:8085 (admin at /admin).
 Git: work is committed locally. Nothing is pushed unless the user asks.
@@ -26,6 +26,10 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 2. Florida listing index built (see docs/INDEXING-LOG.md). Other states: index after the NY import and Geo backfill finish.
 3. Admin-added city: rebuild the city summary when a new city is saved (decide: nightly job or on save).
 4. Update the public site's map to match the admin behaviour where needed.
+
+## Later (when time allows)
+
+- Fill the NPI gaps for every state, starting with Florida (about 37,600 checkpointed-but-missing offices need a checkpoint fix and a retry). Full per-state list, causes and steps: docs/NPI-GAP-LOG.md. Regenerate it with scripts/npi-gap-report.mjs after each run.
 
 ## Next (mobile)
 - Port to mobile: 50-per-batch nearby list, count, admin-set report radius and cooldown, map changes.
