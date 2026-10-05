@@ -637,12 +637,17 @@ export default function AdminDashboard() {
   // Only ever fetch one page: the table is too large to sort or load whole.
   // Browsing uses the primary-key index; search uses the name trigram index.
   const [clinicsLimit, setClinicsLimit] = useState(50);
-  useEffect(() => { setClinicsLimit(50); }, [searchQuery]);
+  const [specialtyFilter, setSpecialtyFilter] = useState("");
+  useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter]);
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
-    queryKey: ["admin-clinics", searchQuery, clinicsLimit],
+    queryKey: ["admin-clinics", searchQuery, specialtyFilter, clinicsLimit],
     queryFn: async () => {
       let q = supabase.from("clinics").select("*").limit(clinicsLimit);
-      q = searchQuery ? q.ilike("name", `%${searchQuery}%`) : q.order("id");
+      const term = searchQuery.trim().replace(/[,()]/g, " ");
+      if (term) q = q.or(`name.ilike.%${term}%,address.ilike.%${term}%,npi.eq.${term}`);
+      else q = q.order("id");
+      const spec = specialtyFilter.trim().replace(/[,()]/g, " ");
+      if (spec) q = q.ilike("specialty", `%${spec}%`);
       const { data, error } = await q;
       if (error) throw error;
       return (data || []) as Clinic[];
@@ -1299,12 +1304,18 @@ export default function AdminDashboard() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search doctors..."
+                  placeholder="Name, address, or NPI..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
+              <Input
+                placeholder="Specialty..."
+                value={specialtyFilter}
+                onChange={(e) => setSpecialtyFilter(e.target.value)}
+                className="w-40"
+              />
               <Button size="sm" onClick={() => { setPrefillData(null); setCreateOpen(true); }} className="shrink-0 gap-1.5">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add</span>
