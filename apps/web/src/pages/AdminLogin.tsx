@@ -49,19 +49,15 @@ export default function AdminLogin() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-4 pt-3">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-foreground/[0.07] blur-2xl" />
-        <div className="relative z-10 mx-auto flex max-w-md items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
-              <Clock className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-sm font-bold tracking-tight text-primary-foreground">SeeMyWait</span>
-            <span className="ml-1 text-xs text-primary-foreground/70">Admin</span>
+      <header className="flex h-14 w-full items-center gap-3 bg-primary px-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9 shrink-0 text-primary-foreground hover:bg-primary-foreground/10">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-foreground/15">
+            <Clock className="h-4 w-4 text-primary-foreground" />
           </div>
+          <span className="text-sm font-bold tracking-tight text-primary-foreground">SeeMyWait Admin</span>
         </div>
       </header>
 
