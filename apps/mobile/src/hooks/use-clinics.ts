@@ -39,76 +39,88 @@ export type ClinicWithMeta = Clinic & {
     reportedAt: string;
     waitMinutes: number | null;
   }[];
-  /** Real distance from the user in miles, from the `nearby_clinics` RPC. Undefined without a known location. */
+  /** Real distance from the user in miles, from the nearby RPC. Undefined without a known location. */
   distance?: number;
 };
 
 type UseClinicsResult = {
   clinics: ClinicWithMeta[];
   loading: boolean;
-  /** True once a quick nearby pass has results but the full-radius pass is still loading. */
+  /** True while further 1,000-office batches are still arriving for the full radius. */
   isLoadingMore: boolean;
+  /** Exact number of active offices inside the nearby radius (single server count, not downloaded). */
+  totalCount: number | null;
   refresh: () => Promise<void>;
 };
 
-/** Row shape returned by the `nearby_clinics` RPC (see supabase/migrations/20260929000000). */
+/** Row shape returned by the `nearby_clinics_batch` RPC. */
 type NearbyClinicRow = Clinic & { distance_miles: number };
+type NearbyBatchCursor = { distance: number; id: string };
+type NearbyBatch = { clinics: NearbyClinicRow[]; next_cursor: NearbyBatchCursor | null };
 
-const QUICK_RADIUS_MILES = 5;
+const BATCH_SIZE = 1000;
+/** Safety cap, same as the web app: 30 batches = 30,000 offices. */
+const MAX_BATCHES = 30;
+const HISTORY_WINDOW_MINUTES = 180;
 
-async function fetchClinicsAndReports(
-  userLat: number | undefined,
-  userLon: number | undefined,
-  radiusMiles: number
-): Promise<{ clinics: (Clinic & { distance_miles?: number })[]; reports: WaitTimeReport[] }> {
-  const hasLocation = userLat !== undefined && userLon !== undefined;
+/**
+ * Pulls every office in the radius, nearest first, one 1,000-row batch at a time.
+ * `onBatch` receives the accumulated list after each batch so the map and list fill in.
+ * `isCurrent` lets the caller abandon a stale load (location or settings changed).
+ */
+async function loadNearbyBatches(
+  lat: number,
+  lng: number,
+  radiusMiles: number,
+  isCurrent: () => boolean,
+  onBatch: (all: NearbyClinicRow[]) => void
+): Promise<NearbyClinicRow[]> {
+  const byId = new Map<string, NearbyClinicRow>();
+  let cursor: NearbyBatchCursor | null = null;
+  for (let i = 0; i < MAX_BATCHES; i++) {
+    const { data, error } = await supabase.rpc('nearby_clinics_batch', {
+      p_lat: lat,
+      p_lng: lng,
+      p_radius_miles: radiusMiles,
+      p_page_size: BATCH_SIZE,
+      p_after_distance: cursor?.distance,
+      p_after_id: cursor?.id,
+    });
+    if (error) throw error;
+    if (!isCurrent()) return [...byId.values()];
+    const batch = data as unknown as NearbyBatch;
+    if (!batch || !Array.isArray(batch.clinics)) throw new Error('Invalid nearby-search response');
+    for (const clinic of batch.clinics) byId.set(clinic.id, clinic);
+    onBatch([...byId.values()]);
+    const next = batch.next_cursor;
+    if (!next) break;
+    if (cursor && next.distance === cursor.distance && next.id === cursor.id) {
+      throw new Error('Nearby-search cursor did not advance');
+    }
+    cursor = next;
+  }
+  return [...byId.values()];
+}
 
-  const clinicsPromise = hasLocation
-    ? supabase
-        .rpc('nearby_clinics', {
-          p_lat: userLat,
-          p_lng: userLon,
-          p_radius_miles: radiusMiles,
-          p_limit: 500,
-        })
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return (data ?? []) as NearbyClinicRow[];
-        })
-    : supabase
-        .from('clinics')
-        .select('*')
-        .eq('is_active', true)
-        .limit(500)
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return (data ?? []) as Clinic[];
-        });
-
-  const windowStartIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const reportsPromise = supabase
+async function fetchReports(reportExpiryMinutes: number): Promise<WaitTimeReport[]> {
+  // Same window as the web app: at least the 3-hour history, or the configured expiry if longer.
+  const windowMinutes = Math.max(reportExpiryMinutes, HISTORY_WINDOW_MINUTES);
+  const cutoffIso = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  const { data, error } = await supabase
     .from('wait_time_reports')
     .select('*')
-    .gte('reported_at', windowStartIso)
+    .gte('reported_at', cutoffIso)
     .or('is_flagged.is.null,is_flagged.eq.false')
     .order('reported_at', { ascending: false })
-    .limit(500)
-    .then(({ data, error }) => {
-      if (error) throw error;
-      return (data ?? []) as WaitTimeReport[];
-    });
-
-  const [clinics, reports] = await Promise.all([clinicsPromise, reportsPromise]);
-  return { clinics, reports };
+    .limit(1000);
+  if (error) throw error;
+  return (data ?? []) as WaitTimeReport[];
 }
 
 /**
- * Loads clinics near the user plus their non-expired wait reports. When a
- * location is known, uses the server-side `nearby_clinics` RPC (PostGIS GiST
- * index — real distance, sorted in SQL) via a progressive two-pass load: a
- * quick 5-mile pass so the map/list has something almost immediately, then
- * the full configured radius. Without a location, falls back to a plain
- * bounded fetch of active clinics (no radius filtering possible).
+ * Loads every active office inside the nearby radius (batched, nearest first) plus
+ * their recent wait reports. Without a location, falls back to a bounded fetch of
+ * active clinics (no radius filtering possible).
  */
 export const useClinics = (
   reportExpiryMinutes: number,
@@ -117,10 +129,10 @@ export const useClinics = (
   radiusMiles: number = 100
 ): UseClinicsResult => {
   const hasLocation = userLat !== undefined && userLon !== undefined;
-  const quickRadiusMiles = Math.min(QUICK_RADIUS_MILES, radiusMiles);
 
   const [clinics, setClinics] = useState<(Clinic & { distance_miles?: number })[]>([]);
   const [reports, setReports] = useState<WaitTimeReport[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [nowMs, setNowMs] = useState<number>(Date.now());
@@ -135,36 +147,62 @@ export const useClinics = (
 
   const load = useCallback(async () => {
     const token = ++loadTokenRef.current;
+    const isCurrent = () => loadTokenRef.current === token;
     setLoading(true);
     setIsLoadingMore(false);
 
-    if (!hasLocation) {
-      const { clinics: fetched, reports: fetchedReports } = await fetchClinicsAndReports(undefined, undefined, radiusMiles);
-      if (loadTokenRef.current !== token) return;
-      setClinics(fetched);
+    try {
+      if (!hasLocation) {
+        const { data, error } = await supabase.from('clinics').select('*').eq('is_active', true).limit(500);
+        if (error) throw error;
+        const fetchedReports = await fetchReports(reportExpiryMinutes);
+        if (!isCurrent()) return;
+        setClinics((data ?? []) as Clinic[]);
+        setReports(fetchedReports);
+        setTotalCount(null);
+        setLoading(false);
+        return;
+      }
+
+      // Reports and the exact count are cheap, so they run alongside the batches.
+      const reportsPromise = fetchReports(reportExpiryMinutes);
+      const countPromise = supabase
+        .rpc('nearby_clinic_count', { p_lat: userLat, p_lng: userLon, p_radius_miles: radiusMiles })
+        .then(({ data, error }) => {
+          if (error) throw error;
+          return Number(data ?? 0);
+        });
+
+      let firstBatchShown = false;
+      await loadNearbyBatches(userLat!, userLon!, radiusMiles, isCurrent, (partial) => {
+        if (!isCurrent()) return;
+        setClinics(partial);
+        if (!firstBatchShown) {
+          firstBatchShown = true;
+          setLoading(false);
+          setIsLoadingMore(true);
+        }
+      }).then((all) => {
+        if (isCurrent()) setClinics(all);
+      });
+      const [fetchedReports, count] = await Promise.all([reportsPromise, countPromise]);
+      if (!isCurrent()) return;
       setReports(fetchedReports);
+      setTotalCount(count);
       setLoading(false);
-      return;
+      setIsLoadingMore(false);
+    } catch (error) {
+      if (!isCurrent()) return;
+      setLoading(false);
+      setIsLoadingMore(false);
+      throw error;
     }
-
-    // Quick pass: small radius, shows results almost immediately.
-    const quick = await fetchClinicsAndReports(userLat, userLon, quickRadiusMiles);
-    if (loadTokenRef.current !== token) return;
-    setClinics(quick.clinics);
-    setReports(quick.reports);
-    setLoading(false);
-    setIsLoadingMore(true);
-
-    // Full pass: the configured radius, replaces the quick set once it lands.
-    const full = await fetchClinicsAndReports(userLat, userLon, radiusMiles);
-    if (loadTokenRef.current !== token) return;
-    setClinics(full.clinics);
-    setReports(full.reports);
-    setIsLoadingMore(false);
-  }, [hasLocation, quickRadiusMiles, radiusMiles, userLat, userLon]);
+  }, [hasLocation, radiusMiles, reportExpiryMinutes, userLat, userLon]);
 
   useEffect(() => {
-    void load();
+    void load().catch(() => {
+      // Keep whatever loaded; the next refresh (location, settings, or pull) retries.
+    });
   }, [load]);
 
   const isLatestReportActive = useCallback(
@@ -195,7 +233,7 @@ export const useClinics = (
   }, [reports]);
 
   const recentReportsByClinic = useMemo(() => {
-    const windowMs = 3 * 60 * 60 * 1000;
+    const windowMs = HISTORY_WINDOW_MINUTES * 60 * 1000;
     const map = new Map<string, { id: string; reportedAt: string; waitMinutes: number | null }[]>();
     for (const report of reports) {
       const reportedAtMs = new Date(report.reported_at).getTime();
@@ -230,6 +268,7 @@ export const useClinics = (
     clinics: clinicsWithMeta,
     loading,
     isLoadingMore,
+    totalCount,
     refresh: load,
   };
 };

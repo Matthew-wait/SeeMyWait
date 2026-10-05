@@ -6,7 +6,6 @@ import type { ClinicWithMeta } from '@/src/hooks/use-clinics';
 import { useTheme } from '@/src/hooks/use-theme';
 import { haversineDistanceMeters, metersToMiles } from '@/src/lib/distance';
 import type { LatLng } from '@/src/lib/geolocation';
-import { REPORT_WAIT_GEOFENCE_METERS } from '@/src/lib/report-wait-geofence';
 import { waitTierVisual } from '@/src/lib/wait-tier-style';
 
 type Props = {
@@ -21,9 +20,15 @@ type Props = {
   onClinicPress?: (clinic: ClinicWithMeta) => void;
   /** True while the quick nearby results are shown but the full-radius load is still in flight. */
   isLoadingMore?: boolean;
+  /** Exact count inside the nearby radius from the server; falls back to the loaded length. */
+  totalCount?: number | null;
+  /** Admin report radius (metres); decides which offices show the Report action. */
+  reportGeofenceMeters: number;
 };
 
 const COLLAPSED_PREVIEW_COUNT = 6;
+/** Same as the web list: 50 at a time, Load more adds 50 from the rows already loaded. */
+const LIST_BATCH = 50;
 
 export const ClinicListPanel = ({
   clinics,
@@ -36,9 +41,13 @@ export const ClinicListPanel = ({
   onToggleCollapsed,
   onClinicPress,
   isLoadingMore = false,
+  totalCount = null,
+  reportGeofenceMeters,
 }: Props) => {
   const { isDark } = useTheme();
-  const clinicsToShow = expanded ? clinics : clinics.slice(0, COLLAPSED_PREVIEW_COUNT);
+  const [listCap, setListCap] = useState<number>(LIST_BATCH);
+  const shownCount = totalCount ?? clinics.length;
+  const clinicsToShow = expanded ? clinics.slice(0, listCap) : clinics.slice(0, COLLAPSED_PREVIEW_COUNT);
   const [openReportHistoryByClinicId, setOpenReportHistoryByClinicId] = useState<Record<string, boolean>>({});
   const formatReportedTime = (iso: string): string => {
     const d = new Date(iso);
@@ -58,7 +67,7 @@ export const ClinicListPanel = ({
         accessibilityLabel="Show nearby doctor offices panel">
         <Feather name="chevron-up" size={18} color="#000000" />
         <Text style={[styles.collapsedLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-          Nearby doctor offices ({clinics.length})
+          Nearby doctor offices ({shownCount})
         </Text>
       </Pressable>
     );
@@ -73,7 +82,7 @@ export const ClinicListPanel = ({
       <View style={[styles.headerWrap, { borderBottomColor: isDark ? '#334155' : '#e2e8f0' }]}>
         <View style={styles.headerRow}>
           <Text style={[styles.heading, { color: isDark ? '#f1f5f9' : '#0f172a' }]} numberOfLines={1}>
-            Nearby Doctor Offices ({clinics.length})
+            Nearby Doctor Offices ({shownCount})
           </Text>
           <Pressable
             onPress={onToggleCollapsed}
@@ -102,7 +111,7 @@ export const ClinicListPanel = ({
             ? haversineDistanceMeters(userLocation, { latitude: clinic.latitude, longitude: clinic.longitude })
             : null;
           const isNearForReport =
-            typeof distanceFromUserMeters === 'number' && distanceFromUserMeters <= REPORT_WAIT_GEOFENCE_METERS;
+            typeof distanceFromUserMeters === 'number' && distanceFromUserMeters <= reportGeofenceMeters;
           const isCollapsedPreviewTail =
             !expanded && clinics.length > COLLAPSED_PREVIEW_COUNT && index === clinicsToShow.length - 1;
           return (
@@ -188,6 +197,13 @@ export const ClinicListPanel = ({
         })}
         {clinics.length === 0 ? <Text style={[styles.empty, { color: isDark ? '#94a3b8' : '#64748b' }]}>No doctor offices found.</Text> : null}
       </ScrollView>
+      {expanded && clinics.length > listCap ? (
+        <Pressable onPress={() => setListCap((cap) => cap + LIST_BATCH)} style={styles.expandBtn} accessibilityRole="button">
+          <Text style={[styles.expandText, { color: isDark ? '#7dd3fc' : '#0369a1' }]}>
+            Load more ({Math.min(LIST_BATCH, clinics.length - listCap)} of {clinics.length - listCap} left)
+          </Text>
+        </Pressable>
+      ) : null}
       {clinics.length > COLLAPSED_PREVIEW_COUNT ? (
         <Pressable onPress={onToggleExpanded} style={styles.expandBtn}>
           <Text style={[styles.expandText, { color: isDark ? '#e2e8f0' : '#111827' }]}>

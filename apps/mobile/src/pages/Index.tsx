@@ -26,7 +26,7 @@ import { useTheme } from '@/src/hooks/use-theme';
 import { getDeviceFingerprint } from '@/src/lib/device-fingerprint';
 import { haversineDistanceMeters } from '@/src/lib/distance';
 import { getCurrentPosition, getDisplayPosition, type LatLng, reverseGeocodeAddress } from '@/src/lib/geolocation';
-import { maxAccuracyMetersForReport, REPORT_WAIT_GEOFENCE_METERS } from '@/src/lib/report-wait-geofence';
+import { maxAccuracyMetersForReport } from '@/src/lib/report-wait-geofence';
 import { supabase } from '@/src/lib/supabase';
 import { showToast } from '@/src/lib/toast';
 import { computeExpiryTimeFromMinutesIso, waitMinutesToCategory } from '@/src/lib/wait-time-report';
@@ -69,6 +69,7 @@ export const IndexPage = () => {
     clinics,
     loading: clinicsLoading,
     isLoadingMore: clinicsLoadingMore,
+    totalCount: clinicsTotalCount,
     refresh: refreshClinics,
   } = useClinics(
     settings.reportCooldownMinutes,
@@ -131,7 +132,7 @@ export const IndexPage = () => {
           longitude: clinic.longitude,
         }),
       }))
-      .filter((item) => item.distance <= REPORT_WAIT_GEOFENCE_METERS)
+      .filter((item) => item.distance <= settings.reportGeofenceMeters)
       .sort((a, b) => a.distance - b.distance)[0];
     if (!closest) {
       setNearbyClinic(null);
@@ -249,14 +250,14 @@ export const IndexPage = () => {
           latitude: clinic.latitude,
           longitude: clinic.longitude,
         });
-        if (distance > REPORT_WAIT_GEOFENCE_METERS) {
+        if (distance > settings.reportGeofenceMeters) {
           showToast(
-            `You must be within ${REPORT_WAIT_GEOFENCE_METERS} m of the clinic to report (GPS check).`
+            `You must be within ${settings.reportGeofenceMeters} m of the clinic to report (GPS check).`
           );
           setPromptSubmitting(false);
           return;
         }
-        const maxAccuracyM = maxAccuracyMetersForReport(REPORT_WAIT_GEOFENCE_METERS);
+        const maxAccuracyM = maxAccuracyMetersForReport(settings.reportGeofenceMeters);
         if ((livePos.accuracy ?? 999) > maxAccuracyM) {
           showToast(`GPS accuracy must be about ${maxAccuracyM} m or better to report near this clinic.`);
           setPromptSubmitting(false);
@@ -324,7 +325,7 @@ export const IndexPage = () => {
         haversineDistanceMeters(userLocation, {
           latitude: clinic.latitude,
           longitude: clinic.longitude,
-        }) <= REPORT_WAIT_GEOFENCE_METERS;
+        }) <= settings.reportGeofenceMeters;
       setSelectedClinic(clinic);
       setSelectedClinicCanReport(canReport);
     },
@@ -572,6 +573,8 @@ export const IndexPage = () => {
         onToggleCollapsed={isPopupActive ? () => {} : () => setListPanelCollapsed((v) => !v)}
         onClinicPress={isPopupActive ? undefined : openClinicPopup}
         isLoadingMore={clinicsLoadingMore}
+        totalCount={clinicsTotalCount}
+        reportGeofenceMeters={settings.reportGeofenceMeters}
       />
       <View pointerEvents={isPopupActive ? 'none' : 'auto'}>
         <BottomNav />

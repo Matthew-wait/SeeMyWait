@@ -7,11 +7,14 @@ export type AppSettings = {
   nearbyRadiusMiles: number;
   /** Anti-spam: min minutes between reports per device + clinic (server should mirror). */
   reportCooldownMinutes: number;
+  /** From Supabase `report_geofence_meters`: how close a user must be to report (GPS accuracy uses the same). */
+  reportGeofenceMeters: number;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
   nearbyRadiusMiles: 100,
   reportCooldownMinutes: 60,
+  reportGeofenceMeters: 1000,
 };
 
 const parseNumber = (value: unknown, fallback: number): number => {
@@ -44,23 +47,27 @@ export const useAppSettings = () => {
           row.report_cooldown_minutes,
           DEFAULT_SETTINGS.reportCooldownMinutes
         ),
+        reportGeofenceMeters: parseNumber(row.report_geofence_meters, DEFAULT_SETTINGS.reportGeofenceMeters),
       });
       setLoading(false);
       return;
     }
 
     const kv = data as { key?: string; value?: unknown }[];
-    const nearby = kv.find((item) => item.key === 'nearby_radius_miles')?.value;
-    const cooldown = kv.find((item) => item.key === 'report_cooldown_minutes')?.value;
+    const find = (key: string) => kv.find((item) => item.key === key)?.value;
     setSettings({
-      nearbyRadiusMiles: parseNumber(nearby, DEFAULT_SETTINGS.nearbyRadiusMiles),
-      reportCooldownMinutes: parseNumber(cooldown, DEFAULT_SETTINGS.reportCooldownMinutes),
+      nearbyRadiusMiles: parseNumber(find('nearby_radius_miles'), DEFAULT_SETTINGS.nearbyRadiusMiles),
+      reportCooldownMinutes: parseNumber(find('report_cooldown_minutes'), DEFAULT_SETTINGS.reportCooldownMinutes),
+      reportGeofenceMeters: parseNumber(find('report_geofence_meters'), DEFAULT_SETTINGS.reportGeofenceMeters),
     });
     setLoading(false);
   }, []);
 
   useEffect(() => {
     void loadSettings();
+    // Same cadence as the web app, so admin changes reach phones without a restart.
+    const id = setInterval(() => void loadSettings(), 30_000);
+    return () => clearInterval(id);
   }, [loadSettings]);
 
   return { settings, loading, refresh: loadSettings };
