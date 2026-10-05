@@ -1433,7 +1433,11 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {clinics.map((c) => (
-                      <TableRow key={c.id} className="transition-colors">
+                      <TableRow
+                        key={c.id}
+                        className="cursor-pointer transition-colors hover:bg-primary/5"
+                        onClick={() => { if (c.latitude && c.longitude) setMapCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 16 }); }}
+                      >
                         <TableCell>
                           <p className="font-medium text-foreground text-sm leading-tight">{c.name}</p>
                           {c.phone && (
