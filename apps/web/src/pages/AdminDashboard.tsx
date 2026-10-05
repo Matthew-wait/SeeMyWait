@@ -1270,7 +1270,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-10 pb-5 pt-4">
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-10 pb-3 pt-2">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/80" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
         <div className="relative z-10 mx-auto w-full max-w-[1440px] flex items-center justify-between">
