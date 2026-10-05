@@ -776,6 +776,15 @@ export default function AdminDashboard() {
   const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [mapFocus, setMapFocus] = useState<Clinic | null>(null);
   const [doctorsView, setDoctorsView] = useState<"list" | "map">("list");
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadedMore, setLoadedMore] = useState(false);
+  useEffect(() => {
+    if (!loadingMore || clinicsFetching) return;
+    setLoadingMore(false);
+    setLoadedMore(true);
+    const t = setTimeout(() => setLoadedMore(false), 1500);
+    return () => clearTimeout(t);
+  }, [loadingMore, clinicsFetching]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -852,7 +861,7 @@ export default function AdminDashboard() {
   const [letterFilter, setLetterFilter] = useState("");
   useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter, letterFilter]);
   useEffect(() => { setClinicsLimit(50); }, [filterState, filterCity]);
-  const { data: clinics, isLoading: clinicsLoading } = useQuery({
+  const { data: clinics, isLoading: clinicsLoading, isFetching: clinicsFetching } = useQuery({
     queryKey: ["admin-clinics", filterState, filterCity, searchQuery, specialtyFilter, letterFilter, clinicsLimit],
     enabled: !!filterState && !!filterCity,
     // Keep the rows on screen while Load more fetches the bigger page.
@@ -1612,8 +1621,14 @@ export default function AdminDashboard() {
                 </Table>
                 {clinicsHasMore && (
                   <div className="sticky bottom-0 flex justify-center border-t border-border/50 bg-card/95 py-0.5 backdrop-blur-sm">
-                    <button type="button" onClick={() => setClinicsLimit((n) => n + 50)} className="px-2 py-0.5 text-[11px] font-semibold text-primary hover:underline">
-                      Load 50 more
+                    <button
+                      type="button"
+                      disabled={loadingMore}
+                      onClick={() => { setLoadingMore(true); setLoadedMore(false); setClinicsLimit((n) => n + 50); }}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold text-primary hover:underline disabled:no-underline"
+                    >
+                      {loadingMore ? <Loader2 className="h-3 w-3 animate-spin" /> : loadedMore ? <Check className="h-3 w-3" /> : null}
+                      {loadingMore ? "Loading 50 more…" : loadedMore ? "Loaded" : "Load 50 more"}
                     </button>
                   </div>
                 )}
