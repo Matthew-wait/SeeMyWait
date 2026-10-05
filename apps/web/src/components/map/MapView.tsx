@@ -110,6 +110,8 @@ interface MapViewProps {
   focusedPlace?: CandidatePlace | null;
   /** Colour of the focused pin (defaults to the candidate blue). */
   focusedColor?: string;
+  /** Fit the view to the given clinics whenever they change (admin list-driven map). */
+  fitToClinics?: boolean;
   /** A tapped empty point awaiting "Add here" — drops a pin + coordinate popup. */
   pendingPoint?: { lat: number; lng: number } | null;
   /** Inert on web (kept so callers don't need to change); see {@link PoiTap}. */
@@ -129,6 +131,7 @@ function MapViewInner({
   candidate = null,
   focusedPlace = null,
   focusedColor = CANDIDATE_COLOR,
+  fitToClinics = false,
   pendingPoint = null,
   onMapPointClick,
 }: MapViewProps) {
@@ -277,6 +280,14 @@ function MapViewInner({
       interactive: false,
     }).addTo(layer);
   }, [userLocation, nearbyRadiusMiles, status]);
+
+  // Admin: keep the view on the rows currently listed.
+  useEffect(() => {
+    if (!fitToClinics || status !== "ready" || !mapRef.current) return;
+    const pts = clinics.filter((c) => hasValidCoords(c.latitude, c.longitude)).map((c) => L.latLng(c.latitude, c.longitude));
+    if (pts.length === 0) return;
+    mapRef.current.fitBounds(L.latLngBounds(pts), { padding: [40, 40], maxZoom: 16 });
+  }, [clinics, fitToClinics, status]);
 
   // Driving route to a chosen office.
   const routeLayerRef = useRef<L.Polyline | null>(null);

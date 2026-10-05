@@ -1224,24 +1224,9 @@ export default function AdminDashboard() {
 
   // Adapt admin clinic rows to the shape MapView renders (all default to the
   // green "On Time" pin; the admin map is for adding, not wait status).
-  const { data: mapCityClinics } = useQuery({
-    queryKey: ["admin-map-city", filterState, filterCity],
-    enabled: !!filterState && !!filterCity,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clinics")
-        .select("*")
-        .eq("state", filterState)
-        .eq("city", filterCity)
-        .limit(500);
-      if (error) throw error;
-      return data || [];
-    },
-    staleTime: 60_000,
-  });
   const mapClinics: ClinicWithWaitTime[] = useMemo(
     () =>
-      (mapCityClinics || []).map((c) => ({
+      (clinics || []).map((c) => ({
         id: c.id,
         name: c.name,
         address: c.address,
@@ -1685,6 +1670,19 @@ export default function AdminDashboard() {
 
         {/* Map */}
         <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
+          {clinicsHasMore && (
+            <div className="absolute bottom-3 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border/40 bg-card/95 px-3 py-1 shadow-md backdrop-blur-sm">
+              {loadingMore && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+              <button
+                type="button"
+                disabled={loadingMore}
+                onClick={() => { setLoadingMore(true); setLoadedMore(false); setClinicsLimit((n) => n + 50); }}
+                className="text-[11px] font-semibold text-primary hover:underline disabled:opacity-50"
+              >
+                Load 50 more
+              </button>
+            </div>
+          )}
           {mapFocus && (
             <div className="absolute left-3 top-3 z-[70] w-72 rounded-xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
               <div className="flex items-start justify-between gap-2">
@@ -1707,8 +1705,9 @@ export default function AdminDashboard() {
             centerOn={mapCenterOn}
             focusedPlace={mapFocus ? { name: mapFocus.name, latitude: mapFocus.latitude, longitude: mapFocus.longitude } : null}
             focusedColor="#15803d"
+            fitToClinics
             onClinicClick={(c) => {
-              const row = (mapCityClinics || []).find((x) => x.id === c.id) ?? clinics?.find((x) => x.id === c.id);
+              const row = clinics?.find((x) => x.id === c.id);
               if (row) setEditClinic(row);
             }}
             onEmptyClick={() => {}}
