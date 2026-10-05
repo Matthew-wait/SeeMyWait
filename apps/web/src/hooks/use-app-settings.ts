@@ -7,7 +7,7 @@ interface AppSettings {
 }
 
 const DEFAULTS: AppSettings = {
-  nearby_radius_miles: 100,
+  nearby_radius_miles: 5,
   report_cooldown_minutes: 60,
 };
 

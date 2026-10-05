@@ -8,12 +8,12 @@ const navItems = [
   { path: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export function BottomNav() {
+export function BottomNav({ inFlow = false }: { inFlow?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 bg-card/95 backdrop-blur-2xl safe-area-inset-bottom">
+    <nav className={cn(inFlow ? "relative shrink-0" : "fixed bottom-0 left-0 right-0", "z-50 border-t border-border/30 bg-card/95 backdrop-blur-2xl safe-area-inset-bottom")}>
       <div className="mx-auto flex max-w-2xl items-center justify-around gap-1 px-1 py-1 pb-safe">
         {navItems.map((item) => {
           const isActive =

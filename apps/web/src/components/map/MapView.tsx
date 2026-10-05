@@ -7,6 +7,7 @@ import { WaitTimeCategory } from "@/lib/wait-time-utils";
 import { tileUrlTemplate, TILE_ATTRIBUTION, TILE_MAX_ZOOM } from "@/lib/map-tiles";
 import { MapZoomControls } from "@/components/map/MapZoomControls";
 import { MapPin } from "lucide-react";
+import { ClinicPinLayer } from "@/lib/clinic-pin-layer";
 
 const WAIT_COLORS: Record<WaitTimeCategory, string> = {
   on_time: "#22c55e",
@@ -127,12 +128,12 @@ function MapViewInner({
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const clinicLayerRef = useRef<L.LayerGroup | null>(null);
+  const clinicLayerRef = useRef<ClinicPinLayer | null>(null);
+  const clinicsByIdRef = useRef(new Map<string, ClinicWithWaitTime>());
   const userLayerRef = useRef<L.LayerGroup | null>(null);
   const candidateMarkerRef = useRef<L.Marker | null>(null);
   const focusedMarkerRef = useRef<L.Marker | null>(null);
   const pendingMarkerRef = useRef<L.Marker | null>(null);
-  const prevClinicKeyRef = useRef("");
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
@@ -149,6 +150,7 @@ function MapViewInner({
     if (!containerRef.current || mapRef.current) return;
     ensureMapStyle();
 
+    let resizeObserver: ResizeObserver | undefined;
     try {
       const map = L.map(containerRef.current, {
         center: userLocation ? [userLocation.lat, userLocation.lng] : DEFAULT_CENTER,
@@ -163,6 +165,9 @@ function MapViewInner({
       }).addTo(map);
 
       map.on("click", (e: L.LeafletMouseEvent) => {
+        const pin = clinicLayerRef.current?.pick(e.containerPoint);
+        const clinic = pin && clinicsByIdRef.current.get(pin.id);
+        if (clinic) { onClinicClickRef.current(clinic); return; }
         if (onMapPointClickRef.current) {
           onMapPointClickRef.current({ lat: e.latlng.lat, lng: e.latlng.lng });
         } else {
@@ -170,18 +175,25 @@ function MapViewInner({
         }
       });
 
-      clinicLayerRef.current = L.layerGroup().addTo(map);
+      clinicLayerRef.current = new ClinicPinLayer().addTo(map);
       userLayerRef.current = L.layerGroup().addTo(map);
 
       mapRef.current = map;
+      resizeObserver = new ResizeObserver(() => {
+        if (mapRef.current === map) map.invalidateSize();
+      });
+      resizeObserver.observe(containerRef.current);
       setStatus("ready");
       // The container may still be settling into its flex height on first paint.
-      requestAnimationFrame(() => map.invalidateSize());
+      requestAnimationFrame(() => {
+        if (mapRef.current === map) map.invalidateSize();
+      });
     } catch {
       setStatus("error");
     }
 
     return () => {
+      resizeObserver?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
       clinicLayerRef.current = null;
@@ -189,37 +201,29 @@ function MapViewInner({
       candidateMarkerRef.current = null;
       focusedMarkerRef.current = null;
       pendingMarkerRef.current = null;
-      prevClinicKeyRef.current = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Clinic markers — rebuilt only when the set or their wait colours change.
+  // Draw all loaded clinics with the existing artwork on a canvas layer.
   useEffect(() => {
     if (status !== "ready" || !clinicLayerRef.current) return;
 
-    const key = clinics
-      .map((c) => `${c.id}:${c.waitTime?.category || "on_time"}`)
-      .sort()
-      .join(",");
-    if (key === prevClinicKeyRef.current) return;
-    prevClinicKeyRef.current = key;
-
-    const layer = clinicLayerRef.current;
-    layer.clearLayers();
-
-    clinics.forEach((clinic) => {
-      if (!hasValidCoords(clinic.latitude, clinic.longitude)) return;
-      const color = WAIT_COLORS[clinic.waitTime?.category ?? "on_time"];
-      L.marker([clinic.latitude, clinic.longitude], {
-        icon: pinIcon(color),
-        title: clinic.name,
-        keyboard: false,
-      })
-        .on("click", () => onClinicClickRef.current(clinic))
-        .addTo(layer);
-    });
+    clinicsByIdRef.current = new Map(clinics.map(c => [c.id,c]));
+    clinicLayerRef.current.setPins(clinics.filter(c => hasValidCoords(c.latitude,c.longitude))
+      .map(c => ({id:c.id,name:c.name,latitude:c.latitude,longitude:c.longitude,
+        color:WAIT_COLORS[c.waitTime?.category ?? "on_time"]})));
   }, [clinics, status]);
+
+  // Geolocation usually resolves after the map has mounted on its Miami
+  // default, so centre on the user the first time a valid location arrives.
+  const initialLocationCenteredRef = useRef(false);
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current || initialLocationCenteredRef.current) return;
+    if (!userLocation || !hasValidCoords(userLocation.lat, userLocation.lng)) return;
+    initialLocationCenteredRef.current = true;
+    mapRef.current.setView([userLocation.lat, userLocation.lng], 14);
+  }, [userLocation, status]);
 
   // User location dot + nearby-radius circle.
   useEffect(() => {

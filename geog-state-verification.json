@@ -1,0 +1,260 @@
+{
+    "states":  {
+                   "value":  [
+                                 {
+                                     "state":  "AK",
+                                     "total":  31646,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "AL",
+                                     "total":  79040,
+                                     "eligible_missing":  29278,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "AR",
+                                     "total":  77926,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "AS",
+                                     "total":  6,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "DC",
+                                     "total":  50112,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "DE",
+                                     "total":  24836,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "FL",
+                                     "total":  589657,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "GU",
+                                     "total":  411,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "HI",
+                                     "total":  37446,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "IA",
+                                     "total":  60633,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "ID",
+                                     "total":  40743,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "KS",
+                                     "total":  68566,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "ME",
+                                     "total":  38978,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "MI",
+                                     "total":  333437,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "MP",
+                                     "total":  3,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "MS",
+                                     "total":  49074,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "MT",
+                                     "total":  26664,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "ND",
+                                     "total":  24892,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "NH",
+                                     "total":  35005,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "NM",
+                                     "total":  60536,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "NY",
+                                     "total":  613942,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "PA",
+                                     "total":  301390,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "PR",
+                                     "total":  21025,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "RI",
+                                     "total":  29888,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "SD",
+                                     "total":  20695,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "TX",
+                                     "total":  542173,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "VI",
+                                     "total":  126,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "VT",
+                                     "total":  17635,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "WV",
+                                     "total":  74540,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 },
+                                 {
+                                     "state":  "WY",
+                                     "total":  16965,
+                                     "eligible_missing":  0,
+                                     "missing_coordinates":  0,
+                                     "invalid_coordinates":  0
+                                 }
+                             ],
+                   "Count":  30
+               },
+    "verified_at":  "2026-10-05T06:25:35.4249404Z",
+    "pakistan_verified_at":  "2026-10-05T06:26:34.9808437Z",
+    "pakistan_clinic_ids":  [
+                                "2d975f38-1e9b-4349-a83b-b569a36299c6",
+                                "180753f7-c7b9-4f71-88ba-979bf1ef8fcd",
+                                "f9234d19-f878-4835-affc-1f233271ce14",
+                                "d521f33e-5223-48b4-8632-44d8269c6699",
+                                "07ba22df-8144-48d5-9d28-d7d311c80a44",
+                                "6c4b76f8-9978-4710-a98b-e06e714a3aaa",
+                                "65ca76c1-73e5-4df7-ba9a-6401e8df8d41",
+                                "f8390fd9-094c-4c35-af58-af490a29abc9",
+                                "b645efbb-c55d-4820-8823-307441348c1e",
+                                "bf457f10-a915-4ffc-bf69-4549fad32b2d",
+                                "fc3f30ca-7292-48b4-9e0c-b886a37192d4",
+                                "e3a2ef1d-ccc6-4dde-942c-54513a9a56e7",
+                                "5932e66e-11b2-4a62-bc8c-177a4387a586",
+                                "42d135b5-d3ab-4997-ba40-6dad8917bab9",
+                                "0a9a1874-4038-4320-a562-b1cd4f4c0a51",
+                                "508033d2-deb1-4513-9891-7216865363aa",
+                                "c3f2f346-961b-4b5d-81f9-36386a62526f",
+                                "c7537bee-6573-41b1-8088-6b272a75e039",
+                                "0b647f93-bde7-48f4-9bb7-3dd99c405c7e",
+                                "699b34f6-2af9-4282-8468-64abc0680b15",
+                                "d3e1c6be-6b8b-4ca2-9260-b68b190d5a3b",
+                                "bb16f8f4-d197-435a-b1c5-c8455f276adb",
+                                "554ef441-ed21-430a-af19-08821e7e2996",
+                                "3bd03617-d9d0-42ef-8af1-e152bcf43644",
+                                "78aaec9f-c170-4587-abf6-e07a82b402b6",
+                                "7c452306-1ecd-42c4-b4dc-ad63f027ab07",
+                                "2a1ddbd0-44f1-445e-86cf-f1da7a14048f"
+                            ],
+    "pakistan":  {
+                     "value":  [
+                                   {
+                                       "total":  27,
+                                       "with_geog":  27,
+                                       "eligible_missing":  0,
+                                       "missing_coordinates":  0,
+                                       "invalid_coordinates":  0
+                                   }
+                               ],
+                     "Count":  1
+                 }
+}

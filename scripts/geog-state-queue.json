@@ -1,0 +1,226 @@
+﻿[
+    {
+        "state":  "FL",
+        "pending":  417464
+    },
+    {
+        "state":  "MP",
+        "pending":  3
+    },
+    {
+        "state":  "AS",
+        "pending":  6
+    },
+    {
+        "state":  "VI",
+        "pending":  124
+    },
+    {
+        "state":  "GU",
+        "pending":  409
+    },
+    {
+        "state":  "PA",
+        "pending":  4930
+    },
+    {
+        "state":  "MI",
+        "pending":  13418
+    },
+    {
+        "state":  "WY",
+        "pending":  16684
+    },
+    {
+        "state":  "TX",
+        "pending":  17223
+    },
+    {
+        "state":  "VT",
+        "pending":  17327
+    },
+    {
+        "state":  "NY",
+        "pending":  18101
+    },
+    {
+        "state":  "SD",
+        "pending":  20375
+    },
+    {
+        "state":  "PR",
+        "pending":  20679
+    },
+    {
+        "state":  "DE",
+        "pending":  24451
+    },
+    {
+        "state":  "ND",
+        "pending":  24474
+    },
+    {
+        "state":  "MT",
+        "pending":  26232
+    },
+    {
+        "state":  "RI",
+        "pending":  29392
+    },
+    {
+        "state":  "AK",
+        "pending":  31124
+    },
+    {
+        "state":  "NH",
+        "pending":  34456
+    },
+    {
+        "state":  "HI",
+        "pending":  36806
+    },
+    {
+        "state":  "ME",
+        "pending":  38331
+    },
+    {
+        "state":  "ID",
+        "pending":  40065
+    },
+    {
+        "state":  "MS",
+        "pending":  48319
+    },
+    {
+        "state":  "DC",
+        "pending":  49275
+    },
+    {
+        "state":  "NM",
+        "pending":  59547
+    },
+    {
+        "state":  "IA",
+        "pending":  59637
+    },
+    {
+        "state":  "KS",
+        "pending":  67493
+    },
+    {
+        "state":  "WV",
+        "pending":  73327
+    },
+    {
+        "state":  "AR",
+        "pending":  76612
+    },
+    {
+        "state":  "AL",
+        "pending":  77778
+    },
+    {
+        "state":  "UT",
+        "pending":  83091
+    },
+    {
+        "state":  "NE",
+        "pending":  84487
+    },
+    {
+        "state":  "CT",
+        "pending":  94928
+    },
+    {
+        "state":  "KY",
+        "pending":  96080
+    },
+    {
+        "state":  "OK",
+        "pending":  102348
+    },
+    {
+        "state":  "SC",
+        "pending":  104003
+    },
+    {
+        "state":  "LA",
+        "pending":  110292
+    },
+    {
+        "state":  "NV",
+        "pending":  116637
+    },
+    {
+        "state":  "MO",
+        "pending":  119243
+    },
+    {
+        "state":  "WI",
+        "pending":  131356
+    },
+    {
+        "state":  "IN",
+        "pending":  139182
+    },
+    {
+        "state":  "OR",
+        "pending":  139583
+    },
+    {
+        "state":  "MN",
+        "pending":  141187
+    },
+    {
+        "state":  "TN",
+        "pending":  141643
+    },
+    {
+        "state":  "AZ",
+        "pending":  159051
+    },
+    {
+        "state":  "VA",
+        "pending":  175649
+    },
+    {
+        "state":  "CO",
+        "pending":  178526
+    },
+    {
+        "state":  "MD",
+        "pending":  192476
+    },
+    {
+        "state":  "GA",
+        "pending":  198914
+    },
+    {
+        "state":  "NJ",
+        "pending":  202734
+    },
+    {
+        "state":  "IL",
+        "pending":  210934
+    },
+    {
+        "state":  "WA",
+        "pending":  226576
+    },
+    {
+        "state":  "MA",
+        "pending":  238639
+    },
+    {
+        "state":  "NC",
+        "pending":  244214
+    },
+    {
+        "state":  "OH",
+        "pending":  369692
+    },
+    {
+        "state":  "CA",
+        "pending":  1086319
+    }
+]

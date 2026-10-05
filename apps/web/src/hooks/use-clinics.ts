@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getAverageWaitTime, WaitTimeCategory } from "@/lib/wait-time-utils";
 import { getDistanceMiles } from "@/lib/geolocation";
+import { fetchNearbyBatch, loadAllNearbyPages, mergeNearbyPages, NearbyBatchCursor } from "@/lib/nearby-clinics";
 
 export interface Clinic {
   id: string;
@@ -33,8 +35,6 @@ export interface ClinicWithWaitTime extends Clinic {
 
 const HISTORY_WINDOW_MINUTES = 180; // last 3 hours
 
-/** Row shape returned by the `nearby_clinics` RPC (adds real distance_miles). */
-type NearbyClinicRow = Clinic & { distance_miles: number };
 
 async function fetchClinicsWithWaitTimes(
   searchQuery: string | undefined,
@@ -45,19 +45,10 @@ async function fetchClinicsWithWaitTimes(
 ): Promise<ClinicWithWaitTime[]> {
   const hasLocation = userLat !== undefined && userLon !== undefined;
 
-  // With a known location, use the server-side geo filter: real distance,
-  // computed and sorted in SQL (PostGIS GiST index — see migration
-  // 20260928000000), capped to a sane row count.
+  // Fetch all geographic pages when a location is available.
   let clinics: (Clinic & { distance_miles?: number })[];
   if (hasLocation && !searchQuery) {
-    const { data, error } = await supabase.rpc("nearby_clinics", {
-      p_lat: userLat,
-      p_lng: userLon,
-      p_radius_miles: radiusMiles,
-      p_limit: 500,
-    });
-    if (error) throw error;
-    clinics = (data ?? []) as NearbyClinicRow[];
+    clinics = await loadAllNearbyPages(userLat, userLon, radiusMiles);
   } else {
     // No location yet (e.g. permission denied), or a text search: bound
     // the fetch explicitly instead of leaning on the implicit API cap.
@@ -123,7 +114,7 @@ async function fetchClinicsWithWaitTimes(
   // Sort by distance if location available (the RPC path is already
   // sorted server-side; this is a no-op there and covers the fallback).
   if (hasLocation) {
-    result.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    result.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
   }
 
   return result;
@@ -147,63 +138,73 @@ export function useClinics(
   });
 }
 
-const QUICK_RADIUS_MILES = 5;
-
-/**
- * Progressive nearby-clinics load: fires a small-radius (5mi) query first so
- * the map/list has something to show almost immediately, then a second query
- * for the full configured radius. `data` prefers the full result once it
- * lands; `isLoadingMore` is true in the gap between "quick results shown" and
- * "full radius loaded", so the UI can show a "still loading nearby offices…"
- * indicator instead of looking finished when it isn't.
- *
- * Only used for the location-based nearby view — text search and the
- * no-location fallback go through the plain `useClinics` above unchanged.
- */
+/** Load the nearest 1,000; subsequent batches require an explicit user request. */
 export function useNearbyClinicsProgressive(
   userLat: number | undefined,
   userLon: number | undefined,
   reportExpiryMinutes: number,
-  fullRadiusMiles: number
+  fullRadiusMiles: number,
+  settingsReady = true
 ) {
   const hasLocation = userLat !== undefined && userLon !== undefined;
-  const quickRadiusMiles = Math.min(QUICK_RADIUS_MILES, fullRadiusMiles);
-
-  const quick = useQuery({
-    queryKey: ["clinics-quick", userLat, userLon, reportExpiryMinutes, quickRadiusMiles],
-    enabled: hasLocation,
-    queryFn: () =>
-      fetchClinicsWithWaitTimes(undefined, userLat, userLon, reportExpiryMinutes, quickRadiusMiles),
-    // Quick pass is a stepping stone to the full result, not something to
-    // keep re-fetching on its own schedule.
-    staleTime: Infinity,
+  const nearby = useInfiniteQuery({
+    queryKey: ["clinics-nearby-batches", userLat, userLon, fullRadiusMiles],
+    enabled: hasLocation && settingsReady,
+    initialPageParam: null as NearbyBatchCursor | null,
+    queryFn: ({ pageParam, signal }) => fetchNearbyBatch(userLat!, userLon!, fullRadiusMiles, pageParam, signal),
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    // Refresh reports each minute without downloading the whole directory again.
+    staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    retry: 2,
   });
+  const { fetchNextPage, hasNextPage, isError } = nearby;
 
-  const full = useQuery({
-    queryKey: ["clinics-full", userLat, userLon, reportExpiryMinutes, fullRadiusMiles],
-    enabled: hasLocation,
-    queryFn: () =>
-      fetchClinicsWithWaitTimes(undefined, userLat, userLon, reportExpiryMinutes, fullRadiusMiles),
+  const reports = useQuery({
+    queryKey: ["nearby-wait-reports", reportExpiryMinutes],
+    enabled: hasLocation && settingsReady,
+    queryFn: async ({ signal }) => {
+      const cutoff = new Date(Date.now() - Math.max(reportExpiryMinutes, HISTORY_WINDOW_MINUTES) * 60_000).toISOString();
+      const { data, error } = await supabase.from("wait_time_reports")
+        .select("clinic_id, wait_time, reported_at").gte("reported_at", cutoff)
+        .eq("is_flagged", false).abortSignal(signal);
+      if (error) throw error;
+      return data ?? [];
+    },
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   });
-
-  const data = full.data ?? quick.data ?? [];
-  // Nothing to show at all yet.
-  const isInitialLoading = !full.data && !quick.data && (quick.isLoading || full.isLoading);
-  // Quick results are up, but the full-radius set hasn't landed yet — show a
-  // "more are on the way" indicator rather than the quick set looking final.
-  const isLoadingMore = Boolean(quick.data) && !full.data && full.isLoading;
-
+  const rows = useMemo(() => mergeNearbyPages(nearby.data?.pages ?? []), [nearby.data]);
+  const data = useMemo((): ClinicWithWaitTime[] => {
+    const byClinic = new Map<string, ClinicReport[]>();
+    for (const report of reports.data ?? []) {
+      const entries = byClinic.get(report.clinic_id) ?? [];
+      entries.push(report);
+      byClinic.set(report.clinic_id, entries);
+    }
+    const historyCutoff = Math.max(Date.now(), reports.dataUpdatedAt) - HISTORY_WINDOW_MINUTES * 60_000;
+    return rows.filter(c => Number.isFinite(c.latitude) && Number.isFinite(c.longitude)
+      && Math.abs(c.latitude) <= 90 && Math.abs(c.longitude) <= 180)
+      .map(c => {
+        const allReports = byClinic.get(c.id) ?? [];
+        return { ...c, distance: c.distance_miles,
+          waitTime: getAverageWaitTime(allReports, reportExpiryMinutes),
+          recentReports: allReports.filter(r => Date.parse(r.reported_at) >= historyCutoff)
+            .sort((a,b) => Date.parse(b.reported_at) - Date.parse(a.reported_at)) };
+      });
+  }, [rows, reports.data, reports.dataUpdatedAt, reportExpiryMinutes]);
+  const isInitialLoading = hasLocation && (!settingsReady || nearby.isPending);
   return {
-    data,
-    isInitialLoading,
-    isLoadingMore,
-    isLoading: isInitialLoading, // kept for drop-in compatibility with existing `isLoading` checks
-    refetch: () => {
-      quick.refetch();
-      full.refetch();
+    data, isInitialLoading, isLoading: isInitialLoading,
+    isLoadingMore: hasLocation && settingsReady && nearby.isFetching && !isError,
+    hasMore: Boolean(hasNextPage),
+    loadMore: () => { if (hasNextPage && !nearby.isFetching) void fetchNextPage(); },
+    error: nearby.error,
+    refetch: async () => {
+      await reports.refetch();
+      if (hasNextPage && isError) await fetchNextPage();
+      else await nearby.refetch();
+      return { data };
     },
   };
 }

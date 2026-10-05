@@ -5,6 +5,8 @@ import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeCategory, WAIT_TIME_MINUTES_LABEL } from "@/lib/wait-time-utils";
+import { useWindowedList } from "@/hooks/use-windowed-list";
+import { nearbyCountLabel } from "@/lib/nearby-clinics";
 
 const WAIT_BG: Record<WaitTimeCategory, string> = {
   on_time: "bg-green-500/10 border-green-500/25",
@@ -36,6 +38,10 @@ interface ClinicListPanelProps {
    *  still in flight — shows a small "finding more nearby offices" row so
    *  the initial short list doesn't look like the final result. */
   isLoadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadError?: boolean;
+  onRetryLoad?: () => void;
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
   onSuggestClinic: () => void;
   onRetryLocation: () => void;
@@ -47,7 +53,7 @@ const INITIAL_COUNT = 5;
 function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
   const radiusLabel = radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`;
   return (
-    <p className="px-3 pt-3 pb-2 text-[11px] leading-relaxed text-muted-foreground">
+    <p className="px-3 pt-0.5 pb-1 text-[11px] leading-snug text-muted-foreground">
       You're seeing doctor offices within <span className="font-medium text-foreground">{radiusLabel}</span> of your location.
       Use search to find a specific one further away — and{" "}
       <button
@@ -72,6 +78,10 @@ export function ClinicListPanel({
   hasLocation,
   locating,
   isLoadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  loadError = false,
+  onRetryLoad,
   onClinicClick,
   onSuggestClinic,
   onRetryLocation,
@@ -98,6 +108,7 @@ export function ClinicListPanel({
 
   const listToShow = isSearching ? clinics : nearbyClinics;
   const displayList = expanded ? listToShow : listToShow.slice(0, INITIAL_COUNT);
+  const windowed = useWindowedList(displayList, expanded);
   const canExpandList = listToShow.length > INITIAL_COUNT;
   // The browse view now also carries the radius notice above the list, so its
   // scroll area gets a smaller cap than search results (which don't show that
@@ -114,7 +125,7 @@ export function ClinicListPanel({
   // Collapsed state - just show a toggle bar
   if (collapsed) {
     return (
-      <div className="bg-background border-t border-border/30 pb-28 sm:pb-24">
+      <div className="shrink-0 bg-background border-t border-border/30">
         <button
           onClick={() => setCollapsed(false)}
           className="w-full flex items-center justify-center gap-2 py-3 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
@@ -122,7 +133,7 @@ export function ClinicListPanel({
           <PanelBottomOpen className="h-4 w-4" />
           {isSearching
             ? `Show Results (${listToShow.length})`
-            : `Show Nearby Doctor Offices (${listToShow.length})`}
+            : `Show Nearby Doctor Offices (${nearbyCountLabel(listToShow.length, hasMore)})`}
         </button>
       </div>
     );
@@ -133,7 +144,7 @@ export function ClinicListPanel({
   // "nearby" — ask for location instead, with a way to retry or search.
   if (!isSearching && !hasLocation) {
     return (
-      <div className="bg-background border-t border-border/30 px-3 pt-4 pb-28 sm:pb-24 text-center">
+      <div className="shrink-0 bg-background border-t border-border/30 px-3 py-4 text-center">
         <p className="text-xs text-muted-foreground">
           We couldn't determine your location, so nearby doctor offices can't be shown reliably.
           Enable location access, or use search to find a specific one by name.
@@ -151,13 +162,19 @@ export function ClinicListPanel({
     );
   }
 
+  if (listToShow.length === 0 && loadError) {
+    return <div className="shrink-0 bg-background border-t border-border/30 pb-4 text-center">
+      <p className="px-3 pt-4 text-xs text-muted-foreground">Nearby doctor offices could not be loaded.</p>
+      <button onClick={onRetryLoad} className="px-3 py-2 text-xs font-semibold text-primary">Try Again</button>
+    </div>;
+  }
   if (listToShow.length === 0) {
     // The quick 5-mile pass came back empty, but the full-radius fetch is
     // still running — don't tell the user "none found" when more could
     // still show up any second.
     if (!isSearching && isLoadingMore) {
       return (
-        <div className="bg-background border-t border-border/30 pb-28 sm:pb-24 text-center">
+        <div className="shrink-0 bg-background border-t border-border/30 pb-4 text-center">
           <div className="flex items-center justify-center gap-2 px-3 pt-4 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Looking for nearby doctor offices…
@@ -166,7 +183,7 @@ export function ClinicListPanel({
       );
     }
     return (
-      <div className="bg-background border-t border-border/30 pb-28 sm:pb-24 text-center">
+      <div className="shrink-0 bg-background border-t border-border/30 pb-4 text-center">
         <p className="px-3 pt-4 text-xs text-muted-foreground">
           {isSearching ? `No results for "${searchQuery}"` : "No nearby doctor offices found."}
         </p>
@@ -180,21 +197,24 @@ export function ClinicListPanel({
   }
 
   return (
-    <div className="bg-background border-t border-border/30 pb-28 sm:pb-24">
-      {!isSearching && hasLocation && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
-      <div className="flex items-start justify-between gap-2 px-3 pb-1 pt-3">
+    <div className="flex min-h-0 max-h-[60dvh] flex-col bg-background border-t border-border/30">
+      <div className="shrink-0 flex items-start justify-between gap-2 px-3 pb-0.5 pt-2">
         <div className="min-w-0">
           <h3 className="min-w-0 text-sm font-semibold text-foreground">
             {isSearching
               ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
-              : `Nearby Doctor Offices (${nearbyClinics.length})`}
+              : `Nearby Doctor Offices (${nearbyCountLabel(nearbyClinics.length, hasMore)})`}
           </h3>
+          {!isSearching && hasLocation && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
           {!isSearching && isLoadingMore && (
             <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               Finding more within {radiusMiles} {radiusMiles === 1 ? "mile" : "miles"}…
             </p>
           )}
+          {loadError && <p className="mt-0.5 text-[10px] text-muted-foreground">
+            Some offices are still missing. <button onClick={onRetryLoad} className="text-primary">Try Again</button>
+          </p>}
         </div>
         <button
           onClick={() => setCollapsed(true)}
@@ -205,14 +225,18 @@ export function ClinicListPanel({
         </button>
       </div>
       <div
-        className={`px-3 pb-2 space-y-2 overflow-y-auto ${listMaxHeightClass}`}
+        ref={windowed.ref}
+        className={`min-h-0 flex-1 px-3 pb-1 overflow-y-auto ${listMaxHeightClass}`}
       >
-        {displayList.map((clinic) => {
+        <div style={{ height: windowed.top }} />
+        <div className="space-y-2">
+        {displayList.slice(windowed.start, windowed.end).map((clinic) => {
           const historyOpen = expandedHistory.has(clinic.id);
           const hasHistory = clinic.recentReports && clinic.recentReports.length > 0;
           return (
             <div
               key={clinic.id}
+              data-clinic-row={clinic.id}
               role="button"
               tabIndex={0}
               onClick={() => onClinicClick(clinic)}
@@ -308,6 +332,8 @@ export function ClinicListPanel({
             </div>
           );
         })}
+        </div>
+        <div style={{ height: windowed.bottom }} />
       </div>
 
       {/*
@@ -317,15 +343,23 @@ export function ClinicListPanel({
         BottomNav exactly the same height across the whole app.
       */}
       {canExpandList && (
-        <div className="border-t border-border/20 px-3">
+        <div className="shrink-0 border-t border-border/20 px-3">
           <button
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
-            className="h-9 w-full text-center text-[11px] font-semibold text-primary hover:bg-primary/5 transition-colors"
+            className="h-8 w-full text-center text-[11px] font-semibold text-primary hover:bg-primary/5 transition-colors"
           >
             {expanded
               ? "Show Less"
               : `Explore More (${listToShow.length - INITIAL_COUNT} more)`}
+          </button>
+        </div>
+      )}
+      {!isSearching && hasMore && (
+        <div className="shrink-0 border-t border-border/20 px-3">
+          <button type="button" disabled={isLoadingMore} onClick={() => { setExpanded(true); onLoadMore?.(); }}
+            className="h-8 w-full text-center text-[11px] font-semibold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50">
+            {isLoadingMore ? "Loading…" : "Load more (up to 1,000)"}
           </button>
         </div>
       )}

@@ -1,0 +1,931 @@
+[
+  {
+    "name": "Miami-Dade",
+    "lat": 25.8965,
+    "lng": -80.157,
+    "expected": 154273,
+    "count": 154273,
+    "duplicates": 0,
+    "maxMiles": 24.9999352105827,
+    "elapsedMs": 328888,
+    "pages": [
+      {
+        "count": 1000,
+        "elapsedMs": 2671
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 887
+      },
+      {
+        "count": 307,
+        "elapsedMs": 706
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2104
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1682
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2328
+      },
+      {
+        "count": 31,
+        "elapsedMs": 497
+      },
+      {
+        "count": 727,
+        "elapsedMs": 1477
+      },
+      {
+        "count": 771,
+        "elapsedMs": 1476
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1478
+      },
+      {
+        "count": 273,
+        "elapsedMs": 612
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1670
+      },
+      {
+        "count": 294,
+        "elapsedMs": 1386
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1853
+      },
+      {
+        "count": 454,
+        "elapsedMs": 763
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1671
+      },
+      {
+        "count": 487,
+        "elapsedMs": 808
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1556
+      },
+      {
+        "count": 800,
+        "elapsedMs": 1466
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1852
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1595
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1821
+      },
+      {
+        "count": 382,
+        "elapsedMs": 827
+      },
+      {
+        "count": 0,
+        "elapsedMs": 457
+      },
+      {
+        "count": 0,
+        "elapsedMs": 467
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1923
+      },
+      {
+        "count": 543,
+        "elapsedMs": 1117
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1752
+      },
+      {
+        "count": 402,
+        "elapsedMs": 1079
+      },
+      {
+        "count": 0,
+        "elapsedMs": 460
+      },
+      {
+        "count": 0,
+        "elapsedMs": 460
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2640
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1837
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1664
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2518
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1923
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1990
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1900
+      },
+      {
+        "count": 267,
+        "elapsedMs": 680
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1816
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1685
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1853
+      },
+      {
+        "count": 419,
+        "elapsedMs": 1225
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1896
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1648
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2187
+      },
+      {
+        "count": 771,
+        "elapsedMs": 1466
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2095
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2027
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1956
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1694
+      },
+      {
+        "count": 1,
+        "elapsedMs": 482
+      },
+      {
+        "count": 764,
+        "elapsedMs": 1558
+      },
+      {
+        "count": 962,
+        "elapsedMs": 1872
+      },
+      {
+        "count": 0,
+        "elapsedMs": 459
+      },
+      {
+        "count": 0,
+        "elapsedMs": 469
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2041
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1860
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1676
+      },
+      {
+        "count": 233,
+        "elapsedMs": 896
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1855
+      },
+      {
+        "count": 833,
+        "elapsedMs": 1518
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 4092
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1448
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1654
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1648
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1619
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1559
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1871
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1985
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1719
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1721
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1825
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1983
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1956
+      },
+      {
+        "count": 303,
+        "elapsedMs": 730
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2077
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1591
+      },
+      {
+        "count": 83,
+        "elapsedMs": 583
+      },
+      {
+        "count": 0,
+        "elapsedMs": 459
+      },
+      {
+        "count": 0,
+        "elapsedMs": 488
+      },
+      {
+        "count": 0,
+        "elapsedMs": 456
+      },
+      {
+        "count": 0,
+        "elapsedMs": 467
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1880
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1531
+      },
+      {
+        "count": 437,
+        "elapsedMs": 1225
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1946
+      },
+      {
+        "count": 931,
+        "elapsedMs": 1776
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2286
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2324
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1741
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1889
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1946
+      },
+      {
+        "count": 10,
+        "elapsedMs": 477
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1862
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1723
+      },
+      {
+        "count": 613,
+        "elapsedMs": 1020
+      },
+      {
+        "count": 63,
+        "elapsedMs": 528
+      },
+      {
+        "count": 623,
+        "elapsedMs": 1435
+      },
+      {
+        "count": 329,
+        "elapsedMs": 951
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1945
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1866
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1508
+      },
+      {
+        "count": 142,
+        "elapsedMs": 793
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1914
+      },
+      {
+        "count": 222,
+        "elapsedMs": 862
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1895
+      },
+      {
+        "count": 731,
+        "elapsedMs": 1170
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1636
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1644
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1548
+      },
+      {
+        "count": 552,
+        "elapsedMs": 1219
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1987
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1739
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1798
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1985
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1971
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1744
+      },
+      {
+        "count": 265,
+        "elapsedMs": 912
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1976
+      },
+      {
+        "count": 31,
+        "elapsedMs": 499
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2082
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1698
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1871
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1617
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1941
+      },
+      {
+        "count": 395,
+        "elapsedMs": 1223
+      },
+      {
+        "count": 930,
+        "elapsedMs": 1653
+      },
+      {
+        "count": 29,
+        "elapsedMs": 523
+      },
+      {
+        "count": 1,
+        "elapsedMs": 484
+      },
+      {
+        "count": 76,
+        "elapsedMs": 514
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1981
+      },
+      {
+        "count": 185,
+        "elapsedMs": 831
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1893
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1853
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1608
+      },
+      {
+        "count": 401,
+        "elapsedMs": 800
+      },
+      {
+        "count": 169,
+        "elapsedMs": 816
+      },
+      {
+        "count": 233,
+        "elapsedMs": 896
+      },
+      {
+        "count": 8,
+        "elapsedMs": 477
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1951
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1855
+      },
+      {
+        "count": 709,
+        "elapsedMs": 1240
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1969
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1876
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1657
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1588
+      },
+      {
+        "count": 611,
+        "elapsedMs": 1195
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1909
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1851
+      },
+      {
+        "count": 57,
+        "elapsedMs": 510
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1939
+      },
+      {
+        "count": 985,
+        "elapsedMs": 1549
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1585
+      },
+      {
+        "count": 32,
+        "elapsedMs": 495
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1942
+      },
+      {
+        "count": 231,
+        "elapsedMs": 863
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1920
+      },
+      {
+        "count": 219,
+        "elapsedMs": 847
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1946
+      },
+      {
+        "count": 717,
+        "elapsedMs": 1445
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2547
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1663
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2960
+      },
+      {
+        "count": 462,
+        "elapsedMs": 1099
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1636
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2002
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1879
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1640
+      },
+      {
+        "count": 55,
+        "elapsedMs": 532
+      },
+      {
+        "count": 170,
+        "elapsedMs": 617
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1978
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1729
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2234
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2120
+      },
+      {
+        "count": 247,
+        "elapsedMs": 1045
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2061
+      },
+      {
+        "count": 350,
+        "elapsedMs": 1002
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1918
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1757
+      },
+      {
+        "count": 564,
+        "elapsedMs": 1176
+      },
+      {
+        "count": 196,
+        "elapsedMs": 648
+      },
+      {
+        "count": 219,
+        "elapsedMs": 884
+      },
+      {
+        "count": 9,
+        "elapsedMs": 503
+      },
+      {
+        "count": 224,
+        "elapsedMs": 881
+      },
+      {
+        "count": 819,
+        "elapsedMs": 1608
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2932
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2372
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2340
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2369
+      },
+      {
+        "count": 830,
+        "elapsedMs": 1624
+      },
+      {
+        "count": 372,
+        "elapsedMs": 1365
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1975
+      },
+      {
+        "count": 187,
+        "elapsedMs": 901
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2116
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1867
+      },
+      {
+        "count": 322,
+        "elapsedMs": 739
+      },
+      {
+        "count": 17,
+        "elapsedMs": 488
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1882
+      },
+      {
+        "count": 316,
+        "elapsedMs": 942
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1949
+      },
+      {
+        "count": 785,
+        "elapsedMs": 1489
+      },
+      {
+        "count": 0,
+        "elapsedMs": 502
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2737
+      },
+      {
+        "count": 121,
+        "elapsedMs": 563
+      },
+      {
+        "count": 236,
+        "elapsedMs": 652
+      },
+      {
+        "count": 3,
+        "elapsedMs": 479
+      },
+      {
+        "count": 92,
+        "elapsedMs": 541
+      },
+      {
+        "count": 332,
+        "elapsedMs": 945
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2381
+      },
+      {
+        "count": 405,
+        "elapsedMs": 1214
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 2008
+      },
+      {
+        "count": 6,
+        "elapsedMs": 499
+      },
+      {
+        "count": 757,
+        "elapsedMs": 1561
+      },
+      {
+        "count": 0,
+        "elapsedMs": 467
+      },
+      {
+        "count": 143,
+        "elapsedMs": 871
+      },
+      {
+        "count": 50,
+        "elapsedMs": 536
+      },
+      {
+        "count": 51,
+        "elapsedMs": 635
+      },
+      {
+        "count": 818,
+        "elapsedMs": 1728
+      },
+      {
+        "count": 71,
+        "elapsedMs": 520
+      },
+      {
+        "count": 0,
+        "elapsedMs": 506
+      },
+      {
+        "count": 0,
+        "elapsedMs": 483
+      },
+      {
+        "count": 0,
+        "elapsedMs": 470
+      },
+      {
+        "count": 0,
+        "elapsedMs": 469
+      },
+      {
+        "count": 0,
+        "elapsedMs": 492
+      },
+      {
+        "count": 0,
+        "elapsedMs": 473
+      },
+      {
+        "count": 0,
+        "elapsedMs": 481
+      },
+      {
+        "count": 0,
+        "elapsedMs": 464
+      },
+      {
+        "count": 0,
+        "elapsedMs": 462
+      }
+    ],
+    "pass": true
+  }
+]

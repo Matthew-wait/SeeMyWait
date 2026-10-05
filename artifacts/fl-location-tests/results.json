@@ -1,0 +1,692 @@
+[
+  {
+    "name": "Miami",
+    "address": "2100 NW 42nd Avenue, Miami, FL 33142, USA",
+    "latitude": 25.7959,
+    "longitude": -80.287,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:27:45.294Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 25.7959,
+          "p_lng": -80.287,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 630,
+        "minMiles": 0.72069767320722,
+        "maxMiles": 1.14404633056078,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 25.7959,
+          "p_lng": -80.287,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 653,
+        "minMiles": 0.72069767320722,
+        "maxMiles": 1.14404633056078,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 25.7959,
+          "p_lng": -80.287,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 538,
+        "minMiles": 0.72069767320722,
+        "maxMiles": 1.14404633056078,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 6178,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 25.7959,
+        "longitude": -80.287
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nAlberto Castillo, MEDICAL INTERPRETER\n\n6930 Nw 12th St # 13211, Miami, FL 33126\n\nInterpreter\n0.7 mi\nOn Time\n\nEmily C Moises Day Training Center\n\n5643 Nw 36th St, Miami Springs, FL 33166\n\nClinic/Center, Developmental Disabilities\n0.8 mi\nOn Time\n\nPsy Elder Care Corp\n\n5399 Nw 36th St Unit C, Miami Springs, FL 33166\n\nCommunity/Behavioral Health\n0.8 mi\nOn Time\n\nMedisana Health Center Corp\n\n5391 Nw 36th St, Miami Springs, FL 33166\n\nClinic/Center, Primary Care\n0.8 mi\nOn Time\n\nMadeleyne Bofill, PA\n\n5391 Nw 36th St, Miami Springs, FL 33166\n\nPhysician Assistant\n0.8 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "miami.png"
+  },
+  {
+    "name": "Fort Lauderdale",
+    "address": "100 Terminal Drive, Fort Lauderdale, FL 33315, USA",
+    "latitude": 26.0742,
+    "longitude": -80.1506,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:27:51.788Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.0742,
+          "p_lng": -80.1506,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1073,
+        "minMiles": 0.357343477447954,
+        "maxMiles": 1.84391108421817,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.0742,
+          "p_lng": -80.1506,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1104,
+        "minMiles": 0.357343477447954,
+        "maxMiles": 1.84391108421817,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.0742,
+          "p_lng": -80.1506,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 780,
+        "minMiles": 0.357343477447954,
+        "maxMiles": 1.84391108421817,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 3668,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 26.0742,
+        "longitude": -80.1506
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nUsa Wellness Providers Corp\n\n1050 Lee Wagener Blvd 230, Fort Lauderdale, FL 33315\n\nSpecialist\n0.4 mi\nOn Time\n\nCynthia Zhang, AP\n\n1100 Lee Wagener Blvd Suite 356, Ft Lauderdale, FL 33315\n\nAcupuncturist\n0.4 mi\nOn Time\n\nNational Jets Inc\n\n3485 Sw 9th Ave, Fort Lauderdale, FL 33315\n\nAmbulance, Air Transport\n0.4 mi\nOn Time\n\nForce Physiotherapy Llc\n\n891 Sw 34th St, Fort Lauderdale, FL 33315\n\nPhysical Therapist\n0.5 mi\nOn Time\n\nPreferred Educational & Psychological Services, Inc\n\n610 Sw 34th St Suite 301, Fort Lauderdale, FL 33315\n\nPsychologist, Clinical\n0.6 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "fort-lauderdale.png"
+  },
+  {
+    "name": "West Palm Beach",
+    "address": "1000 James L. Turnage Boulevard, West Palm Beach, FL 33415, USA",
+    "latitude": 26.6832,
+    "longitude": -80.0956,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:27:55.761Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.6832,
+          "p_lng": -80.0956,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1727,
+        "minMiles": 0.604553920510469,
+        "maxMiles": 1.5920987626884,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.6832,
+          "p_lng": -80.0956,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1870,
+        "minMiles": 0.604553920510469,
+        "maxMiles": 1.5920987626884,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.6832,
+          "p_lng": -80.0956,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 933,
+        "minMiles": 0.604553920510469,
+        "maxMiles": 1.5920987626884,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 4677,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 26.6832,
+        "longitude": -80.0956
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nPartnership For A Drug Free Community Of South Fl Inc\n\n3361 Belvedere Rd Ste C, West Palm Beach, FL 33406\n\nEarly Intervention Provider Agency\n0.6 mi\nOn Time\n\nAna Jimenez, RPH\n\n2377 Fairway Drive, West Palm Beach, FL 33409\n\nPharmacist\n0.7 mi\nOn Time\n\nRachel Ortiz Escalona\n\n2368 Seminole Blvd, West Palm Beach, FL 33409\n\nNon-emergency Medical Transport (VAN)\n0.7 mi\nOn Time\n\nNorma Ceja, APRN\n\n3228 Gun Club Rd, West Palm Beach, FL 33406\n\nNurse Practitioner\n0.7 mi\nOn Time\n\nLinda Guillaume, NP\n\n3228 Gun Club Rd, West Palm Beach, FL 33406\n\nNurse Practitioner, Family\n0.7 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "west-palm-beach.png"
+  },
+  {
+    "name": "Naples",
+    "address": "160 Aviation Drive North, Naples, FL 34104, USA",
+    "latitude": 26.1526,
+    "longitude": -81.7753,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:00.822Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.1526,
+          "p_lng": -81.7753,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 770,
+        "minMiles": 0.526229800937525,
+        "maxMiles": 1.04120741069653,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.1526,
+          "p_lng": -81.7753,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 790,
+        "minMiles": 0.526229800937525,
+        "maxMiles": 1.04120741069653,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.1526,
+          "p_lng": -81.7753,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 547,
+        "minMiles": 0.526229800937525,
+        "maxMiles": 1.04120741069653,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 3443,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 26.1526,
+        "longitude": -81.7753
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nJacqueline Brunetti, M.D\n\n200 Aviation Dr N Ste 9, Naples, FL 34104\n\nRadiology, Diagnostic Radiology\n0.5 mi\nOn Time\n\nDylan Caldwell, MD\n\n200 Aviation Dr N Ste 9, Naples, FL 34104\n\nEmergency Medicine\n0.5 mi\nOn Time\n\nMicaela Hogan, RN\n\n1625 Avion Pl, Naples, FL 34104\n\nRegistered Nurse\n0.5 mi\nOn Time\n\nDennis Morgan\n\n207 Airport Pulling Rd S, Naples, FL 34104\n\nDriver\n0.5 mi\nOn Time\n\nWalter Gauger\n\n217 Airport Pulling Rd N, Naples, FL 34104\n\nPharmacist\n0.5 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "naples.png"
+  },
+  {
+    "name": "Fort Myers",
+    "address": "11000 Terminal Access Road, Fort Myers, FL 33913, USA",
+    "latitude": 26.5362,
+    "longitude": -81.7552,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:04.551Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.5362,
+          "p_lng": -81.7552,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 855,
+        "minMiles": 1.00667633314568,
+        "maxMiles": 4.20322725102899,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.5362,
+          "p_lng": -81.7552,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 879,
+        "minMiles": 1.00667633314568,
+        "maxMiles": 4.20322725102899,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 26.5362,
+          "p_lng": -81.7552,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 550,
+        "minMiles": 1.00667633314568,
+        "maxMiles": 4.20322725102899,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 3686,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 26.5362,
+        "longitude": -81.7552
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nJohnny Cobas Hernandez, MD\n\n11000 Terminal Access Rd, Fort Myers, FL 33913\n\nStudent in an Organized Health Care Education/Training Program\n1.0 mi\nOn Time\n\nCypress Home Medical Inc\n\n11341 Lindbergh Blvd, Fort Myers, FL 33913\n\nPharmacy, Home Infusion Therapy Pharmacy\n1.2 mi\nOn Time\n\nPaul Burns, PT\n\n11341 Lindbergh Blvd, Fort Myers, FL 33913\n\nPhysical Therapist\n1.2 mi\nOn Time\n\nOtto Medinilla, PAC\n\n11300 Lindbergh Blvd Ste 115, Fort Myers, FL 33913\n\nPhysician Assistant\n1.2 mi\nOn Time\n\nKristine Hernandez, D.C\n\n11300 Lindbergh Blvd 110, Fort Myers, FL 33913\n\nChiropractor\n1.2 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "fort-myers.png"
+  },
+  {
+    "name": "Sarasota",
+    "address": "6000 Airport Circle, Sarasota, FL 34243, USA",
+    "latitude": 27.3954,
+    "longitude": -82.5544,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:08.531Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 27.3954,
+          "p_lng": -82.5544,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1613,
+        "minMiles": 0.559068345071035,
+        "maxMiles": 2.25168478063733,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 27.3954,
+          "p_lng": -82.5544,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1997,
+        "minMiles": 0.559068345071035,
+        "maxMiles": 2.25168478063733,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 27.3954,
+          "p_lng": -82.5544,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1365,
+        "minMiles": 0.559068345071035,
+        "maxMiles": 2.25168478063733,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 4544,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 27.3954,
+        "longitude": -82.5544
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nGulfport Air, Llc\n\n8191 N Tamiami Trl Nomad Hanger, Sarasota, FL 34243\n\nAir Carrier\n0.6 mi\nOn Time\n\nEmpower Home Health\n\n8051 N Tamiami Trl Ste E6, Sarasota, FL 34243\n\nIn Home Supportive Care\n0.6 mi\nOn Time\n\nOutreach Foot Care Llc\n\n8051 N Tamiami Trl Ste E6, Sarasota, FL 34243\n\nPodiatrist, Primary Podiatric Medicine\n0.6 mi\nOn Time\n\nJanell Stallworth, LMHC\n\n8051 N Tamiami Trl Ste E2, Sarasota, FL 34243\n\nCounselor, Mental Health\n0.6 mi\nOn Time\n\nAmy Register, CNP\n\n8051 N Tamiami Trl Ste E6, Sarasota, FL 34243\n\nNurse Practitioner\n0.6 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "sarasota.png"
+  },
+  {
+    "name": "Tampa",
+    "address": "4100 George J. Bean Parkway, Tampa, FL 33607, USA",
+    "latitude": 27.9755,
+    "longitude": -82.5332,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:13.346Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 27.9755,
+          "p_lng": -82.5332,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 824,
+        "minMiles": 0.925751159559423,
+        "maxMiles": 1.52808703691069,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 27.9755,
+          "p_lng": -82.5332,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 850,
+        "minMiles": 0.925751159559423,
+        "maxMiles": 1.52808703691069,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 27.9755,
+          "p_lng": -82.5332,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 546,
+        "minMiles": 0.925751159559423,
+        "maxMiles": 1.52808703691069,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 3725,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 27.9755,
+        "longitude": -82.5332
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nOrthotic And Prosthetic Clinics Of America\n\n4809 Memorial Highway Suite 100, Tampa, FL 33634\n\nProsthetic/Orthotic Supplier\n0.9 mi\nOn Time\n\nOrthotic And Prosthetic Clinics Of America\n\n4809 Memorial Hwy Ste 100, Tampa, FL 33634\n\nProsthetic/Orthotic Supplier\n0.9 mi\nOn Time\n\nThe Mobility Lab\n\n4809 Memorial Hwy Ste 400, Tampa, FL 33634\n\nClinic/Center, Physical Therapy\n0.9 mi\nOn Time\n\nAlicia Orbea, DC\n\n4809 Memorial Hwy, Tampa, FL 33634\n\nChiropractor\n0.9 mi\nOn Time\n\nMobile Prosthetics & Orthotics, Inc.\n\n4809 Memorial Hwy Ste 100, Tampa, FL 33634\n\nProsthetic/Orthotic Supplier\n0.9 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "tampa.png"
+  },
+  {
+    "name": "Orlando",
+    "address": "1 Jeff Fuqua Boulevard, Orlando, FL 32827, USA",
+    "latitude": 28.4312,
+    "longitude": -81.3081,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:17.468Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 28.4312,
+          "p_lng": -81.3081,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 558,
+        "minMiles": 0.836782329837499,
+        "maxMiles": 3.29066651896052,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 28.4312,
+          "p_lng": -81.3081,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 923,
+        "minMiles": 0.836782329837499,
+        "maxMiles": 3.29066651896052,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 28.4312,
+          "p_lng": -81.3081,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 941,
+        "minMiles": 0.836782329837499,
+        "maxMiles": 3.29066651896052,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 3648,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 28.4312,
+        "longitude": -81.3081
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nDustin Comer\n\n5855 Cargo Rd, Orlando, FL 32827\n\nEmergency Medical Technician, Paramedic\n0.8 mi\nOn Time\n\nEvernorth Direct Health Llc\n\n5855 Cargo Rd, Orlando, FL 32827\n\nClinic/Center\n0.8 mi\nOn Time\n\nBryan Steinman, PT,DPT\n\n8440 Tradeport Dr #108, Orlando, FL 32827\n\nPhysical Therapist\n1.8 mi\nOn Time\n\nMatthew Leonard, DPT\n\n8440 Tradeport Dr, Orlando, FL 32827\n\nPhysical Therapist\n1.8 mi\nOn Time\n\nPaul Gopez\n\n8440 Tradeport Dr Ste 108, Orlando, FL 32827\n\nPhysical Therapist\n1.8 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "orlando.png"
+  },
+  {
+    "name": "Jacksonville",
+    "address": "2400 Yankee Clipper Drive, Jacksonville, FL 32218, USA",
+    "latitude": 30.4941,
+    "longitude": -81.6879,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:21.402Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 30.4941,
+          "p_lng": -81.6879,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1024,
+        "minMiles": 0.293840520839547,
+        "maxMiles": 3.82616964042492,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 30.4941,
+          "p_lng": -81.6879,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1696,
+        "minMiles": 0.293840520839547,
+        "maxMiles": 3.82616964042492,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 30.4941,
+          "p_lng": -81.6879,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1728,
+        "minMiles": 0.293840520839547,
+        "maxMiles": 3.82616964042492,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 4349,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 30.4941,
+        "longitude": -81.6879
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nLea Bush\n\n14600 Whirlwind Ave, Jacksonville, FL 32218\n\nPeer Specialist\n0.3 mi\nOn Time\n\nAdrian Andrews, PA\n\n14300 Fang Dr Bldg #3, Jacksonville, FL 32218\n\nPhysician Assistant\n1.1 mi\nOn Time\n\nZuleika Fuentes Pinto, CLINICAL SOCIAL WORK\n\n14300 Fang Dr, Jacksonville, FL 32218\n\nSocial Worker, Clinical\n1.1 mi\nOn Time\n\nDanreb Faustino\n\n14300 Fang Dr Bldg 3, Jacksonville, FL 32218\n\nRegistered Nurse\n1.1 mi\nOn Time\n\nBernisha Brock-Robinson, RN\n\n12681 Sampson Rd, Jacksonville, FL 32218\n\nRegistered Nurse, Pediatrics\n2.0 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "jacksonville.png"
+  },
+  {
+    "name": "Tallahassee",
+    "address": "3300 Capital Circle SW, Tallahassee, FL 32310, USA",
+    "latitude": 30.3965,
+    "longitude": -84.3503,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:28:26.015Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 30.3965,
+          "p_lng": -84.3503,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1123,
+        "minMiles": 0.613233740026992,
+        "maxMiles": 4.47436959833323,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 30.3965,
+          "p_lng": -84.3503,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1148,
+        "minMiles": 0.613233740026992,
+        "maxMiles": 4.47436959833323,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 30.3965,
+          "p_lng": -84.3503,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 789,
+        "minMiles": 0.613233740026992,
+        "maxMiles": 4.47436959833323,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 5314,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 30.3965,
+        "longitude": -84.3503
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nEdward Holifield, M.D\n\n4032 Longleaf Ct, Tallahassee, FL 32310\n\nInternal Medicine, Cardiovascular Disease\n0.6 mi\nOn Time\n\nColumbus Brand, LMHC\n\n3420 Capital Cir Sw, Tallahassee, FL 32310\n\nCounselor, Mental Health\n0.6 mi\nOn Time\n\nSamuel Fenn, RPH\n\n3539 Lakeview Dr, Tallahassee, FL 32310\n\nPharmacist\n1.2 mi\nOn Time\n\nYolanda Morris\n\n4132 Pond Cypress Ct, Tallahassee, FL 32310\n\nSocial Worker\n1.2 mi\nOn Time\n\nChoices For Success Llc\n\n4132 Pond Cypress Ct, Tallahassee, FL 32310\n\nResidential Treatment Facility, Intellectual and/or Developmental Disabilities\n1.2 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "tallahassee.png"
+  }
+]

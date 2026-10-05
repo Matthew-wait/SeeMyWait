@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Central Florida",
+    "lat": 27.7567667,
+    "lng": -81.4639835,
+    "expected": 4846,
+    "count": 4846,
+    "maxMiles": 24.9944729098937,
+    "calls": 89,
+    "elapsedMs": 65970,
+    "errors": [],
+    "canvas": {
+      "total": 4846,
+      "visible": 13
+    },
+    "renderedCards": 10,
+    "top": [
+      "Patricia Beckwith, LPC2011 N Lake Reedy Blvd Lot 5, Frostproof, FL 33843Counselor, Mental Health1.6 miOn Time",
+      "Chantelle Rhoden, MSW, LCSW65 Deer Rd, Frostproof, FL 33843Social Worker, Clinical3.0 miOn Time",
+      "Susan Meade948 Fazzini Rd, Babson Park, FL 33827Homemaker3.2 miOn Time"
+    ],
+    "tail": [
+      "Billy Brown, DDS695 S Broadway Ave, Bartow, FL 33830Dentist, General Practice25 miOn Time",
+      "Billy B Brown Jr Dds Pa695 S Broadway Ave, Bartow, FL 33830Durable Medical Equipment & Medical Supplies25 miOn Time",
+      "Joni Nelson, LMHC495 S Central Ave, Bartow, FL 33830Counselor, Mental Health25 miOn Time"
+    ],
+    "screenshot": "artifacts/nearby-central-florida.png"
+  },
+  {
+    "name": "Miami-Dade",
+    "lat": 25.8965,
+    "lng": -80.157,
+    "expected": 154273,
+    "count": 154273,
+    "maxMiles": 24.9999352105827,
+    "calls": 219,
+    "elapsedMs": 350668,
+    "errors": [
+      "Cannot read properties of undefined (reading '_leaflet_pos')"
+    ],
+    "canvas": {
+      "total": 154273,
+      "visible": 3231
+    },
+    "renderedCards": 11,
+    "top": [
+      "Estela Nayor, MD2025 Ixora Rd, North Miami, FL 33181General Practice0.1 miOn Time",
+      "Community Case Management Services, Llc13145 Coronado Dr, North Miami, FL 33181Behavior Analyst0.1 miOn Time",
+      "Anna Ishkhanova13145 Coronado Dr, North Miami, FL 33181Behavior Technician0.1 miOn Time"
+    ],
+    "tail": [
+      "Rocio Acosta13849 Sw 158th Ter, Miami, FL 33177Case Manager/Care Coordinator25 miOn Time",
+      "Marelis Vidal20131 Coral Sea Rd, Cutler Bay, FL 33189Behavior Technician25 miOn Time",
+      "Natalia Zuniga15363 Sw 142nd Ave, Miami, FL 33177Behavior Technician25 miOn Time"
+    ],
+    "screenshot": "artifacts/nearby-miami-dade.png"
+  }
+]

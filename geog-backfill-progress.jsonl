@@ -1,0 +1,11 @@
+{"complete":false,"time":"2026-10-04T06:48:22.0462948Z","pid":38928,"rows_updated":500,"elapsed_ms":5487}
+{"complete":false,"time":"2026-10-04T06:48:26.9400830Z","pid":38928,"rows_updated":500,"elapsed_ms":4859}
+{"complete":false,"time":"2026-10-04T06:48:31.4994504Z","pid":38928,"rows_updated":500,"elapsed_ms":4558}
+{"complete":false,"time":"2026-10-04T06:48:35.7580405Z","pid":38928,"rows_updated":500,"elapsed_ms":4257}
+{"complete":false,"time":"2026-10-04T06:48:40.4750592Z","pid":38928,"rows_updated":500,"elapsed_ms":4716}
+{"complete":false,"time":"2026-10-04T06:48:44.4895194Z","pid":38928,"rows_updated":500,"elapsed_ms":4013}
+{"complete":false,"time":"2026-10-04T06:48:48.4937598Z","pid":38928,"rows_updated":500,"elapsed_ms":4002}
+{"complete":false,"time":"2026-10-04T06:48:53.0206905Z","pid":38928,"rows_updated":500,"elapsed_ms":4526}
+{"complete":false,"time":"2026-10-04T06:48:57.4305058Z","pid":38928,"rows_updated":500,"elapsed_ms":4409}
+{"complete":false,"time":"2026-10-04T06:49:02.3458052Z","pid":38928,"rows_updated":500,"elapsed_ms":4914}
+{"time":"2026-10-04T06:49:34.7971745Z","pid":38928,"error":"The remote server returned an error: (400) Bad Request.","stopped":true}

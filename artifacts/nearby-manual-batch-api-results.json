@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Miami-Dade",
+    "lat": 25.8965,
+    "lng": -80.157,
+    "pages": [
+      {
+        "count": 1000,
+        "elapsedMs": 1731,
+        "hasMore": true,
+        "maxMiles": 1.1636744102255328
+      },
+      {
+        "count": 1000,
+        "elapsedMs": 1744,
+        "hasMore": true,
+        "maxMiles": 2.0379951441953987
+      }
+    ],
+    "unique": 2000
+  },
+  {
+    "name": "Central Florida",
+    "lat": 27.7567667,
+    "lng": -81.4639835,
+    "pages": [
+      {
+        "count": 27,
+        "elapsedMs": 349,
+        "hasMore": false,
+        "maxMiles": 4.7338871861826926
+      }
+    ],
+    "unique": 27
+  },
+  {
+    "name": "Islamabad",
+    "lat": 33.6844,
+    "lng": 73.0479,
+    "pages": [
+      {
+        "count": 17,
+        "elapsedMs": 314,
+        "hasMore": false,
+        "maxMiles": 4.930086934508719
+      }
+    ],
+    "unique": 17
+  }
+]

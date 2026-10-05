@@ -1,0 +1,71 @@
+[
+  {
+    "name": "Miami",
+    "address": "2100 NW 42nd Avenue, Miami, FL 33142, USA",
+    "latitude": 25.7959,
+    "longitude": -80.287,
+    "locale": "en-US",
+    "timezone": "America/New_York",
+    "testedAt": "2026-10-05T06:26:32.763Z",
+    "requests": [
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 25.7959,
+          "p_lng": -80.287,
+          "p_radius_miles": 100,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 995,
+        "minMiles": 0.72069767320722,
+        "maxMiles": 1.14404633056078,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 25.7959,
+          "p_lng": -80.287,
+          "p_radius_miles": 5,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 1015,
+        "minMiles": 0.72069767320722,
+        "maxMiles": 1.14404633056078,
+        "invalidCoordinates": 0,
+        "error": null
+      },
+      {
+        "status": 200,
+        "params": {
+          "p_lat": 25.7959,
+          "p_lng": -80.287,
+          "p_radius_miles": 25,
+          "p_limit": 500
+        },
+        "count": 500,
+        "elapsedMs": 630,
+        "minMiles": 0.72069767320722,
+        "maxMiles": 1.14404633056078,
+        "invalidCoordinates": 0,
+        "error": null
+      }
+    ],
+    "pageErrors": [],
+    "totalLoadMs": 4458,
+    "browserSettings": {
+      "locale": "en-US",
+      "timezone": "America/New_York",
+      "position": {
+        "latitude": 25.7959,
+        "longitude": -80.287
+      }
+    },
+    "text": "© OpenStreetMap contributors\n\nYou're seeing doctor offices within 25 miles of your location. Use search to find a specific one further away — and suggest it to the admin if it isn't listed yet.\n\nNearby Doctor Offices (500)\n\nAlberto Castillo, MEDICAL INTERPRETER\n\n6930 Nw 12th St # 13211, Miami, FL 33126\n\nInterpreter\n0.7 mi\nOn Time\n\nEmily C Moises Day Training Center\n\n5643 Nw 36th St, Miami Springs, FL 33166\n\nClinic/Center, Developmental Disabilities\n0.8 mi\nOn Time\n\nPsy Elder Care Corp\n\n5399 Nw 36th St Unit C, Miami Springs, FL 33166\n\nCommunity/Behavioral Health\n0.8 mi\nOn Time\n\nMedisana Health Center Corp\n\n5391 Nw 36th St, Miami Springs, FL 33166\n\nClinic/Center, Primary Care\n0.8 mi\nOn Time\n\nMadeleyne Bofill, PA\n\n5391 Nw 36th St, Miami Springs, FL 33166\n\nPhysician Assistant\n0.8 mi\nOn Time\nExplore More (495 more)\nMap\nAdd Doctor\nSettings",
+    "mapPresent": true,
+    "screenshot": "miami.png"
+  }
+]

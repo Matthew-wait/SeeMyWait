@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Miami-Dade",
+    "label": "Nearby Doctor Offices (1,000+)",
+    "afterLabel": "Nearby Doctor Offices (2,000+)",
+    "initialMs": 5215,
+    "batches": 2,
+    "loaded": 2000,
+    "canvas": 2000,
+    "errors": [],
+    "automaticRequestsStopped": true,
+    "manualLoadVerified": true,
+    "screenshot": "artifacts/nearby-manual-miami-dade.png"
+  },
+  {
+    "name": "Central Florida",
+    "label": "Nearby Doctor Offices (27)",
+    "afterLabel": "Nearby Doctor Offices (27)",
+    "initialMs": 3572,
+    "batches": 1,
+    "loaded": 27,
+    "canvas": 27,
+    "errors": [],
+    "automaticRequestsStopped": true,
+    "manualLoadVerified": false,
+    "screenshot": "artifacts/nearby-manual-central-florida.png"
+  },
+  {
+    "name": "Islamabad",
+    "label": "Nearby Doctor Offices (17)",
+    "afterLabel": "Nearby Doctor Offices (17)",
+    "initialMs": 3454,
+    "batches": 1,
+    "loaded": 17,
+    "canvas": 17,
+    "errors": [],
+    "automaticRequestsStopped": true,
+    "manualLoadVerified": false,
+    "screenshot": "artifacts/nearby-manual-islamabad.png"
+  }
+]

@@ -255,6 +255,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      nearby_clinics_batch: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_miles?: number
+          p_page_size?: number
+          p_after_distance?: number
+          p_after_id?: string
+        }
+        Returns: Json
+      }
+      nearby_clinics_page: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_miles?: number
+          p_page_size?: number
+          p_cell?: number
+          p_after_id?: string
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

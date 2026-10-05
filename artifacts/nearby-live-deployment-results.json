@@ -1,0 +1,60 @@
+[
+  {
+    "name": "Central Florida",
+    "lat": 27.7567667,
+    "lng": -81.4639835,
+    "expected": 4846,
+    "url": "https://www.seemywait.com/app",
+    "heading": "Nearby Doctor Offices (4846)",
+    "received": 4846,
+    "calls": 89,
+    "maxMiles": 24.9944729098937,
+    "canvas": {
+      "total": 4846,
+      "visible": 1
+    },
+    "errors": [],
+    "elapsedMs": 36796,
+    "complete": true,
+    "top": [
+      "Patricia Beckwith, LPC2011 N Lake Reedy Blvd Lot 5, Frostproof, FL 33843Counselor, Mental Health1.6 miOn Time",
+      "Chantelle Rhoden, MSW, LCSW65 Deer Rd, Frostproof, FL 33843Social Worker, Clinical3.0 miOn Time",
+      "Susan Meade948 Fazzini Rd, Babson Park, FL 33827Homemaker3.2 miOn Time"
+    ],
+    "tail": [
+      "Billy Brown, DDS695 S Broadway Ave, Bartow, FL 33830Dentist, General Practice25 miOn Time",
+      "Billy B Brown Jr Dds Pa695 S Broadway Ave, Bartow, FL 33830Durable Medical Equipment & Medical Supplies25 miOn Time",
+      "Joni Nelson, LMHC495 S Central Ave, Bartow, FL 33830Counselor, Mental Health25 miOn Time"
+    ],
+    "screenshot": "artifacts/nearby-live-central-florida.png"
+  },
+  {
+    "name": "Miami-Dade",
+    "lat": 25.8965,
+    "lng": -80.157,
+    "minimum": 5000,
+    "url": "https://www.seemywait.com/app",
+    "heading": "Nearby Doctor Offices (5397)",
+    "received": 5338,
+    "calls": 7,
+    "maxMiles": 4.88561600403021,
+    "canvas": {
+      "total": 5397,
+      "visible": 723
+    },
+    "errors": [],
+    "elapsedMs": 14835,
+    "complete": false,
+    "top": [
+      "Estela Nayor, MD2025 Ixora Rd, North Miami, FL 33181General Practice0.1 miOn Time",
+      "Community Case Management Services, Llc13145 Coronado Dr, North Miami, FL 33181Behavior Analyst0.1 miOn Time",
+      "Anna Ishkhanova13145 Coronado Dr, North Miami, FL 33181Behavior Technician0.1 miOn Time"
+    ],
+    "tail": [
+      "Desire Health Medical Center648 Nw 183rd Street, Miami, FL 33169Physician Assistant, Medical4.7 miOn Time",
+      "Monarch Mental Health & Wellness Services, Llc648 Nw 183rd Street, Miami Gardens, FL 33169Physician Assistant, Medical4.7 miOn Time",
+      "Lataya Hall, LMHC631 Nw 183rd St, Miami Gardens, FL 33169Counselor, Mental Health4.7 miOn Time"
+    ],
+    "screenshot": "artifacts/nearby-live-miami-dade.png"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Central Florida",
+    "lat": 27.7567667,
+    "lng": -81.4639835,
+    "expected": 4846,
+    "file": "C:\\Users\\PC\\AppData\\Local\\Temp\\seemywait-nearby-7NgOA3\\Central-Florida.json"
+  },
+  {
+    "name": "Miami-Dade",
+    "lat": 25.8965,
+    "lng": -80.157,
+    "expected": 154273,
+    "file": "C:\\Users\\PC\\AppData\\Local\\Temp\\seemywait-nearby-7NgOA3\\Miami-Dade.json"
+  }
+]

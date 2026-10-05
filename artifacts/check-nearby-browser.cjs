@@ -1,0 +1,25 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE);
+const fs=require('node:fs');
+const cases=[{name:'Central Florida',lat:27.7567667,lng:-81.4639835,expected:4846},{name:'Miami-Dade',lat:25.8965,lng:-80.157,expected:154273}];
+(async()=>{const browser=await chromium.connectOverCDP(process.env.FL_TEST_CDP_URL);const results=[];
+try{for(const loc of cases){const context=await browser.newContext({locale:'en-US',timezoneId:'America/New_York',geolocation:{latitude:loc.lat,longitude:loc.lng},permissions:['geolocation'],viewport:{width:1440,height:1000}});
+const page=await context.newPage();const errors=[];const ids=new Set();let maxMiles=0;const tasks=[];let calls=0;page.on('pageerror',e=>errors.push(e.message));
+page.on('response',res=>{if(!res.url().includes('/rpc/nearby_clinics_page'))return;tasks.push((async()=>{const b=await res.json();if(res.status()!==200){errors.push('RPC '+res.status()+': '+b.message);return;}calls++;for(const c of b.clinics){ids.add(c.id);maxMiles=Math.max(maxMiles,c.distance_miles);}if(calls%20===0)console.log(JSON.stringify({location:loc.name,calls,received:ids.size}));})());});
+const start=Date.now();await page.goto('http://127.0.0.1:3001/app',{waitUntil:'domcontentloaded'});
+await page.getByRole('heading',{name:'Nearby Doctor Offices ('+loc.expected+')',exact:true}).waitFor({timeout:600000});
+await page.getByText('Finding more within',{exact:false}).waitFor({state:'hidden',timeout:600000});await Promise.all(tasks);
+await page.getByText('Right Data. Right Spot. Right Time.',{exact:true}).waitFor({state:'hidden',timeout:15000});
+await page.getByRole('button',{name:/Explore More/}).click();
+const scroller=page.locator('[data-clinic-row]').first().locator('..').locator('..');
+const top=await page.locator('[data-clinic-row]').allTextContents();
+await scroller.evaluate(el=>{el.scrollTop=el.scrollHeight;});
+await page.waitForFunction(()=>{const rows=[...document.querySelectorAll('[data-clinic-row]')];return rows.length>0&&rows.at(-1).innerText.includes('25 mi');},{timeout:15000}).catch(()=>{});
+const tail=await page.locator('[data-clinic-row]').allTextContents();
+for(let i=0;i<5;i++)await page.getByRole('button',{name:'Zoom out',exact:true}).click();
+await page.waitForTimeout(1000);
+const canvas=await page.locator('canvas.smw-clinic-pins').evaluate(el=>({total:Number(el.dataset.clinicCount),visible:Number(el.dataset.visibleCount)}));
+const screenshot='artifacts/nearby-'+loc.name.toLowerCase().replaceAll(' ','-')+'.png';await page.screenshot({path:screenshot,fullPage:true});
+const r={...loc,count:ids.size,maxMiles,calls,elapsedMs:Date.now()-start,errors,canvas,renderedCards:tail.length,top:top.slice(0,3),tail:tail.slice(-3),screenshot};
+results.push(r);fs.writeFileSync('artifacts/nearby-pagination-browser-results.json',JSON.stringify(results,null,2));console.log(JSON.stringify({location:loc.name,complete:true,count:r.count,calls,elapsedMs:r.elapsedMs,errors,canvas,renderedCards:r.renderedCards}));
+if(ids.size!==loc.expected||maxMiles>25||errors.length||canvas.total!==loc.expected||tail.length>100)throw new Error('Browser validation failed');await context.close();}
+}finally{await browser.close();}})().catch(e=>{console.error(e.message);process.exitCode=1});

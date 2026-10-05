@@ -1,0 +1,290 @@
+[
+  {
+    "viewport": {
+      "width": 1092,
+      "height": 943
+    },
+    "initial": {
+      "stage": "initial",
+      "nav": {
+        "x": 0,
+        "y": 867.5,
+        "width": 1092,
+        "height": 75.5
+      },
+      "button": {
+        "x": 12,
+        "y": 831.5,
+        "width": 1068,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 499.21875,
+        "width": 1092,
+        "height": 294.28125
+      },
+      "hit": true
+    },
+    "expanded": {
+      "stage": "expanded",
+      "nav": {
+        "x": 0,
+        "y": 867.5,
+        "width": 1092,
+        "height": 75.5
+      },
+      "button": {
+        "x": 12,
+        "y": 831.5,
+        "width": 1068,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 499.21875,
+        "width": 1092,
+        "height": 294.28125
+      },
+      "hit": true
+    },
+    "atBottom": {
+      "stage": "atBottom",
+      "nav": {
+        "x": 0,
+        "y": 867.5,
+        "width": 1092,
+        "height": 75.5
+      },
+      "button": {
+        "x": 12,
+        "y": 831.5,
+        "width": 1068,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 499.21875,
+        "width": 1092,
+        "height": 294.28125
+      },
+      "hit": true
+    },
+    "afterLoad": {
+      "stage": "afterLoad",
+      "nav": {
+        "x": 0,
+        "y": 867.5,
+        "width": 1092,
+        "height": 75.5
+      },
+      "button": {
+        "x": 12,
+        "y": 831.5,
+        "width": 1068,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 499.21875,
+        "width": 1092,
+        "height": 294.28125
+      },
+      "hit": true
+    },
+    "errors": [],
+    "screenshot": "artifacts/nearby-nav-1092x943-live.png"
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "initial": {
+      "stage": "initial",
+      "nav": {
+        "x": 0,
+        "y": 770,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 734,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 414.453125,
+        "width": 390,
+        "height": 281.546875
+      },
+      "hit": true
+    },
+    "expanded": {
+      "stage": "expanded",
+      "nav": {
+        "x": 0,
+        "y": 770,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 734,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 414.453125,
+        "width": 390,
+        "height": 281.546875
+      },
+      "hit": true
+    },
+    "atBottom": {
+      "stage": "atBottom",
+      "nav": {
+        "x": 0,
+        "y": 770,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 734,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 414.453125,
+        "width": 390,
+        "height": 281.546875
+      },
+      "hit": true
+    },
+    "afterLoad": {
+      "stage": "afterLoad",
+      "nav": {
+        "x": 0,
+        "y": 770,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 734,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 414.453125,
+        "width": 390,
+        "height": 281.546875
+      },
+      "hit": true
+    },
+    "errors": [],
+    "screenshot": "artifacts/nearby-nav-390x844-live.png"
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 640
+    },
+    "initial": {
+      "stage": "initial",
+      "nav": {
+        "x": 0,
+        "y": 566,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 530,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 341.015625,
+        "width": 390,
+        "height": 150.984375
+      },
+      "hit": true
+    },
+    "expanded": {
+      "stage": "expanded",
+      "nav": {
+        "x": 0,
+        "y": 566,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 530,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 341.015625,
+        "width": 390,
+        "height": 150.984375
+      },
+      "hit": true
+    },
+    "atBottom": {
+      "stage": "atBottom",
+      "nav": {
+        "x": 0,
+        "y": 566,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 530,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 341.015625,
+        "width": 390,
+        "height": 150.984375
+      },
+      "hit": true
+    },
+    "afterLoad": {
+      "stage": "afterLoad",
+      "nav": {
+        "x": 0,
+        "y": 566,
+        "width": 390,
+        "height": 74
+      },
+      "button": {
+        "x": 12,
+        "y": 530,
+        "width": 366,
+        "height": 36
+      },
+      "scroll": {
+        "x": 0,
+        "y": 341.015625,
+        "width": 390,
+        "height": 150.984375
+      },
+      "hit": true
+    },
+    "errors": [],
+    "screenshot": "artifacts/nearby-nav-390x640-live.png"
+  }
+]

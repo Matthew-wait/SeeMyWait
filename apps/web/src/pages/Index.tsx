@@ -46,19 +46,18 @@ const Index = () => {
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const navigate = useNavigate();
 
-  const { data: appSettings } = useAppSettings();
-  const nearbyRadiusMiles = appSettings?.nearby_radius_miles ?? 100;
+  const { data: appSettings, isPending: settingsLoading } = useAppSettings();
+  const nearbyRadiusMiles = appSettings?.nearby_radius_miles ?? 5;
   const reportCooldownMinutes = appSettings?.report_cooldown_minutes ?? 60;
 
-  // Progressive load: a 5-mile pass lands almost immediately so the map/list
-  // isn't blank while the full-radius query (now PostGIS-indexed, but still
-  // a network round trip) resolves. `isLoadingMore` covers that gap — the
-  // list panel shows a "finding more nearby…" row instead of looking done.
-  const { data: clinics, isInitialLoading: isLoading, isLoadingMore, refetch } = useNearbyClinicsProgressive(
+  // Load the nearest 1,000; load more only when requested.
+  // Keep the existing loading indicator until every geographic page finishes.
+  const { data: clinics, isInitialLoading: isLoading, isLoadingMore, hasMore, loadMore, error: nearbyError, refetch } = useNearbyClinicsProgressive(
     userLocation?.lat,
     userLocation?.lng,
     reportCooldownMinutes,
-    nearbyRadiusMiles
+    nearbyRadiusMiles,
+    !settingsLoading
   );
 
   // Single search path: the `medical-search` edge function does DB-first
@@ -109,7 +108,7 @@ const Index = () => {
   // offices in Texas with no indication they aren't actually close by.
   const clinicsWithinNearbyRadius = useMemo(() => {
     if (!clinics || !userLocation) return [];
-    return clinics.filter((c) => (c.distance || 999) <= nearbyRadiusMiles);
+    return clinics.filter((c) => (c.distance ?? Infinity) <= nearbyRadiusMiles);
   }, [clinics, userLocation, nearbyRadiusMiles]);
 
   // Distance is straight-line (haversine), computed in useClinics. Driving
@@ -149,9 +148,8 @@ const Index = () => {
 
   // Map markers:
   //  - while searching, show exactly the offices the server matched;
-  //  - otherwise show EVERY active clinic (item 8) so a pin appears wherever the
-  //    map is panned, independent of the nearby-radius filter (which only
-  //    governs the list below). MapView guards non-finite coordinates.
+  //  - otherwise show all clinics loaded within the configured nearby radius.
+  //    MapView guards non-finite coordinates.
   const displayedClinics = useMemo(() => {
     if (!isSearching) return clinics ?? [];
     if (!dbSearchResults.length) return [];
@@ -307,7 +305,7 @@ const Index = () => {
   }, [showResultsDropdown]);
 
   return (
-    <div className="relative flex h-screen flex-col bg-background overflow-hidden pb-20 sm:pb-0">
+    <div className="relative flex h-dvh flex-col bg-background overflow-hidden">
       {/* Search bar overlay */}
       <div className="absolute top-0 left-0 right-0 z-[50] px-2 sm:px-3 pt-2 sm:pt-3 pb-2 pointer-events-none">
         <div ref={searchBoxRef} className="pointer-events-auto mx-auto max-w-lg">
@@ -474,13 +472,17 @@ const Index = () => {
           hasLocation={!!userLocation}
           locating={locating}
           isLoadingMore={!isSearching && isLoadingMore}
+          hasMore={!isSearching && hasMore}
+          onLoadMore={loadMore}
+          loadError={!isSearching && Boolean(nearbyError)}
+          onRetryLoad={() => { void refetch(); }}
           onClinicClick={handleClinicClick}
           onSuggestClinic={() => navigate("/suggest")}
           onRetryLocation={requestLocation}
         />
       </div>
 
-      <BottomNav />
+      <BottomNav inFlow />
     </div>
   );
 };
