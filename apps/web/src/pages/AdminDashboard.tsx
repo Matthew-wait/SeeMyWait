@@ -1549,7 +1549,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Map */}
-        <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
+        <div className="relative h-[320px] overflow-hidden rounded-xl border border-border/50">
           <MapView
             clinics={mapClinics}
             userLocation={adminLoc}
