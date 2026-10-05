@@ -1421,9 +1421,9 @@ export default function AdminDashboard() {
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
               </div>
             ) : clinics && clinics.length > 0 ? (
-              <div className="overflow-x-auto rounded-lg border border-border/50">
+              <div className="max-h-[calc(100vh-260px)] min-h-[320px] overflow-auto rounded-lg border border-border/50">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead className="hidden sm:table-cell">Specialty</TableHead>
