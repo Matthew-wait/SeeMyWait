@@ -597,6 +597,28 @@ function CsvUploadDialog({
   );
 }
 
+const US_JURISDICTIONS: { code: string; name: string }[] = [
+  { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" }, { code: "CA", name: "California" }, { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" }, { code: "DE", name: "Delaware" }, { code: "DC", name: "District of Columbia" },
+  { code: "FL", name: "Florida" }, { code: "GA", name: "Georgia" }, { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" }, { code: "IL", name: "Illinois" }, { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" }, { code: "KS", name: "Kansas" }, { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" }, { code: "ME", name: "Maine" }, { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" }, { code: "MI", name: "Michigan" }, { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" }, { code: "MO", name: "Missouri" }, { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" }, { code: "NV", name: "Nevada" }, { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" }, { code: "NM", name: "New Mexico" }, { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" }, { code: "ND", name: "North Dakota" }, { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" }, { code: "OR", name: "Oregon" }, { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" }, { code: "SC", name: "South Carolina" }, { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" }, { code: "TX", name: "Texas" }, { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" }, { code: "VA", name: "Virginia" }, { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" }, { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" },
+  { code: "PR", name: "Puerto Rico" }, { code: "GU", name: "Guam" }, { code: "VI", name: "U.S. Virgin Islands" },
+  { code: "AS", name: "American Samoa" }, { code: "MP", name: "Northern Mariana Islands" },
+];
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -634,18 +656,46 @@ export default function AdminDashboard() {
     checkAuth();
   }, [navigate]);
 
+  const [filterState, setFilterState] = useState("FL");
+  const [filterCity, setFilterCity] = useState("Miami");
+  const { data: cityOptions } = useQuery({
+    queryKey: ["city-summary", filterState],
+    queryFn: async () => {
+      // Table is newer than the generated types; typed locally.
+      const summary = supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => { eq: (k: string, v: string) => { order: (k: string, o: { ascending: boolean }) => Promise<{ data: { city: string; n: number }[] | null; error: Error | null }> } };
+        };
+      };
+      const { data, error } = await summary
+        .from("clinic_city_summary")
+        .select("city, n")
+        .eq("state", filterState)
+        .order("n", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10 * 60_000,
+  });
+  const cityTotal = cityOptions?.find((c) => c.city === filterCity)?.n ?? 0;
+
   // Only ever fetch one page: the table is too large to sort or load whole.
   // Browsing uses the primary-key index; search uses the name trigram index.
   const [clinicsLimit, setClinicsLimit] = useState(50);
   const [specialtyFilter, setSpecialtyFilter] = useState("");
   useEffect(() => { setClinicsLimit(50); }, [searchQuery, specialtyFilter]);
+  useEffect(() => {
+    if (!cityOptions || cityOptions.length === 0) return;
+    if (!cityOptions.some((c) => c.city === filterCity)) setFilterCity(cityOptions[0].city);
+  }, [cityOptions, filterCity]);
+  useEffect(() => { setClinicsLimit(50); }, [filterState, filterCity]);
   const { data: clinics, isLoading: clinicsLoading } = useQuery({
-    queryKey: ["admin-clinics", searchQuery, specialtyFilter, clinicsLimit],
+    queryKey: ["admin-clinics", filterState, filterCity, searchQuery, specialtyFilter, clinicsLimit],
     queryFn: async () => {
-      let q = supabase.from("clinics").select("*").limit(clinicsLimit);
+      let q = supabase.from("clinics").select("*").eq("state", filterState).eq("city", filterCity).limit(clinicsLimit);
       const term = searchQuery.trim().replace(/[,()]/g, " ");
       if (term) q = q.or(`name.ilike.%${term}%,address.ilike.%${term}%,npi.eq.${term}`);
-      else q = q.order("id");
+      else q = q.order("name");
       const spec = specialtyFilter.trim().replace(/[,()]/g, " ");
       if (spec) q = q.ilike("specialty", `%${spec}%`);
       const { data, error } = await q;
@@ -1300,6 +1350,29 @@ export default function AdminDashboard() {
 
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                aria-label="State"
+                value={filterState}
+                onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                {US_JURISDICTIONS.map((j) => (
+                  <option key={j.code} value={j.code}>{j.name}</option>
+                ))}
+              </select>
+              <select
+                aria-label="City"
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                {(cityOptions || []).map((c) => (
+                  <option key={c.city} value={c.city}>{c.city} ({c.n.toLocaleString("en-US")})</option>
+                ))}
+              </select>
+              <span className="text-xs text-muted-foreground">{cityTotal.toLocaleString("en-US")} offices in {filterCity || "—"}</span>
+            </div>
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
