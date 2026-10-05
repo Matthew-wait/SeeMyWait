@@ -731,6 +731,12 @@ export default function AdminDashboard() {
 
   const [filterState, setFilterState] = useState("FL");
   const [filterCity, setFilterCity] = useState("Miami");
+  const [stateText, setStateText] = useState("Florida");
+  const [cityText, setCityText] = useState("Miami");
+  useEffect(() => {
+    setStateText(US_JURISDICTIONS.find((j) => j.code === filterState)?.name ?? filterState);
+  }, [filterState]);
+  useEffect(() => { setCityText(filterCity); }, [filterCity]);
   const { data: cityOptions } = useQuery({
     queryKey: ["city-summary", filterState],
     queryFn: async () => {
@@ -1355,28 +1361,51 @@ export default function AdminDashboard() {
           {/* ── DOCTORS / CLINICS TAB ── */}
           <TabsContent value="clinics" className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <select
+              <input
+                list="admin-state-options"
                 aria-label="State"
-                value={filterState}
-                onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); setSpecialtyFilter(""); }}
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-              >
+                placeholder="Type a state…"
+                value={stateText}
+                onChange={(e) => {
+                  const typed = e.target.value;
+                  setStateText(typed);
+                  const match = US_JURISDICTIONS.find((j) => j.name.toLowerCase() === typed.trim().toLowerCase());
+                  if (match && match.code !== filterState) {
+                    setFilterState(match.code);
+                    setFilterCity("");
+                    setSpecialtyFilter("");
+                  }
+                }}
+                className="h-9 w-56 rounded-md border border-input bg-background px-2 text-sm"
+              />
+              <datalist id="admin-state-options">
                 {US_JURISDICTIONS.map((j) => (
-                  <option key={j.code} value={j.code}>{j.name}</option>
+                  <option key={j.code} value={j.name} />
                 ))}
-              </select>
-              <select
+              </datalist>
+              <input
+                list="admin-city-options"
                 aria-label="City"
-                value={filterCity}
-                onChange={(e) => setFilterCity(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-              >
+                placeholder="Type a city…"
+                value={cityText}
+                onChange={(e) => {
+                  const typed = e.target.value;
+                  setCityText(typed);
+                  const match = (cityOptions || []).find((c) => c.city.toLowerCase() === typed.trim().toLowerCase());
+                  if (match && match.city !== filterCity) setFilterCity(match.city);
+                }}
+                className="h-9 w-64 rounded-md border border-input bg-background px-2 text-sm"
+              />
+              <datalist id="admin-city-options">
                 {(cityOptions || []).map((c) => (
-                  <option key={c.city} value={c.city}>{c.city} ({c.n.toLocaleString("en-US")})</option>
+                  <option key={c.city} value={c.city}>{c.n.toLocaleString("en-US")} offices</option>
                 ))}
-              </select>
-              <span className="text-xs text-muted-foreground">{cityTotal.toLocaleString("en-US")} offices in {filterCity || "—"}</span>
+              </datalist>
             </div>
+            <h2 className="text-base font-semibold text-foreground">
+              {filterCity || "Select a city"}{" "}
+              <span className="font-normal text-muted-foreground">· {cityTotal.toLocaleString("en-US")} offices</span>
+            </h2>
             <div className="flex flex-wrap items-center gap-1">
               <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
               {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
