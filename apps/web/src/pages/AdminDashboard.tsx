@@ -1071,7 +1071,16 @@ export default function AdminDashboard() {
     });
   };
 
-  const totalClinics = clinics?.length || 0;
+  const { data: totalClinics } = useQuery({
+    queryKey: ["admin-clinic-total"],
+    queryFn: async () => {
+      // Planner estimate: an exact count scans all rows and times out at this size.
+      const { count, error } = await supabase.from("clinics").select("*", { count: "estimated", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+    staleTime: 60_000,
+  });
   const totalSuggestions = suggestions?.length || 0;
 
   const editFormData = editClinic
@@ -1125,7 +1134,7 @@ export default function AdminDashboard() {
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">{totalClinics}</p>
+            <p className="text-xl font-bold text-foreground sm:text-2xl">{(totalClinics ?? 0).toLocaleString("en-US")}</p>
             <p className="text-[9px] text-muted-foreground sm:text-[10px]">Doctor Offices</p>
           </CardContent>
         </Card>
