@@ -106,6 +106,7 @@ export type Database = {
           specialty: string | null
           state: string | null
           updated_at: string
+          npi_imported: boolean
         }
         Insert: {
           address: string
@@ -123,6 +124,7 @@ export type Database = {
           specialty?: string | null
           state?: string | null
           updated_at?: string
+          npi_imported?: boolean
         }
         Update: {
           address?: string
@@ -140,6 +142,7 @@ export type Database = {
           specialty?: string | null
           state?: string | null
           updated_at?: string
+          npi_imported?: boolean
         }
         Relationships: []
       }

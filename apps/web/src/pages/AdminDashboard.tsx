@@ -174,11 +174,14 @@ function ClinicFormDialog({
   initialData,
   prefill,
   isLoading,
+  readOnly = false,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (data: ClinicFormData) => void;
   initialData?: ClinicFormData;
+  /** NPI-imported rows: view only. */
+  readOnly?: boolean;
   /** Seeds a NEW office (create mode) with data from a map tap — coordinates included. */
   prefill?: ClinicFormData;
   isLoading: boolean;
@@ -310,11 +313,13 @@ function ClinicFormDialog({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md w-full mx-3">
         <DialogHeader>
-          <DialogTitle className="text-base">
-            {initialData ? "Edit Doctor Office" : "Add Doctor Office"}
+          <DialogTitle className="text-base flex items-center gap-2">
+            {readOnly ? "Doctor Office" : initialData ? "Edit Doctor Office" : "Add Doctor Office"}
+            {readOnly && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">NPI imported · view only</span>}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3 pt-1">
+          <fieldset disabled={readOnly} className="contents">
           <div className="space-y-1.5">
             <Label htmlFor="name" className="text-xs">Doctor Office Name *</Label>
             <Input id="name" value={form.name} onChange={set("name")} placeholder="e.g. Dr. Maria Santos" className="placeholder:text-muted-foreground/50" required />
@@ -377,13 +382,16 @@ function ClinicFormDialog({
               <Input id="longitude" value={form.longitude} onChange={set("longitude")} placeholder="e.g. -80.1918" className="placeholder:text-muted-foreground/50" />
             </div>
           </div>
+          </fieldset>
           <DialogFooter className="pt-2 gap-2">
             <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
-              Cancel
+              {readOnly ? "Close" : "Cancel"}
             </Button>
-            <Button type="submit" size="sm" disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (initialData ? "Save Changes" : "Add Doctor Office")}
-            </Button>
+            {!readOnly && (
+              <Button type="submit" size="sm" disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (initialData ? "Save Changes" : "Add Doctor Office")}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
@@ -525,7 +533,7 @@ function CsvUploadDialog({
           continue;
         }
 
-        const { error } = await supabase.from("clinics").insert({
+        const { error } = await supabase.from("clinics").insert({ npi_imported: false,
           name: name.trim(),
           address: address.trim(),
           phone: (r["phone"] || "").trim() || null,
@@ -1010,7 +1018,7 @@ export default function AdminDashboard() {
         form.latitude,
         form.longitude
       );
-      const { error } = await supabase.from("clinics").insert({
+      const { error } = await supabase.from("clinics").insert({ npi_imported: false,
         name: form.name.trim(),
         address: form.address.trim(),
         phone: form.phone.trim() || null,
@@ -1053,6 +1061,7 @@ export default function AdminDashboard() {
         form.latitude,
         form.longitude
       );
+      if ((editClinic as { npi_imported?: boolean | null } | null)?.npi_imported) throw new Error("NPI-imported offices are view only.");
       const { error } = await supabase.from("clinics").update({
         name: form.name.trim(),
         address: form.address.trim(),
@@ -1151,7 +1160,7 @@ export default function AdminDashboard() {
           typeof suggestion.latitude === "number" ? String(suggestion.latitude) : undefined,
           typeof suggestion.longitude === "number" ? String(suggestion.longitude) : undefined
         );
-        const { error: clinicError } = await supabase.from("clinics").insert({
+        const { error: clinicError } = await supabase.from("clinics").insert({ npi_imported: false,
           name,
           address,
           latitude: coords.latitude,
@@ -2015,6 +2024,7 @@ export default function AdminDashboard() {
         onSave={(form) => updateClinic.mutate({ id: editClinic!.id, form })}
         initialData={editFormData}
         isLoading={updateClinic.isPending}
+        readOnly={!!(editClinic as { npi_imported?: boolean | null } | null)?.npi_imported}
       />
 
       {/* ── DELETE Confirm Dialog ── */}
