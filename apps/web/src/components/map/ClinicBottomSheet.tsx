@@ -1,14 +1,14 @@
 import { useAppSettings } from "@/hooks/use-app-settings";
 import { REPORT_WAIT_GEOFENCE_METERS } from "@/lib/report-geofence";
 import { useState, useEffect } from "react";
-import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, ExternalLink } from "lucide-react";
+import { MapPin, Navigation, Loader2, X, Stethoscope, AlertTriangle, TimerOff, Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeCategory } from "@/lib/wait-time-utils";
 import { getCurrentPosition, getFreshPosition, isWithinRadius } from "@/lib/geolocation";
-import { directionsUrl, viewOnMapUrl } from "@/lib/medical-search";
+import { directionsUrl } from "@/lib/medical-search";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -34,11 +34,12 @@ type ReportEligibility =
 interface ClinicBottomSheetProps {
   clinic: ClinicWithWaitTime;
   onClose: () => void;
+  onViewOnMap?: (clinic: ClinicWithWaitTime) => void;
   onReported: () => void;
   cooldownMinutes?: number;
 }
 
-export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes = 60 }: ClinicBottomSheetProps) {
+export function ClinicBottomSheet({ clinic, onClose, onReported, onViewOnMap, cooldownMinutes = 60 }: ClinicBottomSheetProps) {
   const { data: appSettings } = useAppSettings();
   const geofenceM = appSettings?.report_geofence_meters ?? REPORT_WAIT_GEOFENCE_METERS;
   const [submitting, setSubmitting] = useState(false);
@@ -159,14 +160,6 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
   // Hand off to the external maps app — we never rebuild navigation in-app.
   const openDirections = () => {
     window.open(directionsUrl(clinic.latitude, clinic.longitude), "_blank", "noopener,noreferrer");
-  };
-
-  const openInGoogleMaps = () => {
-    window.open(
-      viewOnMapUrl(clinic.name, clinic.latitude, clinic.longitude),
-      "_blank",
-      "noopener,noreferrer"
-    );
   };
 
   const eligibilityMessage = (): string => {
@@ -311,18 +304,18 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, cooldownMinutes
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" onClick={openDirections} variant="outline" className="w-full gap-2 rounded-xl sm:flex-1">
-              <Navigation className="h-4 w-4" />
-              Get Directions
-            </Button>
             <Button
               type="button"
-              onClick={openInGoogleMaps}
-              variant="ghost"
-              className="w-full gap-2 rounded-xl text-muted-foreground sm:w-auto"
+              onClick={() => { onViewOnMap?.(clinic); onClose(); }}
+              variant="outline"
+              className="w-full gap-2 rounded-xl sm:flex-1"
             >
-              <ExternalLink className="h-4 w-4" />
-              View on Google Maps
+              <MapIcon className="h-4 w-4" />
+              View on map
+            </Button>
+            <Button type="button" onClick={openDirections} variant="ghost" className="w-full gap-2 rounded-xl text-muted-foreground sm:w-auto">
+              <Navigation className="h-4 w-4" />
+              Get Directions
             </Button>
           </div>
         </div>

@@ -102,6 +102,8 @@ interface MapViewProps {
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
   onEmptyClick: () => void;
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
+  /** Driving route from the user to a chosen office, drawn as a line. */
+  route?: { geometry: [number, number][]; miles: number; minutes: number } | null;
   nearbyRadiusMiles?: number;
   candidate?: CandidatePlace | null;
   /** A saved search result selected by the user. Always gets its own pin. */
@@ -120,6 +122,7 @@ function MapViewInner({
   onClinicClick,
   onEmptyClick,
   centerOn,
+  route = null,
   nearbyRadiusMiles = 100,
   candidate = null,
   focusedPlace = null,
@@ -258,6 +261,23 @@ function MapViewInner({
       interactive: false,
     }).addTo(layer);
   }, [userLocation, nearbyRadiusMiles, status]);
+
+  // Driving route to a chosen office.
+  const routeLayerRef = useRef<L.Polyline | null>(null);
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current) return;
+    const map = mapRef.current;
+    routeLayerRef.current?.remove();
+    routeLayerRef.current = null;
+    if (!route || route.geometry.length < 2) return;
+    routeLayerRef.current = L.polyline(route.geometry, {
+      color: "#0284c7",
+      weight: 5,
+      opacity: 0.85,
+      pane: "userLocationPane",
+    }).addTo(map);
+    map.fitBounds(routeLayerRef.current.getBounds(), { padding: [60, 60], maxZoom: 16 });
+  }, [route, status]);
 
   // Candidate pin (verify-before-save) — distinct blue, recenters onto it.
   useEffect(() => {

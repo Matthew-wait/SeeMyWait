@@ -31,6 +31,27 @@ const Index = () => {
   const [locating, setLocating] = useState(true);
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
+  /** Office the user asked to see on the map with a driving route from their location. */
+  const [routeTo, setRouteTo] = useState<ClinicWithWaitTime | null>(null);
+  const [route, setRoute] = useState<{ geometry: [number, number][]; miles: number; minutes: number } | null>(null);
+  useEffect(() => {
+    if (!routeTo || !userLocation) { setRoute(null); return; }
+    const controller = new AbortController();
+    const url = `https://router.project-osrm.org/route/v1/driving/${userLocation.lng},${userLocation.lat};${routeTo.longitude},${routeTo.latitude}?overview=full&geometries=geojson`;
+    fetch(url, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((json) => {
+        const r = json?.routes?.[0];
+        if (!r) { setRoute(null); return; }
+        setRoute({
+          geometry: r.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng] as [number, number]),
+          miles: r.distance / 1609.344,
+          minutes: r.duration / 60,
+        });
+      })
+      .catch(() => { if (!controller.signal.aborted) setRoute(null); });
+    return () => controller.abort();
+  }, [routeTo, userLocation]);
   const [focusedPlace, setFocusedPlace] = useState<{
     name: string;
     latitude: number;
@@ -395,6 +416,7 @@ const Index = () => {
             // mistaken for "add a new one" — clear the search first.
             onMapPointClick={isSearching ? undefined : handleMapPointClick}
             centerOn={centerOn}
+            route={route}
             candidate={
               candidate
                 ? {
@@ -451,12 +473,29 @@ const Index = () => {
             />
           )}
 
+          {routeTo && (
+            <div className="absolute left-3 right-3 top-3 z-[60] flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-card/95 px-3 py-2 shadow-lg backdrop-blur-xl">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{routeTo.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {route
+                    ? `${route.miles < 10 ? route.miles.toFixed(1) : Math.round(route.miles)} mi · about ${Math.max(1, Math.round(route.minutes))} min drive`
+                    : userLocation ? "Finding route…" : "Enable location to see the route"}
+                </p>
+              </div>
+              <button type="button" onClick={() => { setRouteTo(null); setRoute(null); }} className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/5">
+                Clear
+              </button>
+            </div>
+          )}
+
           {selectedClinic && (
             <ClinicBottomSheet
               clinic={selectedClinic}
               cooldownMinutes={reportCooldownMinutes}
               onClose={() => setSelectedClinic(null)}
               onReported={handleReported}
+              onViewOnMap={(c) => { setRouteTo(c); setCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 15 }); }}
             />
           )}
         </div>
