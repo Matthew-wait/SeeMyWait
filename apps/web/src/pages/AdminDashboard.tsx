@@ -1344,7 +1344,7 @@ export default function AdminDashboard() {
       <header className="sticky top-0 z-50 overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-10 pb-3 pt-2">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/80" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
-        <div className="relative z-10 mx-auto w-full max-w-[1440px] flex items-center justify-between">
+        <div className="relative z-10 w-full flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
               <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
