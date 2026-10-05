@@ -28,6 +28,13 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 3. Admin-added city: rebuild the city summary when a new city is saved (decide: nightly job or on save).
 4. Update the public site's map to match the admin behaviour where needed.
 
+## Next: iOS release (see docs/IOS-BUILD-AND-SUBMIT.md)
+
+- Build 11 (5.6) submitted to TestFlight. Test on a phone.
+- Fix duplicate React versions flagged by expo doctor.
+- Renew the distribution certificate before 2027-06-30.
+- Android build and Play Store upload: wait for go-ahead.
+
 ## Later (when time allows)
 
 - Fill the NPI gaps for every state, starting with Florida (about 37,600 checkpointed-but-missing offices need a checkpoint fix and a retry). Full per-state list, causes and steps: docs/NPI-GAP-LOG.md. Regenerate it with scripts/npi-gap-report.mjs after each run.
