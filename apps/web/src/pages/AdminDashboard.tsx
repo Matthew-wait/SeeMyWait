@@ -1668,6 +1668,7 @@ export default function AdminDashboard() {
             userLocation={adminLoc}
             centerOn={mapCenterOn}
             focusedPlace={mapFocus ? { name: mapFocus.name, latitude: mapFocus.latitude, longitude: mapFocus.longitude } : null}
+            focusedColor="#15803d"
             onClinicClick={(c) => {
               const row = (mapCityClinics || []).find((x) => x.id === c.id) ?? clinics?.find((x) => x.id === c.id);
               if (row) setEditClinic(row);

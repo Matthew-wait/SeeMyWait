@@ -108,6 +108,8 @@ interface MapViewProps {
   candidate?: CandidatePlace | null;
   /** A saved search result selected by the user. Always gets its own pin. */
   focusedPlace?: CandidatePlace | null;
+  /** Colour of the focused pin (defaults to the candidate blue). */
+  focusedColor?: string;
   /** A tapped empty point awaiting "Add here" — drops a pin + coordinate popup. */
   pendingPoint?: { lat: number; lng: number } | null;
   /** Inert on web (kept so callers don't need to change); see {@link PoiTap}. */
@@ -126,6 +128,7 @@ function MapViewInner({
   nearbyRadiusMiles = 100,
   candidate = null,
   focusedPlace = null,
+  focusedColor = CANDIDATE_COLOR,
   pendingPoint = null,
   onMapPointClick,
 }: MapViewProps) {
@@ -354,7 +357,7 @@ function MapViewInner({
     if (!focusedPlace || !hasValidCoords(focusedPlace.latitude, focusedPlace.longitude)) return;
 
     focusedMarkerRef.current = L.marker([focusedPlace.latitude, focusedPlace.longitude], {
-      icon: pinIcon(CANDIDATE_COLOR),
+      icon: pinIcon(focusedColor),
       title: focusedPlace.name,
       zIndexOffset: 1200,
       keyboard: false,
@@ -367,7 +370,7 @@ function MapViewInner({
         animate: false,
       });
     });
-  }, [focusedPlace, status]);
+  }, [focusedPlace, focusedColor, status]);
 
   const handleZoomIn = useCallback(() => {
     mapRef.current?.zoomIn();
