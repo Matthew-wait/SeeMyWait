@@ -1,34 +1,40 @@
 # Ongoing tasks (handoff)
 
-Status as of 2026-10-05. Local testing at http://127.0.0.1:8086 (admin at /admin).
-Git: local commits only, not pushed, unless the user says otherwise.
+Last updated 2026-10-05. Local dev server: http://127.0.0.1:8085 (admin at /admin).
+Git: work is committed locally. Nothing is pushed unless the user asks.
 
-## Done
-- City summary table (56 jurisdictions, 34,529 cities) + public read policy.
-- State and city dropdowns on the admin Doctors tab (default Florida / Miami), with office count.
-- Doctors list: 50 per page, "Load more", search by name, address, NPI, specialty text filter.
-- Specialty summary table (per state) + refresh function + public read policy (migration 20261005120000, local commit 6a6e845).
-- Office sheet (user site): "View on map" draws the driving route; "Get Directions" opens Google Maps from current location (local commit 91ceee1).
-- Admin layout: full width, capped at 1440px, 40px side padding (local commits 677f80c, d89af5b).
+## Decided
+- No city name clean-up. City dropdown shows stored names as separate entries.
 
-## Done (latest)
-- Specialty dropdown (top row) and A-Z letter filter on the Doctors tab (local commit 7bff780).
-- Admin add and edit forms: state and city dropdowns, with "+ Add new city" (local commit aad39e6).
-- Doctors and Map merged into one screen; map markers from the city, capped at 500; row click centres the map (local commits d5b39b6, e394107).
-- City clean-up proposal written for review, no data changed (docs/CITY-CLEANUP-PROPOSED.md, local commit ea00f8d).
-
-## In progress
-- Nothing in progress.
+## Done (committed locally, not pushed)
+- City and specialty summary tables, with public read policies.
+- Admin Doctors: state and city dropdowns (searchable, required), specialty, radius (empty by default, from admin location), A–Z filter, name/address/NPI search, List/Map toggle, Load 50 more (keeps rows, spinner and tick), map follows the listed rows with its own Load 50 more, hover popup on pins, view-on-map card.
+- Admin add/edit: state and city dropdowns, "add new city" option.
+- NPI-imported offices: `npi_imported` column (true for imported, false for admin-created), view-only edit with tag.
+- Admin layout: full-width header, 1440px content cap, tiles for total, state, city, pending, reports.
+- Admin login: landing logo, simplified full-width header.
+- Office sheet (public site): View on map (route), Get Directions.
 
 ## Waiting on the user
-1. Approve the city clean-up rule and the typo mappings (docs/CITY-CLEANUP-PROPOSED.md), then apply and rebuild the city summary.
-2. Index on (state, city, name): build when the NY import is finished (heavy build on the live database).
+- Confirm the admin login header looks right.
+- Confirm the imported-office view-only dialog and the Doctors/Map layout in a browser.
 
-## Notes
-- Newly added cities appear in the dropdown only after the city summary is rebuilt.
+## Next (web)
+1. Push local commits and deploy to Vercel with `npx vercel --prod --yes` (Git builds skip web changes).
+2. Index on (state, city, name): after the NY import finishes (heavy build on the live database).
+3. Admin-added city: rebuild the city summary when a new city is saved (decide: nightly job or on save).
+4. Update the public site's map to match the admin behaviour where needed.
+
+## Next (mobile)
+- Port to mobile: 50-per-batch nearby list, count, admin-set report radius and cooldown, map changes.
+- Store status: iOS submitted, processing. Android submitted, in review.
+
+## Data operations
+- NY import still running. Geo backfill incomplete, so some offices may not show on the map or in search. Check with the geog state verification file.
+- Duplicate-skip versus real-gap reconciliation: not finished. Retry pass for real gaps is planned.
 
 ## Known limits
 - Browsing order is by name within a city; search matches name, address, NPI, specialty.
-- Specialty is stored as free text (some values are comma-separated), so the dropdown matches the exact stored value.
-- OSRM public routing server is used for the route line; it has usage limits.
-- Public Supabase reads on the summary tables are allowed by policy; no sensitive data there.
+- Specialty is stored as free text, so the dropdown matches the exact stored value.
+- Route line uses OSRM's public server, which has usage limits.
+- Radius filter only applies to rows already loaded.
