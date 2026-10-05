@@ -1,5 +1,7 @@
 # Ongoing tasks (handoff)
 
+Required reading for new agents: docs/INDEXING-LOG.md (all indexes on the clinics table) and docs/MAP-AND-LISTING-RULES.md (map, listing and admin rules).
+
 Last updated 2026-10-05. Local dev server: http://127.0.0.1:8085 (admin at /admin).
 Git: work is committed locally. Nothing is pushed unless the user asks.
 
@@ -21,7 +23,7 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 
 ## Next (web)
 1. Push local commits and deploy to Vercel with `npx vercel --prod --yes` (Git builds skip web changes).
-2. Index on (state, city, name): after the NY import finishes (heavy build on the live database).
+2. Florida listing index built (see docs/INDEXING-LOG.md). Other states: index after the NY import and Geo backfill finish.
 3. Admin-added city: rebuild the city summary when a new city is saved (decide: nightly job or on save).
 4. Update the public site's map to match the admin behaviour where needed.
 
