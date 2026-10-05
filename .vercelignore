@@ -1,0 +1,23 @@
+# Keep Vercel CLI uploads small and free of local data/secrets. Patterns are
+# anchored to the repo root so nested folders (e.g. apps/web/src/integrations/supabase)
+# are never excluded. The web app only needs apps/web, packages/core, and root package files.
+/NPI_Data/
+/supabase/
+/scripts/
+/backups/
+/artifacts/
+/docs/
+/apps/mobile/
+/.vercel/
+/.git/
+/node_modules/
+/apps/*/node_modules/
+/packages/*/node_modules/
+/dist/
+/build/
+*.jsonl
+*.log
+*-service-account.json
+/.env
+/apps/*/.env
+/apps/*/.env.*
