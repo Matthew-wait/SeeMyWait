@@ -1470,10 +1470,11 @@ export default function AdminDashboard() {
                 onChange={setFilterCity}
               />
               </div>
-            </div>
-              <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
+              <div className="ml-auto">
+                <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
                 <button type="button" onClick={() => setDoctorsView("list")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>List</button>
                 <button type="button" onClick={() => setDoctorsView("map")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "map" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>Map</button>
+              </div>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1">
