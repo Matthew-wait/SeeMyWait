@@ -32,6 +32,8 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 
 - Fill the NPI gaps for every state, starting with Florida (about 37,600 checkpointed-but-missing offices need a checkpoint fix and a retry). Full per-state list, causes and steps: docs/NPI-GAP-LOG.md. Regenerate it with scripts/npi-gap-report.mjs after each run.
 
+- Data refresh and backup plan for the large database: the DB backup GitHub workflow (.github/workflows/db-backup.yml) is disabled. It timed out after 40 minutes at about 8.5 million rows. To do: rewrite it to run weekly or monthly, fix the timeout, then re-enable it with gh workflow enable "DB backup". Also review the nightly city count refresh (pg_cron, 03:15 UTC) once it has run.
+
 ## Next (mobile)
 - Port to mobile: 50-per-batch nearby list, count, admin-set report radius and cooldown, map changes.
 - Store status: iOS submitted, processing. Android submitted, in review.
