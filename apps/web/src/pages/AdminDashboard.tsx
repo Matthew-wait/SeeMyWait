@@ -774,6 +774,7 @@ export default function AdminDashboard() {
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+  const [mapFocus, setMapFocus] = useState<Clinic | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -1544,6 +1545,20 @@ export default function AdminDashboard() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 hover:bg-primary/10"
+                              disabled={!c.latitude || !c.longitude}
+                              onClick={() => {
+                                setMapFocus(c);
+                                setMapCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 17 });
+                                setActiveTab("map");
+                              }}
+                              title="View on map"
+                            >
+                              <MapPin className="h-3.5 w-3.5 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-primary/10"
                               onClick={() => setEditClinic(c)}
                               title="Edit"
                             >
@@ -1632,6 +1647,22 @@ export default function AdminDashboard() {
 
         {/* Map */}
         <div className="relative h-[58vh] overflow-hidden rounded-xl border border-border/50">
+          {mapFocus && (
+            <div className="absolute left-3 top-3 z-[70] w-72 rounded-xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">{mapFocus.name}</p>
+                <button type="button" onClick={() => setMapFocus(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{mapFocus.address}</p>
+              {mapFocus.specialty && <p className="mt-1 text-xs"><span className="text-muted-foreground">Specialty: </span>{mapFocus.specialty}</p>}
+              {mapFocus.phone && <p className="text-xs"><span className="text-muted-foreground">Phone: </span>{mapFocus.phone}</p>}
+              {(mapFocus as { npi?: string | null }).npi && <p className="text-xs"><span className="text-muted-foreground">NPI: </span>{(mapFocus as { npi?: string | null }).npi}</p>}
+              <p className="text-xs text-muted-foreground">{mapFocus.latitude.toFixed(5)}, {mapFocus.longitude.toFixed(5)}</p>
+              <div className="mt-2 flex justify-end">
+                <Button size="sm" variant="outline" onClick={() => setEditClinic(mapFocus)}>Edit</Button>
+              </div>
+            </div>
+          )}
           <MapView
             clinics={mapClinics}
             userLocation={adminLoc}
