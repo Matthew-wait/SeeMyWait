@@ -6,6 +6,7 @@ Last updated 2026-10-05. Local dev server: http://127.0.0.1:8085 (admin at /admi
 Git: work is committed locally. Nothing is pushed unless the user asks.
 
 ## Decided
+- Admin city dropdown counts refresh nightly at 03:15 UTC (pg_cron job refresh-clinic-city-summary, migration 20261005140000). A city added today appears after the next run.
 - No city name clean-up. City dropdown shows stored names as separate entries.
 
 ## Done (committed locally, not pushed)
