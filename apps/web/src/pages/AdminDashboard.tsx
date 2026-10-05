@@ -785,8 +785,8 @@ export default function AdminDashboard() {
     checkAuth();
   }, [navigate]);
 
-  const [filterState, setFilterState] = useState("");
-  const [filterCity, setFilterCity] = useState("");
+  const [filterState, setFilterState] = useState("FL");
+  const [filterCity, setFilterCity] = useState("Miami");
 
   const { data: cityOptions } = useQuery({
     queryKey: ["city-summary", filterState],
@@ -1412,7 +1412,7 @@ export default function AdminDashboard() {
           <TabsContent value="clinics" className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">State <span className="text-destructive">*</span></span>
+                <span className="text-xs font-medium text-muted-foreground">Choose State <span className="text-destructive">*</span></span>
               <SearchableSelect
                 ariaLabel="State"
                 placeholder="Choose a state"
@@ -1423,7 +1423,7 @@ export default function AdminDashboard() {
               />
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">City <span className="text-destructive">*</span></span>
+                <span className="text-xs font-medium text-muted-foreground">Choose City <span className="text-destructive">*</span></span>
               <SearchableSelect
                 ariaLabel="City"
                 placeholder={filterState ? "Choose a city" : "Choose a state first"}
