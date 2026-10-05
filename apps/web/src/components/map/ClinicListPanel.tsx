@@ -50,7 +50,7 @@ interface ClinicListPanelProps {
 }
 
 const INITIAL_COUNT = 50;
-const LIST_BATCH = 1000;
+const LIST_BATCH = 50;
 
 /** Shared "why is the list limited" note for the default (non-search) browse view. */
 function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
@@ -343,7 +343,7 @@ export function ClinicListPanel({
           <div className="pt-1 pb-1 text-center">
             <button type="button" disabled={isLoadingMore} onClick={() => { setListCap((c) => c + LIST_BATCH); if (hasMore) onLoadMore?.(); }}
               className="h-7 px-3 rounded-lg text-[11px] font-semibold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50">
-              {isLoadingMore ? "Loading…" : "Load more (next 1,000)"}
+              {isLoadingMore ? "Loading…" : "Load more (next 50)"}
             </button>
           </div>
         )}
