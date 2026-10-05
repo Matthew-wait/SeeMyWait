@@ -1159,7 +1159,7 @@ export default function AdminDashboard() {
       <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-10 pb-5 pt-4">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/80" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
-        <div className="relative z-10 w-full flex items-center justify-between">
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
               <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
@@ -1189,7 +1189,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Stats */}
-      <div className="w-full grid grid-cols-3 gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3">
+      <div className="mx-auto w-full max-w-[1440px] grid grid-cols-3 gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3">
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
             <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
@@ -1213,7 +1213,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <main className="w-full px-10 pb-8 animate-in fade-in duration-500">
+      <main className="mx-auto w-full max-w-[1440px] px-10 pb-8 animate-in fade-in duration-500">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-4">
             <TabsList className="grid w-full grid-cols-4 gap-1 p-1 sm:grid-cols-5 bg-primary/15">
