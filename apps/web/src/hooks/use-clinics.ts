@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,7 +159,13 @@ export function useNearbyClinicsProgressive(
     refetchOnWindowFocus: false,
     retry: 2,
   });
-  const { fetchNextPage, hasNextPage, isError } = nearby;
+  const { fetchNextPage, hasNextPage, isError, isFetchingNextPage } = nearby;
+  // The map needs every office in the radius, so pull the remaining batches in
+  // the background (capped as a safety net). The list caps what it displays.
+  const loadedPages = nearby.data?.pages.length ?? 0;
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage && !isError && loadedPages < 30) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, isError, loadedPages, fetchNextPage]);
 
   const reports = useQuery({
     queryKey: ["nearby-wait-reports", reportExpiryMinutes],
