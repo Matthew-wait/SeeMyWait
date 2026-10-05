@@ -1494,7 +1494,7 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
                 {clinicsHasMore && (
-                  <div className="flex justify-center p-2">
+                  <div className="sticky bottom-0 flex justify-center border-t border-border/50 bg-card/95 p-2 backdrop-blur-sm">
                     <Button variant="outline" size="sm" onClick={() => setClinicsLimit((n) => n + 50)}>
                       Load 50 more
                     </Button>
