@@ -1383,7 +1383,7 @@ export default function AdminDashboard() {
                 <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
               ))}
             </div>
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-stretch">
             <div className="space-y-3 min-w-0">
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
@@ -1510,7 +1510,7 @@ export default function AdminDashboard() {
               </div>
             )}
             </div>
-            <div className="space-y-3 min-w-0">
+            <div className="space-y-3 min-w-0 lg:flex lg:flex-col">
 
         <div className="rounded-xl border border-border/40 bg-card p-3">
           <p className="text-xs text-muted-foreground">
@@ -1549,7 +1549,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Map */}
-        <div className="relative h-[320px] overflow-hidden rounded-xl border border-border/50">
+        <div className="relative h-[320px] lg:h-auto lg:min-h-[320px] lg:flex-1 overflow-hidden rounded-xl border border-border/50">
           <MapView
             clinics={mapClinics}
             userLocation={adminLoc}
