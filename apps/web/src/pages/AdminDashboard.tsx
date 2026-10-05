@@ -1667,6 +1667,7 @@ export default function AdminDashboard() {
             clinics={mapClinics}
             userLocation={adminLoc}
             centerOn={mapCenterOn}
+            focusedPlace={mapFocus ? { name: mapFocus.name, latitude: mapFocus.latitude, longitude: mapFocus.longitude } : null}
             onClinicClick={(c) => {
               const row = (mapCityClinics || []).find((x) => x.id === c.id) ?? clinics?.find((x) => x.id === c.id);
               if (row) setEditClinic(row);
