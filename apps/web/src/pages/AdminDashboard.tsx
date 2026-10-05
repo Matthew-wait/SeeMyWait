@@ -1471,7 +1471,6 @@ export default function AdminDashboard() {
               />
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
                 <button type="button" onClick={() => setDoctorsView("list")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>List</button>
                 <button type="button" onClick={() => setDoctorsView("map")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "map" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>Map</button>
