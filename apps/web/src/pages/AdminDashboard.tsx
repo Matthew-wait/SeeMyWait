@@ -1463,7 +1463,7 @@ export default function AdminDashboard() {
                 <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
               ))}
             </div>
-            <div ref={splitRef} style={{ height: splitHeight }} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-stretch">
+            <div ref={splitRef} style={{ height: splitHeight }} className="grid gap-3">
             <div className="space-y-3 min-w-0 lg:flex lg:min-h-0 lg:flex-col">
             <div className="flex flex-wrap gap-2">
               <div className="relative flex-1">
