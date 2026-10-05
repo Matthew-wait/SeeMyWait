@@ -34,6 +34,7 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 ## Data operations
 - NY import still running. Geo backfill incomplete, so some offices may not show on the map or in search. Check with the geog state verification file.
 - Duplicate-skip versus real-gap reconciliation: not finished. Retry pass for real gaps is planned.
+- Gap to fill later: docs/NPI-GAP-LOG.md lists every state (staged vs live, checkpointed vs not run) and how to fill each gap. Regenerate with scripts/npi-gap-report.mjs after each import run. Florida: 63,292 gap, of which about 37,600 need a checkpoint fix and retry.
 
 ## Known limits
 - Browsing order is by name within a city; search matches name, address, NPI, specialty.
