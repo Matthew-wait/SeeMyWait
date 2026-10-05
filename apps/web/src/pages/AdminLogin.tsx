@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Shield } from "lucide-react";
+import { ArrowLeft, Clock, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminLogin() {
@@ -49,23 +49,29 @@ export default function AdminLogin() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="relative overflow-hidden bg-primary px-4 pb-5 pt-4">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/70" />
-        <div className="relative z-10">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="mb-2 text-primary-foreground hover:bg-primary-foreground/10">
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-4 pb-4 pt-3">
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-foreground/[0.07] blur-2xl" />
+        <div className="relative z-10 mx-auto flex max-w-md items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold text-primary-foreground">Admin Login</h1>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-sm font-bold tracking-tight text-primary-foreground">SeeMyWait</span>
+            <span className="ml-1 text-xs text-primary-foreground/70">Admin</span>
+          </div>
         </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
-        <Card className="w-full max-w-sm border-border/50">
+      <main className="flex flex-1 items-center justify-center bg-gradient-to-b from-primary/5 to-background px-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+        <Card className="w-full max-w-sm border-border/50 shadow-xl shadow-primary/5">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Shield className="h-6 w-6 text-primary" />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
+              <Shield className="h-7 w-7 text-white" />
             </div>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle className="text-xl">Sign In</CardTitle>
             <CardDescription>Access the admin dashboard</CardDescription>
           </CardHeader>
           <CardContent>
