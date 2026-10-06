@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,46 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Set when the page is opened from a password-reset or invitation link.
+  const [settingPassword, setSettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    const fromLink = /type=(recovery|invite)/.test(window.location.hash);
+    if (fromLink) setSettingPassword(true);
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setSettingPassword(true);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      toast.error("Use at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("The passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      await supabase.auth.signOut();
+      window.history.replaceState(null, "", window.location.pathname);
+      setSettingPassword(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success("Password saved. Sign in with your new password.");
+    } catch (err: unknown) {
+      toast.error((err instanceof Error && err.message) || "Could not save the password.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,10 +107,26 @@ export default function AdminLogin() {
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
               <Shield className="h-7 w-7 text-white" />
             </div>
-            <CardTitle className="text-xl">Sign In</CardTitle>
-            <CardDescription>Access the admin dashboard</CardDescription>
+            <CardTitle className="text-xl">{settingPassword ? "Set your password" : "Sign In"}</CardTitle>
+            <CardDescription>{settingPassword ? "Choose a password for the admin account" : "Access the admin dashboard"}</CardDescription>
           </CardHeader>
           <CardContent>
+            {settingPassword ? (
+            <form onSubmit={handleSetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New password</Label>
+                <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm password</Label>
+                <Input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save password
+              </Button>
+            </form>
+            ) : (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -85,6 +141,7 @@ export default function AdminLogin() {
                 Sign In
               </Button>
             </form>
+            )}
           </CardContent>
         </Card>
       </main>
