@@ -515,3 +515,14 @@ Live database totals at 2026-10-06 17:37Z (22:37 PKT):
 | Invalid non-null coordinates (reported separately) | 0 |
 
 Time to completion: not computable while stopped. Completion is not claimed.
+
+## Status update: 2026-10-06 22:41 PKT (UTC+05:00): runner resumed
+
+Runner: PID 13228 restarted at about 17:40Z (22:40 PKT) from the saved MA cursor, at 300-row batch start, under standing approval for restarts on update requests. Committing at 17:41:25Z (22:41 PKT): MA at 235,250 state rows. A 21-second batch appeared at 17:41:16Z before settling.
+
+Leftover check before start: no active clinics sessions.
+
+States done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+Live totals: last verified at 17:37Z (22:37 PKT): done 6,814,330; remaining 1,704,914 with a state, plus 19 with no state; missing coordinates 0; invalid coordinates 0. These will be refreshed at the next live count.
+
+Completion is not claimed.
