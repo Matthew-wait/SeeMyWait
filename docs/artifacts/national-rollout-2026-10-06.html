@@ -1,0 +1,456 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>National Rollout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f7f4; --surface:#ffffff; --surface-2:#edf1ec;
+    --ink:#14211c; --muted:#57685f; --border:#d9e2d8;
+    --accent:#0e7a54; --accent-ink:#ffffff;
+    --good:#1f8a4c; --good-bg:#e4f5e9;
+    --warn:#b3760a; --warn-bg:#fbf0da;
+    --critical:#c23b2e; --critical-bg:#fbe7e4;
+    --prog:#0d6e9c; --prog-bg:#e2f0f7;
+    --shadow:0 1px 2px rgba(20,33,28,.04), 0 8px 24px -12px rgba(20,33,28,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b120e; --surface:#121c16; --surface-2:#182420;
+      --ink:#e6efe9; --muted:#8fa89b; --border:#233129;
+      --accent:#2fbd8a; --accent-ink:#04211a;
+      --good:#4cc484; --good-bg:#12281d;
+      --warn:#e0a83f; --warn-bg:#2b2312;
+      --critical:#ef6b5c; --critical-bg:#2d1614;
+      --prog:#4db8e8; --prog-bg:#12262f;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b120e; --surface:#121c16; --surface-2:#182420;
+    --ink:#e6efe9; --muted:#8fa89b; --border:#233129;
+    --accent:#2fbd8a; --accent-ink:#04211a;
+    --good:#4cc484; --good-bg:#12281d;
+    --warn:#e0a83f; --warn-bg:#2b2312;
+    --critical:#ef6b5c; --critical-bg:#2d1614;
+    --prog:#4db8e8; --prog-bg:#12262f;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    padding-inline:20px; padding-block:32px 64px;
+    display:flex; justify-content:center;
+  }
+  main{width:100%; max-width:980px;}
+  code,.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;}
+  .tab{font-variant-numeric:tabular-nums;}
+
+  header.page{margin-bottom:30px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--accent);
+    display:flex; align-items:center; gap:8px; margin-bottom:10px;
+  }
+  .eyebrow::before{content:"●"; font-size:9px;}
+  h1{font-size:clamp(26px,4vw,34px); line-height:1.15; margin:0 0 8px; text-wrap:balance; letter-spacing:-.01em;}
+  .sub{color:var(--muted); font-size:15px; max-width:60ch; line-height:1.55; margin:0;}
+
+  section.block{margin-bottom:36px;}
+  .block-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .block-head h2{font-size:13px; text-transform:uppercase; letter-spacing:.07em; margin:0; color:var(--muted); font-weight:600;}
+  .block-head .note{font-size:12px; color:var(--muted);}
+
+  /* --- call summary checklist --- */
+  .task-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  @media (max-width:640px){ .task-grid{grid-template-columns:1fr;} }
+  .task{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); padding:14px 16px; display:flex; gap:12px;
+  }
+  .task-stripe{width:4px; border-radius:3px; flex-shrink:0; align-self:stretch;}
+  .task-stripe.good{background:var(--good);}
+  .task-stripe.prog{background:var(--prog);}
+  .task-stripe.warn{background:var(--warn);}
+  .task-body{flex:1; min-width:0;}
+  .task-top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:5px;}
+  .task-title{font-weight:600; font-size:14px; line-height:1.4;}
+  .pill{
+    font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.04em; text-transform:uppercase;
+    padding:3px 7px; border-radius:999px; white-space:nowrap; flex-shrink:0; font-weight:600;
+  }
+  .pill.good{background:var(--good-bg); color:var(--good);}
+  .pill.prog{background:var(--prog-bg); color:var(--prog);}
+  .pill.warn{background:var(--warn-bg); color:var(--warn);}
+  .task p{margin:0; color:var(--muted); font-size:12.8px; line-height:1.55;}
+  .task p code{background:var(--surface-2); padding:1px 5px; border-radius:4px; font-size:.92em; color:var(--ink);}
+
+  /* --- hero stats --- */
+  .stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+    background:var(--border); border:1px solid var(--border); border-radius:12px;
+    overflow:hidden; margin-bottom:16px; box-shadow:var(--shadow);
+  }
+  @media (max-width:640px){ .stats{grid-template-columns:repeat(2,1fr);} }
+  .stat{background:var(--surface); padding:16px 14px; display:flex; flex-direction:column; gap:4px;}
+  .stat .n{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:21px; font-weight:600; line-height:1;}
+  .stat .n.accent{color:var(--accent);}
+  .stat .l{font-size:11px; color:var(--muted); letter-spacing:.03em; text-transform:uppercase;}
+
+  .bigbar{height:10px; border-radius:6px; background:var(--surface-2); overflow:hidden; margin-bottom:24px; border:1px solid var(--border);}
+  .bigbar-fill{height:100%; background:linear-gradient(90deg, var(--accent), var(--prog)); border-radius:6px 0 0 6px;}
+
+  /* --- state table --- */
+  .search{
+    width:100%; padding:10px 14px; border-radius:10px; border:1px solid var(--border);
+    background:var(--surface); color:var(--ink); font-size:14px; margin-bottom:12px;
+    font-family:inherit;
+  }
+  .search::placeholder{color:var(--muted);}
+  .legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+  .legend-item{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted);}
+  .status-group{margin-bottom:22px;}
+  .status-group:last-child{margin-bottom:0;}
+  .status-head{
+    display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;
+    color:var(--ink); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;
+  }
+  .status-sub{font-family:'IBM Plex Mono',monospace; font-weight:500; text-transform:none; letter-spacing:0; color:var(--muted);}
+  .status-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .status-dot.good{background:var(--good);}
+  .status-dot.prog{background:var(--prog);}
+  .status-dot.warn{background:var(--muted);}
+  .machine-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .machine-dot.m1{background:var(--accent);}
+  .machine-dot.m2{background:var(--prog);}
+  .machine-dot.m3{background:var(--warn);}
+  .machine-dot.m0{background:var(--muted);}
+  .state-list{display:flex; flex-direction:column; gap:8px;}
+  .state-list:empty::after{content:"Nothing in this group."; font-size:12px; color:var(--muted); font-style:italic;}
+  .state-row{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .state-head{
+    display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; user-select:none;
+  }
+  .state-rank{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); width:22px; flex-shrink:0;}
+  .state-code{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--accent);
+    background:var(--good-bg); border-radius:6px; padding:3px 6px; flex-shrink:0; width:34px; text-align:center;
+  }
+  .state-name{font-weight:600; font-size:14px; flex-shrink:0; width:150px;}
+  @media (max-width:640px){ .state-name{width:auto; flex:1;} }
+  .state-bar-wrap{flex:1; min-width:60px; display:flex; align-items:center; gap:10px;}
+  .state-bar{flex:1; height:7px; border-radius:5px; background:var(--surface-2); overflow:hidden;}
+  .state-bar-fill{height:100%; background:var(--prog); border-radius:5px;}
+  .state-nums{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted);
+    white-space:nowrap; flex-shrink:0; text-align:right; width:150px;
+  }
+  @media (max-width:640px){ .state-bar-wrap{display:none;} .state-nums{width:auto;} }
+  .state-nums b{color:var(--ink); font-weight:600;}
+  .chev{color:var(--muted); flex-shrink:0; transition:transform .15s; font-size:11px;}
+  .state-row.open .chev{transform:rotate(90deg);}
+  .city-panel{display:none; padding:4px 14px 14px 14px; border-top:1px solid var(--border);}
+  .state-row.open .city-panel{display:block;}
+  .city-panel-inner{padding-top:10px;}
+  .city-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px 16px;}
+  @media (max-width:640px){ .city-grid{grid-template-columns:1fr;} }
+  .city-item{display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:12.5px; padding:3px 0; border-bottom:1px dashed var(--border);}
+  .city-item .city-n{font-family:'IBM Plex Mono',monospace; color:var(--muted); flex-shrink:0;}
+  .city-note{font-size:11px; color:var(--muted); margin-top:8px;}
+
+  footer.note{
+    margin-top:32px; padding-top:18px; border-top:1px solid var(--border);
+    font-size:12px; color:var(--muted); line-height:1.65;
+  }
+  footer.note b{color:var(--ink);}
+</style>
+
+<main>
+  <header class="page">
+    <div class="eyebrow">SeeMyWait &middot; project status</div>
+    <h1>National rollout</h1>
+    <p class="sub">Snapshot from today's call, plus live progress on pulling the full NPI Registry nationwide &mdash; by state, and by city inside each state.</p>
+  </header>
+
+  <section class="block">
+    <div class="block-head"><h2>From today's call</h2></div>
+    <div class="task-grid">
+      <div class="task">
+        <div class="task-stripe prog"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">Nationwide coverage</div><span class="pill prog">In progress</span></div>
+          <p>Expanding from 7 seeded states/metros to the entire United States. Florida is being imported first; see the full breakdown below.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe good"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">Database upgraded to paid tier</div><span class="pill good">Done</span></div>
+          <p>Supabase on a $25/month recurring plan &mdash; storage and compute headroom confirmed sufficient for the full national dataset.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe prog"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">Fetching NPI Registry data nationally</div><span class="pill prog">In progress</span></div>
+          <p>Full national file staged (<span class="mono" id="hdrTarget">&mdash;</span> active US records). Geocoding + import running state by state &mdash; live progress below.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe good"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">Map view</div><span class="pill good">Done</span></div>
+          <p>Tested and confirmed working by Matthew.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe good"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">Google Maps redirect for directions</div><span class="pill good">Done</span></div>
+          <p>Confirmed in code &mdash; "Get Directions" opens Google Maps with the office's exact coordinates.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe good"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">25-mile default search radius</div><span class="pill good">Done</span></div>
+          <p>Shows offices within 25 miles of the user's location by default. Adjustable anytime from the admin Settings tab, no code change needed.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe good"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">1000m radius to report wait time</div><span class="pill good">Done</span></div>
+          <p>Confirmed as the intended value. A user must be within 1000 meters of a doctor office to submit a delay report &mdash; enforced consistently everywhere this is checked.</p>
+        </div>
+      </div>
+      <div class="task">
+        <div class="task-stripe warn"></div>
+        <div class="task-body">
+          <div class="task-top"><div class="task-title">Mobile app &mdash; builds &amp; TestFlight</div><span class="pill good">Done</span></div>
+          <p>iOS build 12 submitted to TestFlight for testing. Android build ready. Store publishing follows after testing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>NPI registry &mdash; national coverage</h2>
+      <span class="note" id="asOf"></span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n tab" id="statTarget">&mdash;</div><div class="l">Active US records found</div></div>
+      <div class="stat"><div class="n tab accent" id="statCurrent">&mdash;</div><div class="l">Live in database now</div></div>
+      <div class="stat"><div class="n tab" id="statPct">&mdash;</div><div class="l">National complete</div></div>
+      <div class="stat"><div class="n tab" id="statStates">&mdash;</div><div class="l">States with data live</div></div>
+    </div>
+    <div class="bigbar"><div class="bigbar-fill" id="bigBarFill" style="width:0%"></div></div>
+
+    <input class="search" id="search" type="text" placeholder="Search a state or a city (e.g. &quot;Texas&quot; or &quot;Austin&quot;)&hellip;">
+
+    <div class="legend">
+      <span class="legend-item"><span class="machine-dot m1"></span>Machine 1</span>
+      <span class="legend-item"><span class="machine-dot m2"></span>Machine 2</span>
+      <span class="legend-item"><span class="machine-dot m3"></span>Machine 3 / Intern &amp; cloud workers</span>
+      <span class="legend-item"><span class="machine-dot m0"></span>Unassigned</span>
+    </div>
+
+    <div class="status-group">
+      <div class="status-head"><span class="status-dot warn"></span>Not started <span class="status-sub" id="notSub"></span></div>
+      <div class="state-list" id="stateListNot"></div>
+    </div>
+    <div class="status-group">
+      <div class="status-head"><span class="status-dot prog"></span>In progress <span class="status-sub" id="progSub"></span></div>
+      <div class="state-list" id="stateListProg"></div>
+    </div>
+    <div class="status-group">
+      <div class="status-head"><span class="status-dot good"></span>Completed <span class="status-sub" id="doneSub"></span></div>
+      <div class="state-list" id="stateListDone"></div>
+    </div>
+  </section>
+
+
+  <section class="block" id="report">
+    <div class="block-head"><h2>Full report by state</h2><span class="note">Remaining = staged minus live. Duplicates are skipped by design.</span></div>
+    <div class="stats">
+      <div class="stat"><div class="n tab" id="rpStaged">&mdash;</div><div class="l">Staged records</div></div>
+      <div class="stat"><div class="n tab accent" id="rpLive">&mdash;</div><div class="l">Live</div></div>
+      <div class="stat"><div class="n tab" id="rpRemaining">&mdash;</div><div class="l">Remaining to import</div></div>
+      <div class="stat"><div class="n tab" id="rpDup">&mdash;</div><div class="l">Skipped duplicates (measured)</div></div>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+        <th style="padding:8px">State</th><th style="padding:8px;text-align:right">Staged</th><th style="padding:8px;text-align:right">Live</th><th style="padding:8px;text-align:right">Remaining</th><th style="padding:8px;text-align:right">Skipped duplicates</th>
+      </tr></thead>
+      <tbody id="rpBody"></tbody>
+    </table>
+    </div>
+    <p class="city-note" style="margin-top:10px">Skipped duplicates are offices already in the database under the same name and address, so they are correct to skip. Only Florida has been measured exactly so far (5,247). Other states show &ldquo;not measured&rdquo; until the same check is run.</p>
+  </section>
+
+  <footer class="note">
+    <b>Method:</b> the full CMS NPPES national file (~9.8M records) was pulled directly rather than the live lookup API, which caps at 1,200 results per query. Each state is geocoded in batches via the Census geocoder and imported by NPI, so re-running is always safe and never creates duplicates. Counts above are pulled live from the database at page-build time, not simulated. City lists are the top 15 by volume in each state &mdash; most states have several hundred more cities represented beyond what's shown here.
+  </footer>
+</main>
+
+<script>
+(function(){
+    var DATA = [{"code":"CA","name":"California","target":1185337,"current":1104101,"remaining":81236,"duplicates":null,"cities":[{"city":"Los Angeles","n":78971},{"city":"San Diego","n":57208},{"city":"San Francisco","n":40925},{"city":"Sacramento","n":35976},{"city":"San Jose","n":24279},{"city":"Fresno","n":21586},{"city":"Oakland","n":19953},{"city":"Monrovia","n":17742},{"city":"Riverside","n":15980},{"city":"Long Beach","n":15536},{"city":"Orange","n":14553},{"city":"Bakersfield","n":14046},{"city":"Pasadena","n":11906},{"city":"Stockton","n":10724},{"city":"Torrance","n":10719}]},{"code":"NY","name":"New York","target":656683,"current":613942,"remaining":42741,"duplicates":null,"cities":[{"city":"New York","n":111641},{"city":"Brooklyn","n":77062},{"city":"Bronx","n":36660},{"city":"Rochester","n":21695},{"city":"Staten Island","n":14763},{"city":"Buffalo","n":14080},{"city":"Syracuse","n":10597},{"city":"Albany","n":8901},{"city":"Flushing","n":8525},{"city":"Jamaica","n":5545},{"city":"New Hyde Park","n":4716},{"city":"White Plains","n":4674},{"city":"Forest Hills","n":4611},{"city":"Yonkers","n":4366},{"city":"Poughkeepsie","n":4202}]},{"code":"FL","name":"Florida","target":652949,"current":589657,"remaining":63292,"duplicates":5247,"cities":[{"city":"Miami","n":63164},{"city":"Tampa","n":31221},{"city":"Orlando","n":30667},{"city":"Jacksonville","n":29301},{"city":"Hialeah","n":13401},{"city":"Gainesville","n":12675},{"city":"West Palm Beach","n":9711},{"city":"Fort Myers","n":9651},{"city":"Boca Raton","n":8907},{"city":"Sarasota","n":8595},{"city":"Tallahassee","n":7944},{"city":"St Petersburg","n":7782},{"city":"Pensacola","n":7682},{"city":"Naples","n":7106},{"city":"Fort Lauderdale","n":6931}]},{"code":"TX","name":"Texas","target":607442,"current":542173,"remaining":65269,"duplicates":null,"cities":[{"city":"Houston","n":81674},{"city":"Dallas","n":44241},{"city":"San Antonio","n":43096},{"city":"Austin","n":31892},{"city":"Fort Worth","n":18974},{"city":"El Paso","n":13869},{"city":"Plano","n":10313},{"city":"Arlington","n":7444},{"city":"Lubbock","n":6788},{"city":"Katy","n":6734},{"city":"Corpus Christi","n":6072},{"city":"Tyler","n":5887},{"city":"Frisco","n":5279},{"city":"Spring","n":5058},{"city":"Mcallen","n":4939}]},{"code":"OH","name":"Ohio","target":407380,"current":375850,"remaining":31530,"duplicates":null,"cities":[{"city":"Columbus","n":42371},{"city":"Cincinnati","n":34391},{"city":"Cleveland","n":33418},{"city":"Toledo","n":15830},{"city":"Dayton","n":13696},{"city":"Akron","n":10645},{"city":"Canton","n":6806},{"city":"Youngstown","n":5780},{"city":"Dublin","n":5224},{"city":"Westerville","n":3794},{"city":"Beachwood","n":3134},{"city":"Lima","n":3131},{"city":"Chillicothe","n":3103},{"city":"Mansfield","n":2857},{"city":"Hamilton","n":2824}]},{"code":"MI","name":"Michigan","target":357320,"current":333437,"remaining":23883,"duplicates":null,"cities":[{"city":"Farmington Hills","n":37227},{"city":"Detroit","n":23789},{"city":"Grand Rapids","n":20094},{"city":"Ann Arbor","n":16262},{"city":"Novi","n":8309},{"city":"Southfield","n":7920},{"city":"Kalamazoo","n":7486},{"city":"Flint","n":7291},{"city":"Dearborn","n":6842},{"city":"Saginaw","n":6664},{"city":"Lansing","n":6004},{"city":"Livonia","n":5603},{"city":"Troy","n":4790},{"city":"Royal Oak","n":4206},{"city":"Traverse City","n":3997}]},{"code":"PA","name":"Pennsylvania","target":335762,"current":301390,"remaining":34372,"duplicates":null,"cities":[{"city":"Philadelphia","n":49111},{"city":"Pittsburgh","n":29719},{"city":"Allentown","n":7045},{"city":"Lancaster","n":6440},{"city":"Erie","n":6042},{"city":"Bethlehem","n":5529},{"city":"Plymouth Meeting","n":5168},{"city":"York","n":5096},{"city":"Harrisburg","n":4806},{"city":"West Chester","n":3316},{"city":"Danville","n":3156},{"city":"Scranton","n":3047},{"city":"Wilkes Barre","n":2588},{"city":"Camp Hill","n":2528},{"city":"Pottstown","n":2359}]},{"code":"IL","name":"Illinois","target":318439,"current":292084,"remaining":26355,"duplicates":null,"cities":[{"city":"Chicago","n":75363},{"city":"Naperville","n":5627},{"city":"Springfield","n":5495},{"city":"Peoria","n":5192},{"city":"Rockford","n":4739},{"city":"Evanston","n":4614},{"city":"Aurora","n":3978},{"city":"Arlington Heights","n":3385},{"city":"Oak Lawn","n":3322},{"city":"Skokie","n":3006},{"city":"Oak Park","n":2876},{"city":"Champaign","n":2831},{"city":"Elgin","n":2795},{"city":"Joliet","n":2739},{"city":"Northbrook","n":2692}]},{"code":"NC","name":"North Carolina","target":277213,"current":248206,"remaining":29007,"duplicates":null,"cities":[{"city":"Charlotte","n":30826},{"city":"Raleigh","n":20783},{"city":"Durham","n":14117},{"city":"Greensboro","n":10870},{"city":"Asheville","n":9383},{"city":"Fayetteville","n":9276},{"city":"Winston Salem","n":8952},{"city":"Wilmington","n":7949},{"city":"Chapel Hill","n":7073},{"city":"Cary","n":6745},{"city":"Greenville","n":6229},{"city":"Concord","n":4285},{"city":"Gastonia","n":3831},{"city":"High Point","n":2782},{"city":"Hickory","n":2715}]},{"code":"MA","name":"Massachusetts","target":258615,"current":242447,"remaining":16168,"duplicates":null,"cities":[{"city":"Boston","n":42565},{"city":"Worcester","n":14202},{"city":"Springfield","n":9205},{"city":"Cambridge","n":5580},{"city":"Brockton","n":4942},{"city":"Fall River","n":3517},{"city":"Milford","n":3505},{"city":"Lowell","n":3378},{"city":"Newton","n":3306},{"city":"Marlborough","n":3243},{"city":"Framingham","n":3083},{"city":"Quincy","n":2944},{"city":"Brookline","n":2793},{"city":"Lawrence","n":2633},{"city":"Pittsfield","n":2552}]},{"code":"WA","name":"Washington","target":243214,"current":232814,"remaining":10400,"duplicates":null,"cities":[{"city":"Seattle","n":45672},{"city":"Spokane","n":15458},{"city":"Tacoma","n":14470},{"city":"Vancouver","n":12407},{"city":"Everett","n":7998},{"city":"Bellevue","n":7582},{"city":"Bellingham","n":6013},{"city":"Olympia","n":5780},{"city":"Yakima","n":4566},{"city":"Kirkland","n":4023},{"city":"Puyallup","n":3994},{"city":"Renton","n":3722},{"city":"Spokane Valley","n":3622},{"city":"Bremerton","n":3395},{"city":"Lakewood","n":3388}]},{"code":"NJ","name":"New Jersey","target":234001,"current":206133,"remaining":27868,"duplicates":null,"cities":[{"city":"Newark","n":6006},{"city":"Cherry Hill","n":4918},{"city":"Westampton","n":4871},{"city":"Jersey City","n":4243},{"city":"Toms River","n":3738},{"city":"Hackensack","n":3701},{"city":"Lakewood","n":3253},{"city":"Edison","n":3246},{"city":"Camden","n":3183},{"city":"Clifton","n":2425},{"city":"Livingston","n":2197},{"city":"Brick","n":2179},{"city":"New Brunswick","n":2144},{"city":"Voorhees","n":2039},{"city":"Paterson","n":2017}]},{"code":"GA","name":"Georgia","target":230573,"current":202119,"remaining":28454,"duplicates":null,"cities":[{"city":"Atlanta","n":33486},{"city":"Marietta","n":8565},{"city":"Augusta","n":7627},{"city":"Savannah","n":6773},{"city":"Columbus","n":6636},{"city":"Decatur","n":6456},{"city":"Macon","n":4865},{"city":"Lawrenceville","n":4237},{"city":"Alpharetta","n":3979},{"city":"Athens","n":3879},{"city":"Gainesville","n":3301},{"city":"Roswell","n":3040},{"city":"Cumming","n":2639},{"city":"Duluth","n":2405},{"city":"Valdosta","n":2206}]},{"code":"MD","name":"Maryland","target":216052,"current":195646,"remaining":20406,"duplicates":null,"cities":[{"city":"Baltimore","n":42244},{"city":"Rockville","n":16072},{"city":"Silver Spring","n":8359},{"city":"Columbia","n":8185},{"city":"Frederick","n":5187},{"city":"Bethesda","n":5167},{"city":"Towson","n":4488},{"city":"Annapolis","n":4259},{"city":"Gaithersburg","n":3433},{"city":"Bowie","n":3337},{"city":"Laurel","n":3323},{"city":"Hagerstown","n":2956},{"city":"Lanham","n":2888},{"city":"Salisbury","n":2881},{"city":"Pikesville","n":2771}]},{"code":"VA","name":"Virginia","target":200979,"current":178536,"remaining":22443,"duplicates":null,"cities":[{"city":"Richmond","n":16497},{"city":"Virginia Beach","n":11342},{"city":"Fairfax","n":7574},{"city":"Alexandria","n":6953},{"city":"Norfolk","n":6735},{"city":"Roanoke","n":5773},{"city":"Chesapeake","n":5167},{"city":"Charlottesville","n":4631},{"city":"Newport News","n":4522},{"city":"Fredericksburg","n":4357},{"city":"Arlington","n":4282},{"city":"Lynchburg","n":3838},{"city":"Portsmouth","n":3686},{"city":"Woodbridge","n":3314},{"city":"Winchester","n":3286}]},{"code":"CO","name":"Colorado","target":197262,"current":181393,"remaining":15869,"duplicates":null,"cities":[{"city":"Denver","n":30978},{"city":"Colorado Springs","n":22494},{"city":"Aurora","n":20382},{"city":"Fort Collins","n":8327},{"city":"Boulder","n":6707},{"city":"Lakewood","n":6119},{"city":"Littleton","n":5188},{"city":"Pueblo","n":4511},{"city":"Grand Junction","n":4400},{"city":"Centennial","n":3931},{"city":"Greeley","n":3788},{"city":"Englewood","n":3621},{"city":"Westminster","n":3267},{"city":"Greenwood Village","n":3222},{"city":"Longmont","n":3106}]},{"code":"AZ","name":"Arizona","target":176321,"current":161728,"remaining":14593,"duplicates":null,"cities":[{"city":"Phoenix","n":42477},{"city":"Tucson","n":21659},{"city":"Scottsdale","n":14584},{"city":"Mesa","n":12769},{"city":"Chandler","n":7354},{"city":"Gilbert","n":7340},{"city":"Glendale","n":7335},{"city":"Tempe","n":6022},{"city":"Peoria","n":3712},{"city":"Surprise","n":2752},{"city":"Flagstaff","n":2719},{"city":"Yuma","n":2333},{"city":"Prescott","n":2241},{"city":"Goodyear","n":2061},{"city":"Avondale","n":1924}]},{"code":"MN","name":"Minnesota","target":168647,"current":143427,"remaining":25220,"duplicates":null,"cities":[{"city":"Minneapolis","n":26054},{"city":"Saint Paul","n":12167},{"city":"Edina","n":4493},{"city":"Duluth","n":4485},{"city":"Bloomington","n":3558},{"city":"Rochester","n":3453},{"city":"Burnsville","n":3257},{"city":"Saint Cloud","n":3241},{"city":"St Louis Park","n":3118},{"city":"Woodbury","n":2542},{"city":"Mankato","n":2254},{"city":"Coon Rapids","n":2055},{"city":"Eden Prairie","n":1977},{"city":"Eagan","n":1962},{"city":"Minnetonka","n":1878}]},{"code":"TN","name":"Tennessee","target":160443,"current":143958,"remaining":16485,"duplicates":null,"cities":[{"city":"Nashville","n":22123},{"city":"Knoxville","n":16439},{"city":"Memphis","n":15745},{"city":"Chattanooga","n":8780},{"city":"Murfreesboro","n":4247},{"city":"Clarksville","n":4203},{"city":"Johnson City","n":3985},{"city":"Franklin","n":3440},{"city":"Brentwood","n":3426},{"city":"Jackson","n":2773},{"city":"Kingsport","n":2378},{"city":"Germantown","n":2040},{"city":"Cookeville","n":2000},{"city":"Hendersonville","n":1915},{"city":"Cordova","n":1719}]},{"code":"IN","name":"Indiana","target":155930,"current":141394,"remaining":14536,"duplicates":null,"cities":[{"city":"Indianapolis","n":35660},{"city":"Fort Wayne","n":10455},{"city":"Evansville","n":4814},{"city":"Carmel","n":4129},{"city":"South Bend","n":3553},{"city":"Bloomington","n":3536},{"city":"Muncie","n":3121},{"city":"Lafayette","n":2919},{"city":"Greenwood","n":2417},{"city":"Merrillville","n":2379},{"city":"Terre Haute","n":2365},{"city":"Fishers","n":2356},{"city":"Kokomo","n":2209},{"city":"Columbus","n":1973},{"city":"Valparaiso","n":1881}]},{"code":"OR","name":"Oregon","target":150181,"current":141871,"remaining":8310,"duplicates":null,"cities":[{"city":"Portland","n":46623},{"city":"Eugene","n":9473},{"city":"Salem","n":7729},{"city":"Bend","n":5831},{"city":"Medford","n":5194},{"city":"Corvallis","n":4364},{"city":"Beaverton","n":4103},{"city":"Tigard","n":3462},{"city":"Hillsboro","n":3163},{"city":"Springfield","n":2437},{"city":"Gresham","n":2368},{"city":"Clackamas","n":2363},{"city":"Milwaukie","n":2273},{"city":"Klamath Falls","n":2237},{"city":"Roseburg","n":2202}]},{"code":"MO","name":"Missouri","target":148636,"current":121130,"remaining":27506,"duplicates":null,"cities":[{"city":"Saint Louis","n":28631},{"city":"Kansas City","n":14678},{"city":"Springfield","n":6979},{"city":"Columbia","n":4423},{"city":"Chesterfield","n":2435},{"city":"Lees Summit","n":2186},{"city":"Joplin","n":2160},{"city":"Cape Girardeau","n":2144},{"city":"Independence","n":2056},{"city":"Florissant","n":1981},{"city":"Saint Charles","n":1881},{"city":"Jefferson City","n":1627},{"city":"Poplar Bluff","n":1540},{"city":"Saint Peters","n":1430},{"city":"Saint Joseph","n":1423}]},{"code":"WI","name":"Wisconsin","target":144809,"current":133512,"remaining":11297,"duplicates":null,"cities":[{"city":"Milwaukee","n":23080},{"city":"Madison","n":15827},{"city":"Green Bay","n":5366},{"city":"La Crosse","n":3905},{"city":"Appleton","n":3828},{"city":"Waukesha","n":3064},{"city":"Eau Claire","n":2950},{"city":"Brookfield","n":2410},{"city":"Wausau","n":2250},{"city":"Wauwatosa","n":2204},{"city":"Kenosha","n":2115},{"city":"Janesville","n":1766},{"city":"Oshkosh","n":1711},{"city":"Sheboygan","n":1672},{"city":"West Allis","n":1662}]},{"code":"LA","name":"Louisiana","target":125728,"current":112087,"remaining":13641,"duplicates":null,"cities":[{"city":"New Orleans","n":16134},{"city":"Baton Rouge","n":14266},{"city":"Shreveport","n":10372},{"city":"Lafayette","n":6898},{"city":"Metairie","n":6451},{"city":"Monroe","n":4372},{"city":"Lake Charles","n":3588},{"city":"Alexandria","n":2813},{"city":"Slidell","n":2437},{"city":"Hammond","n":1976},{"city":"Covington","n":1909},{"city":"Houma","n":1897},{"city":"Bossier City","n":1746},{"city":"Thibodaux","n":1408},{"city":"Mandeville","n":1255}]},{"code":"NV","name":"Nevada","target":123277,"current":118599,"remaining":4678,"duplicates":null,"cities":[{"city":"Las Vegas","n":77270},{"city":"Reno","n":13652},{"city":"Henderson","n":9398},{"city":"North Las Vegas","n":6752},{"city":"Sparks","n":2457},{"city":"Carson City","n":1908},{"city":"Pahrump","n":976},{"city":"N Las Vegas","n":933},{"city":"Elko","n":875},{"city":"Nellis Afb","n":828},{"city":"Fallon","n":464},{"city":"Minden","n":298},{"city":"Yerington","n":280},{"city":"Mesquite","n":261},{"city":"Boulder City","n":240}]},{"code":"OK","name":"Oklahoma","target":117288,"current":104029,"remaining":13259,"duplicates":null,"cities":[{"city":"Oklahoma City","n":25299},{"city":"Tulsa","n":21747},{"city":"Norman","n":4914},{"city":"Edmond","n":4520},{"city":"Lawton","n":3040},{"city":"Muskogee","n":2103},{"city":"Broken Arrow","n":2015},{"city":"Stillwater","n":1615},{"city":"Midwest City","n":1604},{"city":"Ardmore","n":1562},{"city":"Enid","n":1384},{"city":"Claremore","n":1297},{"city":"Tahlequah","n":1268},{"city":"Yukon","n":1232},{"city":"Bartlesville","n":1214}]},{"code":"SC","name":"South Carolina","target":116556,"current":105707,"remaining":10849,"duplicates":null,"cities":[{"city":"Columbia","n":13188},{"city":"Charleston","n":11910},{"city":"Greenville","n":11355},{"city":"Spartanburg","n":3873},{"city":"Florence","n":3531},{"city":"Rock Hill","n":3008},{"city":"Myrtle Beach","n":2972},{"city":"Anderson","n":2682},{"city":"North Charleston","n":2530},{"city":"Lexington","n":2350},{"city":"Summerville","n":2260},{"city":"West Columbia","n":1876},{"city":"Sumter","n":1766},{"city":"Aiken","n":1764},{"city":"Mount Pleasant","n":1538}]},{"code":"KY","name":"Kentucky","target":113389,"current":97638,"remaining":15751,"duplicates":null,"cities":[{"city":"Louisville","n":25999},{"city":"Lexington","n":14423},{"city":"Prestonsburg","n":3450},{"city":"Bowling Green","n":3081},{"city":"Paducah","n":2472},{"city":"Owensboro","n":2426},{"city":"Ashland","n":2043},{"city":"Elizabethtown","n":1720},{"city":"Somerset","n":1709},{"city":"Corbin","n":1537},{"city":"Florence","n":1469},{"city":"Richmond","n":1345},{"city":"Louisa","n":1227},{"city":"Hopkinsville","n":1223},{"city":"Edgewood","n":1095}]},{"code":"CT","name":"Connecticut","target":105474,"current":96528,"remaining":8946,"duplicates":null,"cities":[{"city":"New Haven","n":9897},{"city":"Hartford","n":6891},{"city":"Bridgeport","n":3467},{"city":"Waterbury","n":3400},{"city":"Stamford","n":3129},{"city":"Danbury","n":2809},{"city":"Manchester","n":2555},{"city":"Norwalk","n":2442},{"city":"West Hartford","n":2204},{"city":"New Britain","n":1993},{"city":"Fairfield","n":1844},{"city":"Hamden","n":1750},{"city":"West Haven","n":1466},{"city":"Milford","n":1449},{"city":"Middletown","n":1446}]},{"code":"UT","name":"Utah","target":95788,"current":84422,"remaining":11366,"duplicates":null,"cities":[{"city":"Salt Lake City","n":20928},{"city":"Provo","n":5626},{"city":"St George","n":4035},{"city":"Murray","n":3679},{"city":"Ogden","n":3394},{"city":"Orem","n":3168},{"city":"Layton","n":3097},{"city":"Taylorsville","n":2835},{"city":"Draper","n":2210},{"city":"Sandy","n":2044},{"city":"West Jordan","n":1962},{"city":"Bountiful","n":1608},{"city":"Logan","n":1560},{"city":"South Jordan","n":1412},{"city":"Cedar City","n":1219}]},{"code":"AL","name":"Alabama","target":94848,"current":79040,"remaining":15808,"duplicates":null,"cities":[{"city":"Birmingham","n":16131},{"city":"Mobile","n":6508},{"city":"Huntsville","n":5732},{"city":"Montgomery","n":4840},{"city":"Dothan","n":2714},{"city":"Tuscaloosa","n":2585},{"city":"Hoover","n":1624},{"city":"Madison","n":1579},{"city":"Decatur","n":1577},{"city":"Florence","n":1484},{"city":"Gadsden","n":1213},{"city":"Auburn","n":1140},{"city":"Anniston","n":1124},{"city":"Vestavia","n":1052},{"city":"Cullman","n":975}]},{"code":"NE","name":"Nebraska","target":92793,"current":85867,"remaining":6926,"duplicates":null,"cities":[{"city":"Omaha","n":36441},{"city":"Lincoln","n":16968},{"city":"Norfolk","n":2839},{"city":"Grand Island","n":2708},{"city":"Bellevue","n":2275},{"city":"Kearney","n":1751},{"city":"Papillion","n":1701},{"city":"Hastings","n":1364},{"city":"North Platte","n":1262},{"city":"Scottsbluff","n":1210},{"city":"Fremont","n":1124},{"city":"Elkhorn","n":997},{"city":"Columbus","n":926},{"city":"Beatrice","n":552},{"city":"La Vista","n":532}]},{"code":"WV","name":"West Virginia","target":91483,"current":74540,"remaining":16943,"duplicates":null,"cities":[{"city":"Charleston","n":8428},{"city":"Morgantown","n":5958},{"city":"Huntington","n":5413},{"city":"Barboursville","n":3884},{"city":"Beckley","n":3332},{"city":"Parkersburg","n":2923},{"city":"Martinsburg","n":2750},{"city":"South Charleston","n":2655},{"city":"Elkins","n":2130},{"city":"Wheeling","n":2021},{"city":"Fairmont","n":1642},{"city":"Clarksburg","n":1218},{"city":"Princeton","n":1116},{"city":"Belington","n":1085},{"city":"Buckhannon","n":839}]},{"code":"AR","name":"Arkansas","target":86462,"current":77926,"remaining":8536,"duplicates":null,"cities":[{"city":"Little Rock","n":13818},{"city":"Jonesboro","n":5521},{"city":"Fayetteville","n":4204},{"city":"Fort Smith","n":3595},{"city":"Conway","n":3301},{"city":"North Little Rock","n":2797},{"city":"Springdale","n":2646},{"city":"Hot Springs","n":2414},{"city":"Rogers","n":2388},{"city":"Bentonville","n":2006},{"city":"Benton","n":1998},{"city":"Searcy","n":1651},{"city":"Paragould","n":1492},{"city":"Russellville","n":1477},{"city":"Batesville","n":1199}]},{"code":"KS","name":"Kansas","target":72678,"current":68566,"remaining":4112,"duplicates":null,"cities":[{"city":"Wichita","n":13039},{"city":"Overland Park","n":7633},{"city":"Topeka","n":5608},{"city":"Kansas City","n":4923},{"city":"Olathe","n":2858},{"city":"Lawrence","n":2690},{"city":"Lenexa","n":1791},{"city":"Manhattan","n":1690},{"city":"Salina","n":1390},{"city":"Leawood","n":1320},{"city":"Leavenworth","n":1272},{"city":"Shawnee","n":1237},{"city":"Hutchinson","n":1110},{"city":"Prairie Village","n":903},{"city":"Hays","n":858}]},{"code":"NM","name":"New Mexico","target":69615,"current":60536,"remaining":9079,"duplicates":null,"cities":[{"city":"Albuquerque","n":25990},{"city":"Las Cruces","n":6059},{"city":"Santa Fe","n":4883},{"city":"Rio Rancho","n":2440},{"city":"Gallup","n":2223},{"city":"Farmington","n":2004},{"city":"Alamogordo","n":1546},{"city":"Clovis","n":1350},{"city":"Roswell","n":1304},{"city":"Hobbs","n":965},{"city":"Taos","n":942},{"city":"Los Lunas","n":724},{"city":"Las Vegas","n":701},{"city":"Silver City","n":694},{"city":"Carlsbad","n":673}]},{"code":"IA","name":"Iowa","target":65997,"current":60633,"remaining":5364,"duplicates":null,"cities":[{"city":"Iowa City","n":6596},{"city":"Des Moines","n":6485},{"city":"Cedar Rapids","n":3767},{"city":"West Des Moines","n":2863},{"city":"Davenport","n":2449},{"city":"Waterloo","n":1841},{"city":"Sioux City","n":1831},{"city":"Dubuque","n":1720},{"city":"Ankeny","n":1471},{"city":"Ames","n":1437},{"city":"Council Bluffs","n":1306},{"city":"Mason City","n":1060},{"city":"Bettendorf","n":930},{"city":"Urbandale","n":924},{"city":"Coralville","n":850}]},{"code":"MS","name":"Mississippi","target":57999,"current":49074,"remaining":8925,"duplicates":null,"cities":[{"city":"Jackson","n":7141},{"city":"Hattiesburg","n":3020},{"city":"Gulfport","n":2569},{"city":"Tupelo","n":2525},{"city":"Biloxi","n":1719},{"city":"Oxford","n":1654},{"city":"Southaven","n":1507},{"city":"Meridian","n":1483},{"city":"Ridgeland","n":1310},{"city":"Flowood","n":1159},{"city":"Columbus","n":1093},{"city":"Vicksburg","n":962},{"city":"Brandon","n":897},{"city":"Ocean Springs","n":881},{"city":"Mccomb","n":831}]},{"code":"PR","name":"Puerto Rico","target":57988,"current":21025,"remaining":36963,"duplicates":null,"cities":[{"city":"San Juan","n":5355},{"city":"Guaynabo","n":1648},{"city":"Ponce","n":1331},{"city":"Bayamon","n":1297},{"city":"Caguas","n":884},{"city":"Mayaguez","n":632},{"city":"Carolina","n":595},{"city":"Humacao","n":533},{"city":"Arecibo","n":449},{"city":"Fajardo","n":291},{"city":"Isabela","n":288},{"city":"Aguadilla","n":286},{"city":"Toa Baja","n":263},{"city":"Cayey","n":235},{"city":"Yauco","n":218}]},{"code":"DC","name":"Washington DC","target":52754,"current":50112,"remaining":2642,"duplicates":null,"cities":[{"city":"Washington","n":49713},{"city":"Ne","n":148},{"city":"Washington Dc","n":87},{"city":"Washington, Dc","n":17},{"city":"Bolling Afb","n":16},{"city":"Washington D.C.","n":14},{"city":"Dc","n":8},{"city":"District Of Columbia","n":8},{"city":"Wahington","n":5},{"city":"Washington D.C","n":5},{"city":"Nw Washington","n":5},{"city":"Washinton","n":4},{"city":"Wasington","n":4},{"city":"Washington,","n":4},{"city":"Se","n":4}]},{"code":"ID","name":"Idaho","target":46268,"current":40743,"remaining":5525,"duplicates":null,"cities":[{"city":"Boise","n":11214},{"city":"Meridian","n":3616},{"city":"Idaho Falls","n":3180},{"city":"Coeur D Alene","n":2503},{"city":"Nampa","n":2433},{"city":"Pocatello","n":2411},{"city":"Twin Falls","n":2116},{"city":"Lewiston","n":982},{"city":"Caldwell","n":878},{"city":"Post Falls","n":868},{"city":"Eagle","n":797},{"city":"Moscow","n":771},{"city":"Rexburg","n":691},{"city":"Sandpoint","n":610},{"city":"Ammon","n":476}]},{"code":"ME","name":"Maine","target":43271,"current":38978,"remaining":4293,"duplicates":null,"cities":[{"city":"Portland","n":7026},{"city":"Bangor","n":3468},{"city":"Lewiston","n":2064},{"city":"Augusta","n":1486},{"city":"South Portland","n":1344},{"city":"Scarborough","n":1173},{"city":"Brunswick","n":1150},{"city":"Waterville","n":1011},{"city":"Saco","n":811},{"city":"Auburn","n":706},{"city":"Westbrook","n":706},{"city":"Biddeford","n":606},{"city":"Falmouth","n":524},{"city":"Ellsworth","n":524},{"city":"Presque Isle","n":521}]},{"code":"HI","name":"Hawaii","target":40898,"current":37446,"remaining":3452,"duplicates":null,"cities":[{"city":"Honolulu","n":15140},{"city":"Hilo","n":2239},{"city":"Waipahu","n":1995},{"city":"Aiea","n":1834},{"city":"Kailua","n":1471},{"city":"Wailuku","n":1335},{"city":"Kapolei","n":1208},{"city":"Mililani","n":1027},{"city":"Kailua Kona","n":926},{"city":"Ewa Beach","n":907},{"city":"Tripler Army Medical Center","n":844},{"city":"Kaneohe","n":841},{"city":"Kahului","n":818},{"city":"Lihue","n":678},{"city":"Kihei","n":609}]},{"code":"NH","name":"New Hampshire","target":40720,"current":35005,"remaining":5715,"duplicates":null,"cities":[{"city":"Manchester","n":4799},{"city":"Nashua","n":3616},{"city":"Concord","n":3480},{"city":"Portsmouth","n":2130},{"city":"Keene","n":1597},{"city":"Dover","n":1436},{"city":"Salem","n":1289},{"city":"Bedford","n":1167},{"city":"Exeter","n":830},{"city":"Laconia","n":810},{"city":"Derry","n":748},{"city":"Lebanon","n":640},{"city":"Londonderry","n":538},{"city":"Rochester","n":490},{"city":"Littleton","n":391}]},{"code":"AK","name":"Alaska","target":36035,"current":31646,"remaining":4389,"duplicates":null,"cities":[{"city":"Anchorage","n":14298},{"city":"Fairbanks","n":3559},{"city":"Wasilla","n":2950},{"city":"Juneau","n":1515},{"city":"Bethel","n":1271},{"city":"Palmer","n":949},{"city":"Eagle River","n":907},{"city":"Sitka","n":865},{"city":"Soldotna","n":756},{"city":"Ketchikan","n":718},{"city":"Kenai","n":564},{"city":"Homer","n":448},{"city":"Kodiak","n":352},{"city":"Jber","n":305},{"city":"Seward","n":251}]},{"code":"RI","name":"Rhode Island","target":32157,"current":29888,"remaining":2269,"duplicates":null,"cities":[{"city":"Providence","n":10320},{"city":"Warwick","n":3050},{"city":"Cranston","n":1763},{"city":"Pawtucket","n":1607},{"city":"Woonsocket","n":1290},{"city":"East Providence","n":839},{"city":"Johnston","n":742},{"city":"East Greenwich","n":733},{"city":"Wakefield","n":713},{"city":"Riverside","n":678},{"city":"Middletown","n":662},{"city":"North Kingstown","n":636},{"city":"Westerly","n":582},{"city":"Lincoln","n":540},{"city":"Newport","n":535}]},{"code":"MT","name":"Montana","target":29989,"current":26664,"remaining":3325,"duplicates":null,"cities":[{"city":"Billings","n":4886},{"city":"Missoula","n":4223},{"city":"Bozeman","n":2919},{"city":"Great Falls","n":2280},{"city":"Kalispell","n":2087},{"city":"Helena","n":1952},{"city":"Butte","n":938},{"city":"Hamilton","n":518},{"city":"Whitefish","n":470},{"city":"Polson","n":328},{"city":"Livingston","n":318},{"city":"Miles City","n":315},{"city":"Belgrade","n":277},{"city":"Havre","n":250},{"city":"Lewistown","n":232}]},{"code":"DE","name":"Delaware","target":27926,"current":24836,"remaining":3090,"duplicates":null,"cities":[{"city":"Wilmington","n":7396},{"city":"Newark","n":5211},{"city":"Dover","n":2694},{"city":"Lewes","n":1887},{"city":"New Castle","n":885},{"city":"Middletown","n":866},{"city":"Milford","n":771},{"city":"Bear","n":543},{"city":"Seaford","n":500},{"city":"Georgetown","n":477},{"city":"Smyrna","n":425},{"city":"Hockessin","n":365},{"city":"Millsboro","n":359},{"city":"Rehoboth Beach","n":345},{"city":"Claymont","n":286}]},{"code":"ND","name":"North Dakota","target":27630,"current":24892,"remaining":2738,"duplicates":null,"cities":[{"city":"Fargo","n":7918},{"city":"Bismarck","n":4320},{"city":"Grand Forks","n":2780},{"city":"Minot","n":2169},{"city":"Williston","n":751},{"city":"Dickinson","n":746},{"city":"West Fargo","n":743},{"city":"Jamestown","n":627},{"city":"Mandan","n":622},{"city":"Devils Lake","n":530},{"city":"Wahpeton","n":240},{"city":"Valley City","n":198},{"city":"Grafton","n":138},{"city":"Bottineau","n":92},{"city":"Minot Afb","n":85}]},{"code":"SD","name":"South Dakota","target":23192,"current":20695,"remaining":2497,"duplicates":null,"cities":[{"city":"Sioux Falls","n":7756},{"city":"Rapid City","n":3599},{"city":"Aberdeen","n":961},{"city":"Watertown","n":702},{"city":"Yankton","n":618},{"city":"Spearfish","n":527},{"city":"Fort Meade","n":506},{"city":"Brookings","n":458},{"city":"Mitchell","n":455},{"city":"Pierre","n":392},{"city":"Dakota Dunes","n":372},{"city":"Huron","n":255},{"city":"Hot Springs","n":244},{"city":"Vermillion","n":222},{"city":"Sturgis","n":166}]},{"code":"VT","name":"Vermont","target":19171,"current":17635,"remaining":1536,"duplicates":null,"cities":[{"city":"Burlington","n":3703},{"city":"Rutland","n":1114},{"city":"South Burlington","n":934},{"city":"Brattleboro","n":788},{"city":"Bennington","n":636},{"city":"Saint Albans","n":595},{"city":"Colchester","n":552},{"city":"Montpelier","n":530},{"city":"Williston","n":523},{"city":"Middlebury","n":505},{"city":"White River Junction","n":497},{"city":"Barre","n":481},{"city":"Springfield","n":440},{"city":"St Johnsbury","n":389},{"city":"Newport","n":366}]},{"code":"WY","name":"Wyoming","target":18460,"current":16965,"remaining":1495,"duplicates":null,"cities":[{"city":"Cheyenne","n":3583},{"city":"Casper","n":2546},{"city":"Laramie","n":1775},{"city":"Sheridan","n":1099},{"city":"Gillette","n":927},{"city":"Rock Springs","n":774},{"city":"Jackson","n":745},{"city":"Cody","n":676},{"city":"Evanston","n":490},{"city":"Riverton","n":478},{"city":"Lander","n":434},{"city":"Torrington","n":352},{"city":"Powell","n":317},{"city":"Worland","n":281},{"city":"Douglas","n":279}]},{"code":"VI","name":"U.S. Virgin Islands","target":1254,"current":126,"remaining":1128,"duplicates":null,"cities":[{"city":"Christiansted","n":65},{"city":"St. Thomas","n":15},{"city":"St Thomas","n":13},{"city":"Frederiksted","n":8},{"city":"Charlotte Amalie","n":3},{"city":"St.Thomas","n":2},{"city":"Newport News","n":2},{"city":"Norfolk","n":2},{"city":"Fort Lee","n":1},{"city":"Fredericksburg","n":1},{"city":"Cruz Bay, St John","n":1},{"city":"Hampton","n":1},{"city":"St.Croix","n":1},{"city":"Alexandria","n":1},{"city":"Portsmouth","n":1}]},{"code":"GU","name":"Guam","target":1183,"current":411,"remaining":772,"duplicates":null,"cities":[{"city":"Tamuning","n":226},{"city":"Agana Heights","n":57},{"city":"Dededo","n":28},{"city":"Hagatna","n":19},{"city":"Mangilao","n":18},{"city":"Barrigada","n":9},{"city":"Yigo","n":6},{"city":"Inarajan","n":5},{"city":"Yona","n":5},{"city":"Chalan Pago","n":4},{"city":"Talofofo","n":4},{"city":"Sinajana","n":3},{"city":"Santa Rita","n":3},{"city":"Tutuhan","n":3},{"city":"Upper Tumon","n":3}]},{"code":"MP","name":"N. Mariana Islands","target":322,"current":3,"remaining":319,"duplicates":null,"cities":[{"city":"Shannon","n":1},{"city":"Solomon","n":1},{"city":"Belmont","n":1}]},{"code":"AS","name":"American Samoa","target":229,"current":6,"remaining":223,"duplicates":null,"cities":[{"city":"Tucson","n":3},{"city":"Glendale","n":2},{"city":"West Memphis","n":1}]}];
+
+  var MACHINE1 = ["FL","CA","NY","TX","OH","MI","PA","IL","NC","MA"];
+  var MACHINE2 = ["WA","NJ","GA","MD","VA","CO","AZ","MN","TN","IN"];
+  var MACHINE3 = ["WY","VI","GU","MP","AS","VT","SD","ND","DE","MT"];
+  function machineOf(code){
+    if (MACHINE1.indexOf(code) !== -1) return 1;
+    if (MACHINE2.indexOf(code) !== -1) return 2;
+    if (MACHINE3.indexOf(code) !== -1) return 3;
+    return 0;
+  }
+
+  var target = DATA.reduce(function(s,r){ return s + r.target; }, 0);
+  var current = DATA.reduce(function(s,r){ return s + r.current; }, 0);
+  var statesLive = DATA.filter(function(r){ return r.current > 0; }).length;
+  var pct = target ? (current / target * 100) : 0;
+
+  function fmt(n){ return n.toLocaleString('en-US'); }
+
+  document.getElementById('hdrTarget').textContent = fmt(target);
+  document.getElementById('statTarget').textContent = fmt(target);
+  document.getElementById('statCurrent').textContent = fmt(current);
+  document.getElementById('statPct').textContent = pct.toFixed(2) + '%';
+  document.getElementById('statStates').textContent = statesLive + ' / ' + DATA.length;
+  document.getElementById('bigBarFill').style.width = Math.max(pct, 0.4) + '%';
+  document.getElementById('asOf').textContent = 'Live snapshot · ' + new Date().toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+  // Status buckets by completion percentage. Genuine finished imports land
+  // in the 85-96% range (duplicate name+address skips + a small residual
+  // of un-checkpointed geocode/timeout failures never reach literal 100%),
+  // so 80% is the practical "done" line rather than 100%.
+  function pctOf(r){ return r.target ? (r.current / r.target * 100) : 0; }
+  function statusOf(r){
+    var p = pctOf(r);
+    if (p >= 80) return 'done';
+    if (p >= 3) return 'prog';
+    return 'not';
+  }
+
+  var listEls = {
+    done: document.getElementById('stateListDone'),
+    prog: document.getElementById('stateListProg'),
+    not: document.getElementById('stateListNot')
+  };
+
+  function groupSummary(rows){
+    var t = rows.reduce(function(s,r){ return s + r.target; }, 0);
+    var c = rows.reduce(function(s,r){ return s + r.current; }, 0);
+    var p = t ? (c / t * 100) : 0;
+    return rows.length + ' states · ' + fmt(c) + ' / ' + fmt(t) + ' (' + p.toFixed(1) + '%)';
+  }
+  var byStatus = { done: [], prog: [], not: [] };
+  DATA.forEach(function(r){ byStatus[statusOf(r)].push(r); });
+  document.getElementById('doneSub').textContent = groupSummary(byStatus.done);
+  document.getElementById('progSub').textContent = groupSummary(byStatus.prog);
+  document.getElementById('notSub').textContent = groupSummary(byStatus.not);
+
+  function renderCities(cities, stateTarget){
+    var shown = cities.reduce(function(s,c){ return s + c.n; }, 0);
+    var rest = stateTarget - shown;
+    var html = '<div class="city-grid">' + cities.map(function(c){
+      return '<div class="city-item"><span>' + c.city + '</span><span class="city-n tab">' + fmt(c.n) + '</span></div>';
+    }).join('') + '</div>';
+    if (rest > 0) {
+      html += '<div class="city-note">+ ' + fmt(rest) + ' more across smaller cities/towns in this state.</div>';
+    }
+    return html;
+  }
+
+  var MACHINE_DOT = { 1: 'm1', 2: 'm2', 3: 'm3', 0: 'm0' };
+
+  function renderState(r, rank){
+    var pct = r.target ? Math.min(100, (r.current / r.target * 100)) : 0;
+    var m = machineOf(r.code);
+    var row = document.createElement('div');
+    row.className = 'state-row';
+    row.dataset.search = (r.name + ' ' + r.code + ' ' + r.cities.map(function(c){return c.city;}).join(' ')).toLowerCase();
+    row.innerHTML =
+      '<div class="state-head">' +
+        '<span class="state-rank tab">' + rank + '</span>' +
+        '<span class="machine-dot ' + MACHINE_DOT[m] + '" title="Machine ' + m + '"></span>' +
+        '<span class="state-code">' + r.code + '</span>' +
+        '<span class="state-name">' + r.name + '</span>' +
+        '<span class="state-bar-wrap"><span class="state-bar"><span class="state-bar-fill" style="width:' + Math.max(pct,0.6) + '%"></span></span></span>' +
+        '<span class="state-nums"><b>' + fmt(r.current) + '</b> / ' + fmt(r.target) + '</span>' +
+        '<span class="chev">&#9656;</span>' +
+      '</div>' +
+      '<div class="city-panel"><div class="city-panel-inner">' + renderCities(r.cities, r.target) + '</div></div>';
+    row.querySelector('.state-head').addEventListener('click', function(){
+      row.classList.toggle('open');
+    });
+    return row;
+  }
+
+  // Not-started and in-progress are sorted smallest target first, so the
+  // quickest wins to knock out next are always at the top. Completed is
+  // sorted by percentage (highest first) since ordering there is just a
+  // record of what's done.
+  byStatus.not.sort(function(a,b){ return a.target - b.target; });
+  byStatus.prog.sort(function(a,b){ return a.target - b.target; });
+  byStatus.done.sort(function(a,b){ return pctOf(b) - pctOf(a); });
+  ['not','prog','done'].forEach(function(key){
+    byStatus[key].forEach(function(r, i){
+      listEls[key].appendChild(renderState(r, i + 1));
+    });
+  });
+
+  var searchEl = document.getElementById('search');
+  searchEl.addEventListener('input', function(){
+    var q = searchEl.value.trim().toLowerCase();
+    [listEls.done, listEls.prog, listEls.not].forEach(function(listEl){
+      var rows = listEl.querySelectorAll('.state-row');
+      rows.forEach(function(row){
+        var match = !q || row.dataset.search.indexOf(q) !== -1;
+        row.style.display = match ? '' : 'none';
+        if (q && match) row.classList.add('open'); else if (!q) row.classList.remove('open');
+      });
+    });
+  });
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+<script>
+(function(){
+  var DATA = [{"code":"CA","name":"California","target":1185337,"current":1104101,"remaining":81236,"duplicates":null,"cities":[{"city":"Los Angeles","n":78971},{"city":"San Diego","n":57208},{"city":"San Francisco","n":40925},{"city":"Sacramento","n":35976},{"city":"San Jose","n":24279},{"city":"Fresno","n":21586},{"city":"Oakland","n":19953},{"city":"Monrovia","n":17742},{"city":"Riverside","n":15980},{"city":"Long Beach","n":15536},{"city":"Orange","n":14553},{"city":"Bakersfield","n":14046},{"city":"Pasadena","n":11906},{"city":"Stockton","n":10724},{"city":"Torrance","n":10719}]},{"code":"NY","name":"New York","target":656683,"current":613942,"remaining":42741,"duplicates":null,"cities":[{"city":"New York","n":111641},{"city":"Brooklyn","n":77062},{"city":"Bronx","n":36660},{"city":"Rochester","n":21695},{"city":"Staten Island","n":14763},{"city":"Buffalo","n":14080},{"city":"Syracuse","n":10597},{"city":"Albany","n":8901},{"city":"Flushing","n":8525},{"city":"Jamaica","n":5545},{"city":"New Hyde Park","n":4716},{"city":"White Plains","n":4674},{"city":"Forest Hills","n":4611},{"city":"Yonkers","n":4366},{"city":"Poughkeepsie","n":4202}]},{"code":"FL","name":"Florida","target":652949,"current":589657,"remaining":63292,"duplicates":5247,"cities":[{"city":"Miami","n":63164},{"city":"Tampa","n":31221},{"city":"Orlando","n":30667},{"city":"Jacksonville","n":29301},{"city":"Hialeah","n":13401},{"city":"Gainesville","n":12675},{"city":"West Palm Beach","n":9711},{"city":"Fort Myers","n":9651},{"city":"Boca Raton","n":8907},{"city":"Sarasota","n":8595},{"city":"Tallahassee","n":7944},{"city":"St Petersburg","n":7782},{"city":"Pensacola","n":7682},{"city":"Naples","n":7106},{"city":"Fort Lauderdale","n":6931}]},{"code":"TX","name":"Texas","target":607442,"current":542173,"remaining":65269,"duplicates":null,"cities":[{"city":"Houston","n":81674},{"city":"Dallas","n":44241},{"city":"San Antonio","n":43096},{"city":"Austin","n":31892},{"city":"Fort Worth","n":18974},{"city":"El Paso","n":13869},{"city":"Plano","n":10313},{"city":"Arlington","n":7444},{"city":"Lubbock","n":6788},{"city":"Katy","n":6734},{"city":"Corpus Christi","n":6072},{"city":"Tyler","n":5887},{"city":"Frisco","n":5279},{"city":"Spring","n":5058},{"city":"Mcallen","n":4939}]},{"code":"OH","name":"Ohio","target":407380,"current":375850,"remaining":31530,"duplicates":null,"cities":[{"city":"Columbus","n":42371},{"city":"Cincinnati","n":34391},{"city":"Cleveland","n":33418},{"city":"Toledo","n":15830},{"city":"Dayton","n":13696},{"city":"Akron","n":10645},{"city":"Canton","n":6806},{"city":"Youngstown","n":5780},{"city":"Dublin","n":5224},{"city":"Westerville","n":3794},{"city":"Beachwood","n":3134},{"city":"Lima","n":3131},{"city":"Chillicothe","n":3103},{"city":"Mansfield","n":2857},{"city":"Hamilton","n":2824}]},{"code":"MI","name":"Michigan","target":357320,"current":333437,"remaining":23883,"duplicates":null,"cities":[{"city":"Farmington Hills","n":37227},{"city":"Detroit","n":23789},{"city":"Grand Rapids","n":20094},{"city":"Ann Arbor","n":16262},{"city":"Novi","n":8309},{"city":"Southfield","n":7920},{"city":"Kalamazoo","n":7486},{"city":"Flint","n":7291},{"city":"Dearborn","n":6842},{"city":"Saginaw","n":6664},{"city":"Lansing","n":6004},{"city":"Livonia","n":5603},{"city":"Troy","n":4790},{"city":"Royal Oak","n":4206},{"city":"Traverse City","n":3997}]},{"code":"PA","name":"Pennsylvania","target":335762,"current":301390,"remaining":34372,"duplicates":null,"cities":[{"city":"Philadelphia","n":49111},{"city":"Pittsburgh","n":29719},{"city":"Allentown","n":7045},{"city":"Lancaster","n":6440},{"city":"Erie","n":6042},{"city":"Bethlehem","n":5529},{"city":"Plymouth Meeting","n":5168},{"city":"York","n":5096},{"city":"Harrisburg","n":4806},{"city":"West Chester","n":3316},{"city":"Danville","n":3156},{"city":"Scranton","n":3047},{"city":"Wilkes Barre","n":2588},{"city":"Camp Hill","n":2528},{"city":"Pottstown","n":2359}]},{"code":"IL","name":"Illinois","target":318439,"current":292084,"remaining":26355,"duplicates":null,"cities":[{"city":"Chicago","n":75363},{"city":"Naperville","n":5627},{"city":"Springfield","n":5495},{"city":"Peoria","n":5192},{"city":"Rockford","n":4739},{"city":"Evanston","n":4614},{"city":"Aurora","n":3978},{"city":"Arlington Heights","n":3385},{"city":"Oak Lawn","n":3322},{"city":"Skokie","n":3006},{"city":"Oak Park","n":2876},{"city":"Champaign","n":2831},{"city":"Elgin","n":2795},{"city":"Joliet","n":2739},{"city":"Northbrook","n":2692}]},{"code":"NC","name":"North Carolina","target":277213,"current":248206,"remaining":29007,"duplicates":null,"cities":[{"city":"Charlotte","n":30826},{"city":"Raleigh","n":20783},{"city":"Durham","n":14117},{"city":"Greensboro","n":10870},{"city":"Asheville","n":9383},{"city":"Fayetteville","n":9276},{"city":"Winston Salem","n":8952},{"city":"Wilmington","n":7949},{"city":"Chapel Hill","n":7073},{"city":"Cary","n":6745},{"city":"Greenville","n":6229},{"city":"Concord","n":4285},{"city":"Gastonia","n":3831},{"city":"High Point","n":2782},{"city":"Hickory","n":2715}]},{"code":"MA","name":"Massachusetts","target":258615,"current":242447,"remaining":16168,"duplicates":null,"cities":[{"city":"Boston","n":42565},{"city":"Worcester","n":14202},{"city":"Springfield","n":9205},{"city":"Cambridge","n":5580},{"city":"Brockton","n":4942},{"city":"Fall River","n":3517},{"city":"Milford","n":3505},{"city":"Lowell","n":3378},{"city":"Newton","n":3306},{"city":"Marlborough","n":3243},{"city":"Framingham","n":3083},{"city":"Quincy","n":2944},{"city":"Brookline","n":2793},{"city":"Lawrence","n":2633},{"city":"Pittsfield","n":2552}]},{"code":"WA","name":"Washington","target":243214,"current":232814,"remaining":10400,"duplicates":null,"cities":[{"city":"Seattle","n":45672},{"city":"Spokane","n":15458},{"city":"Tacoma","n":14470},{"city":"Vancouver","n":12407},{"city":"Everett","n":7998},{"city":"Bellevue","n":7582},{"city":"Bellingham","n":6013},{"city":"Olympia","n":5780},{"city":"Yakima","n":4566},{"city":"Kirkland","n":4023},{"city":"Puyallup","n":3994},{"city":"Renton","n":3722},{"city":"Spokane Valley","n":3622},{"city":"Bremerton","n":3395},{"city":"Lakewood","n":3388}]},{"code":"NJ","name":"New Jersey","target":234001,"current":206133,"remaining":27868,"duplicates":null,"cities":[{"city":"Newark","n":6006},{"city":"Cherry Hill","n":4918},{"city":"Westampton","n":4871},{"city":"Jersey City","n":4243},{"city":"Toms River","n":3738},{"city":"Hackensack","n":3701},{"city":"Lakewood","n":3253},{"city":"Edison","n":3246},{"city":"Camden","n":3183},{"city":"Clifton","n":2425},{"city":"Livingston","n":2197},{"city":"Brick","n":2179},{"city":"New Brunswick","n":2144},{"city":"Voorhees","n":2039},{"city":"Paterson","n":2017}]},{"code":"GA","name":"Georgia","target":230573,"current":202119,"remaining":28454,"duplicates":null,"cities":[{"city":"Atlanta","n":33486},{"city":"Marietta","n":8565},{"city":"Augusta","n":7627},{"city":"Savannah","n":6773},{"city":"Columbus","n":6636},{"city":"Decatur","n":6456},{"city":"Macon","n":4865},{"city":"Lawrenceville","n":4237},{"city":"Alpharetta","n":3979},{"city":"Athens","n":3879},{"city":"Gainesville","n":3301},{"city":"Roswell","n":3040},{"city":"Cumming","n":2639},{"city":"Duluth","n":2405},{"city":"Valdosta","n":2206}]},{"code":"MD","name":"Maryland","target":216052,"current":195646,"remaining":20406,"duplicates":null,"cities":[{"city":"Baltimore","n":42244},{"city":"Rockville","n":16072},{"city":"Silver Spring","n":8359},{"city":"Columbia","n":8185},{"city":"Frederick","n":5187},{"city":"Bethesda","n":5167},{"city":"Towson","n":4488},{"city":"Annapolis","n":4259},{"city":"Gaithersburg","n":3433},{"city":"Bowie","n":3337},{"city":"Laurel","n":3323},{"city":"Hagerstown","n":2956},{"city":"Lanham","n":2888},{"city":"Salisbury","n":2881},{"city":"Pikesville","n":2771}]},{"code":"VA","name":"Virginia","target":200979,"current":178536,"remaining":22443,"duplicates":null,"cities":[{"city":"Richmond","n":16497},{"city":"Virginia Beach","n":11342},{"city":"Fairfax","n":7574},{"city":"Alexandria","n":6953},{"city":"Norfolk","n":6735},{"city":"Roanoke","n":5773},{"city":"Chesapeake","n":5167},{"city":"Charlottesville","n":4631},{"city":"Newport News","n":4522},{"city":"Fredericksburg","n":4357},{"city":"Arlington","n":4282},{"city":"Lynchburg","n":3838},{"city":"Portsmouth","n":3686},{"city":"Woodbridge","n":3314},{"city":"Winchester","n":3286}]},{"code":"CO","name":"Colorado","target":197262,"current":181393,"remaining":15869,"duplicates":null,"cities":[{"city":"Denver","n":30978},{"city":"Colorado Springs","n":22494},{"city":"Aurora","n":20382},{"city":"Fort Collins","n":8327},{"city":"Boulder","n":6707},{"city":"Lakewood","n":6119},{"city":"Littleton","n":5188},{"city":"Pueblo","n":4511},{"city":"Grand Junction","n":4400},{"city":"Centennial","n":3931},{"city":"Greeley","n":3788},{"city":"Englewood","n":3621},{"city":"Westminster","n":3267},{"city":"Greenwood Village","n":3222},{"city":"Longmont","n":3106}]},{"code":"AZ","name":"Arizona","target":176321,"current":161728,"remaining":14593,"duplicates":null,"cities":[{"city":"Phoenix","n":42477},{"city":"Tucson","n":21659},{"city":"Scottsdale","n":14584},{"city":"Mesa","n":12769},{"city":"Chandler","n":7354},{"city":"Gilbert","n":7340},{"city":"Glendale","n":7335},{"city":"Tempe","n":6022},{"city":"Peoria","n":3712},{"city":"Surprise","n":2752},{"city":"Flagstaff","n":2719},{"city":"Yuma","n":2333},{"city":"Prescott","n":2241},{"city":"Goodyear","n":2061},{"city":"Avondale","n":1924}]},{"code":"MN","name":"Minnesota","target":168647,"current":143427,"remaining":25220,"duplicates":null,"cities":[{"city":"Minneapolis","n":26054},{"city":"Saint Paul","n":12167},{"city":"Edina","n":4493},{"city":"Duluth","n":4485},{"city":"Bloomington","n":3558},{"city":"Rochester","n":3453},{"city":"Burnsville","n":3257},{"city":"Saint Cloud","n":3241},{"city":"St Louis Park","n":3118},{"city":"Woodbury","n":2542},{"city":"Mankato","n":2254},{"city":"Coon Rapids","n":2055},{"city":"Eden Prairie","n":1977},{"city":"Eagan","n":1962},{"city":"Minnetonka","n":1878}]},{"code":"TN","name":"Tennessee","target":160443,"current":143958,"remaining":16485,"duplicates":null,"cities":[{"city":"Nashville","n":22123},{"city":"Knoxville","n":16439},{"city":"Memphis","n":15745},{"city":"Chattanooga","n":8780},{"city":"Murfreesboro","n":4247},{"city":"Clarksville","n":4203},{"city":"Johnson City","n":3985},{"city":"Franklin","n":3440},{"city":"Brentwood","n":3426},{"city":"Jackson","n":2773},{"city":"Kingsport","n":2378},{"city":"Germantown","n":2040},{"city":"Cookeville","n":2000},{"city":"Hendersonville","n":1915},{"city":"Cordova","n":1719}]},{"code":"IN","name":"Indiana","target":155930,"current":141394,"remaining":14536,"duplicates":null,"cities":[{"city":"Indianapolis","n":35660},{"city":"Fort Wayne","n":10455},{"city":"Evansville","n":4814},{"city":"Carmel","n":4129},{"city":"South Bend","n":3553},{"city":"Bloomington","n":3536},{"city":"Muncie","n":3121},{"city":"Lafayette","n":2919},{"city":"Greenwood","n":2417},{"city":"Merrillville","n":2379},{"city":"Terre Haute","n":2365},{"city":"Fishers","n":2356},{"city":"Kokomo","n":2209},{"city":"Columbus","n":1973},{"city":"Valparaiso","n":1881}]},{"code":"OR","name":"Oregon","target":150181,"current":141871,"remaining":8310,"duplicates":null,"cities":[{"city":"Portland","n":46623},{"city":"Eugene","n":9473},{"city":"Salem","n":7729},{"city":"Bend","n":5831},{"city":"Medford","n":5194},{"city":"Corvallis","n":4364},{"city":"Beaverton","n":4103},{"city":"Tigard","n":3462},{"city":"Hillsboro","n":3163},{"city":"Springfield","n":2437},{"city":"Gresham","n":2368},{"city":"Clackamas","n":2363},{"city":"Milwaukie","n":2273},{"city":"Klamath Falls","n":2237},{"city":"Roseburg","n":2202}]},{"code":"MO","name":"Missouri","target":148636,"current":121130,"remaining":27506,"duplicates":null,"cities":[{"city":"Saint Louis","n":28631},{"city":"Kansas City","n":14678},{"city":"Springfield","n":6979},{"city":"Columbia","n":4423},{"city":"Chesterfield","n":2435},{"city":"Lees Summit","n":2186},{"city":"Joplin","n":2160},{"city":"Cape Girardeau","n":2144},{"city":"Independence","n":2056},{"city":"Florissant","n":1981},{"city":"Saint Charles","n":1881},{"city":"Jefferson City","n":1627},{"city":"Poplar Bluff","n":1540},{"city":"Saint Peters","n":1430},{"city":"Saint Joseph","n":1423}]},{"code":"WI","name":"Wisconsin","target":144809,"current":133512,"remaining":11297,"duplicates":null,"cities":[{"city":"Milwaukee","n":23080},{"city":"Madison","n":15827},{"city":"Green Bay","n":5366},{"city":"La Crosse","n":3905},{"city":"Appleton","n":3828},{"city":"Waukesha","n":3064},{"city":"Eau Claire","n":2950},{"city":"Brookfield","n":2410},{"city":"Wausau","n":2250},{"city":"Wauwatosa","n":2204},{"city":"Kenosha","n":2115},{"city":"Janesville","n":1766},{"city":"Oshkosh","n":1711},{"city":"Sheboygan","n":1672},{"city":"West Allis","n":1662}]},{"code":"LA","name":"Louisiana","target":125728,"current":112087,"remaining":13641,"duplicates":null,"cities":[{"city":"New Orleans","n":16134},{"city":"Baton Rouge","n":14266},{"city":"Shreveport","n":10372},{"city":"Lafayette","n":6898},{"city":"Metairie","n":6451},{"city":"Monroe","n":4372},{"city":"Lake Charles","n":3588},{"city":"Alexandria","n":2813},{"city":"Slidell","n":2437},{"city":"Hammond","n":1976},{"city":"Covington","n":1909},{"city":"Houma","n":1897},{"city":"Bossier City","n":1746},{"city":"Thibodaux","n":1408},{"city":"Mandeville","n":1255}]},{"code":"NV","name":"Nevada","target":123277,"current":118599,"remaining":4678,"duplicates":null,"cities":[{"city":"Las Vegas","n":77270},{"city":"Reno","n":13652},{"city":"Henderson","n":9398},{"city":"North Las Vegas","n":6752},{"city":"Sparks","n":2457},{"city":"Carson City","n":1908},{"city":"Pahrump","n":976},{"city":"N Las Vegas","n":933},{"city":"Elko","n":875},{"city":"Nellis Afb","n":828},{"city":"Fallon","n":464},{"city":"Minden","n":298},{"city":"Yerington","n":280},{"city":"Mesquite","n":261},{"city":"Boulder City","n":240}]},{"code":"OK","name":"Oklahoma","target":117288,"current":104029,"remaining":13259,"duplicates":null,"cities":[{"city":"Oklahoma City","n":25299},{"city":"Tulsa","n":21747},{"city":"Norman","n":4914},{"city":"Edmond","n":4520},{"city":"Lawton","n":3040},{"city":"Muskogee","n":2103},{"city":"Broken Arrow","n":2015},{"city":"Stillwater","n":1615},{"city":"Midwest City","n":1604},{"city":"Ardmore","n":1562},{"city":"Enid","n":1384},{"city":"Claremore","n":1297},{"city":"Tahlequah","n":1268},{"city":"Yukon","n":1232},{"city":"Bartlesville","n":1214}]},{"code":"SC","name":"South Carolina","target":116556,"current":105707,"remaining":10849,"duplicates":null,"cities":[{"city":"Columbia","n":13188},{"city":"Charleston","n":11910},{"city":"Greenville","n":11355},{"city":"Spartanburg","n":3873},{"city":"Florence","n":3531},{"city":"Rock Hill","n":3008},{"city":"Myrtle Beach","n":2972},{"city":"Anderson","n":2682},{"city":"North Charleston","n":2530},{"city":"Lexington","n":2350},{"city":"Summerville","n":2260},{"city":"West Columbia","n":1876},{"city":"Sumter","n":1766},{"city":"Aiken","n":1764},{"city":"Mount Pleasant","n":1538}]},{"code":"KY","name":"Kentucky","target":113389,"current":97638,"remaining":15751,"duplicates":null,"cities":[{"city":"Louisville","n":25999},{"city":"Lexington","n":14423},{"city":"Prestonsburg","n":3450},{"city":"Bowling Green","n":3081},{"city":"Paducah","n":2472},{"city":"Owensboro","n":2426},{"city":"Ashland","n":2043},{"city":"Elizabethtown","n":1720},{"city":"Somerset","n":1709},{"city":"Corbin","n":1537},{"city":"Florence","n":1469},{"city":"Richmond","n":1345},{"city":"Louisa","n":1227},{"city":"Hopkinsville","n":1223},{"city":"Edgewood","n":1095}]},{"code":"CT","name":"Connecticut","target":105474,"current":96528,"remaining":8946,"duplicates":null,"cities":[{"city":"New Haven","n":9897},{"city":"Hartford","n":6891},{"city":"Bridgeport","n":3467},{"city":"Waterbury","n":3400},{"city":"Stamford","n":3129},{"city":"Danbury","n":2809},{"city":"Manchester","n":2555},{"city":"Norwalk","n":2442},{"city":"West Hartford","n":2204},{"city":"New Britain","n":1993},{"city":"Fairfield","n":1844},{"city":"Hamden","n":1750},{"city":"West Haven","n":1466},{"city":"Milford","n":1449},{"city":"Middletown","n":1446}]},{"code":"UT","name":"Utah","target":95788,"current":84422,"remaining":11366,"duplicates":null,"cities":[{"city":"Salt Lake City","n":20928},{"city":"Provo","n":5626},{"city":"St George","n":4035},{"city":"Murray","n":3679},{"city":"Ogden","n":3394},{"city":"Orem","n":3168},{"city":"Layton","n":3097},{"city":"Taylorsville","n":2835},{"city":"Draper","n":2210},{"city":"Sandy","n":2044},{"city":"West Jordan","n":1962},{"city":"Bountiful","n":1608},{"city":"Logan","n":1560},{"city":"South Jordan","n":1412},{"city":"Cedar City","n":1219}]},{"code":"AL","name":"Alabama","target":94848,"current":79040,"remaining":15808,"duplicates":null,"cities":[{"city":"Birmingham","n":16131},{"city":"Mobile","n":6508},{"city":"Huntsville","n":5732},{"city":"Montgomery","n":4840},{"city":"Dothan","n":2714},{"city":"Tuscaloosa","n":2585},{"city":"Hoover","n":1624},{"city":"Madison","n":1579},{"city":"Decatur","n":1577},{"city":"Florence","n":1484},{"city":"Gadsden","n":1213},{"city":"Auburn","n":1140},{"city":"Anniston","n":1124},{"city":"Vestavia","n":1052},{"city":"Cullman","n":975}]},{"code":"NE","name":"Nebraska","target":92793,"current":85867,"remaining":6926,"duplicates":null,"cities":[{"city":"Omaha","n":36441},{"city":"Lincoln","n":16968},{"city":"Norfolk","n":2839},{"city":"Grand Island","n":2708},{"city":"Bellevue","n":2275},{"city":"Kearney","n":1751},{"city":"Papillion","n":1701},{"city":"Hastings","n":1364},{"city":"North Platte","n":1262},{"city":"Scottsbluff","n":1210},{"city":"Fremont","n":1124},{"city":"Elkhorn","n":997},{"city":"Columbus","n":926},{"city":"Beatrice","n":552},{"city":"La Vista","n":532}]},{"code":"WV","name":"West Virginia","target":91483,"current":74540,"remaining":16943,"duplicates":null,"cities":[{"city":"Charleston","n":8428},{"city":"Morgantown","n":5958},{"city":"Huntington","n":5413},{"city":"Barboursville","n":3884},{"city":"Beckley","n":3332},{"city":"Parkersburg","n":2923},{"city":"Martinsburg","n":2750},{"city":"South Charleston","n":2655},{"city":"Elkins","n":2130},{"city":"Wheeling","n":2021},{"city":"Fairmont","n":1642},{"city":"Clarksburg","n":1218},{"city":"Princeton","n":1116},{"city":"Belington","n":1085},{"city":"Buckhannon","n":839}]},{"code":"AR","name":"Arkansas","target":86462,"current":77926,"remaining":8536,"duplicates":null,"cities":[{"city":"Little Rock","n":13818},{"city":"Jonesboro","n":5521},{"city":"Fayetteville","n":4204},{"city":"Fort Smith","n":3595},{"city":"Conway","n":3301},{"city":"North Little Rock","n":2797},{"city":"Springdale","n":2646},{"city":"Hot Springs","n":2414},{"city":"Rogers","n":2388},{"city":"Bentonville","n":2006},{"city":"Benton","n":1998},{"city":"Searcy","n":1651},{"city":"Paragould","n":1492},{"city":"Russellville","n":1477},{"city":"Batesville","n":1199}]},{"code":"KS","name":"Kansas","target":72678,"current":68566,"remaining":4112,"duplicates":null,"cities":[{"city":"Wichita","n":13039},{"city":"Overland Park","n":7633},{"city":"Topeka","n":5608},{"city":"Kansas City","n":4923},{"city":"Olathe","n":2858},{"city":"Lawrence","n":2690},{"city":"Lenexa","n":1791},{"city":"Manhattan","n":1690},{"city":"Salina","n":1390},{"city":"Leawood","n":1320},{"city":"Leavenworth","n":1272},{"city":"Shawnee","n":1237},{"city":"Hutchinson","n":1110},{"city":"Prairie Village","n":903},{"city":"Hays","n":858}]},{"code":"NM","name":"New Mexico","target":69615,"current":60536,"remaining":9079,"duplicates":null,"cities":[{"city":"Albuquerque","n":25990},{"city":"Las Cruces","n":6059},{"city":"Santa Fe","n":4883},{"city":"Rio Rancho","n":2440},{"city":"Gallup","n":2223},{"city":"Farmington","n":2004},{"city":"Alamogordo","n":1546},{"city":"Clovis","n":1350},{"city":"Roswell","n":1304},{"city":"Hobbs","n":965},{"city":"Taos","n":942},{"city":"Los Lunas","n":724},{"city":"Las Vegas","n":701},{"city":"Silver City","n":694},{"city":"Carlsbad","n":673}]},{"code":"IA","name":"Iowa","target":65997,"current":60633,"remaining":5364,"duplicates":null,"cities":[{"city":"Iowa City","n":6596},{"city":"Des Moines","n":6485},{"city":"Cedar Rapids","n":3767},{"city":"West Des Moines","n":2863},{"city":"Davenport","n":2449},{"city":"Waterloo","n":1841},{"city":"Sioux City","n":1831},{"city":"Dubuque","n":1720},{"city":"Ankeny","n":1471},{"city":"Ames","n":1437},{"city":"Council Bluffs","n":1306},{"city":"Mason City","n":1060},{"city":"Bettendorf","n":930},{"city":"Urbandale","n":924},{"city":"Coralville","n":850}]},{"code":"MS","name":"Mississippi","target":57999,"current":49074,"remaining":8925,"duplicates":null,"cities":[{"city":"Jackson","n":7141},{"city":"Hattiesburg","n":3020},{"city":"Gulfport","n":2569},{"city":"Tupelo","n":2525},{"city":"Biloxi","n":1719},{"city":"Oxford","n":1654},{"city":"Southaven","n":1507},{"city":"Meridian","n":1483},{"city":"Ridgeland","n":1310},{"city":"Flowood","n":1159},{"city":"Columbus","n":1093},{"city":"Vicksburg","n":962},{"city":"Brandon","n":897},{"city":"Ocean Springs","n":881},{"city":"Mccomb","n":831}]},{"code":"PR","name":"Puerto Rico","target":57988,"current":21025,"remaining":36963,"duplicates":null,"cities":[{"city":"San Juan","n":5355},{"city":"Guaynabo","n":1648},{"city":"Ponce","n":1331},{"city":"Bayamon","n":1297},{"city":"Caguas","n":884},{"city":"Mayaguez","n":632},{"city":"Carolina","n":595},{"city":"Humacao","n":533},{"city":"Arecibo","n":449},{"city":"Fajardo","n":291},{"city":"Isabela","n":288},{"city":"Aguadilla","n":286},{"city":"Toa Baja","n":263},{"city":"Cayey","n":235},{"city":"Yauco","n":218}]},{"code":"DC","name":"Washington DC","target":52754,"current":50112,"remaining":2642,"duplicates":null,"cities":[{"city":"Washington","n":49713},{"city":"Ne","n":148},{"city":"Washington Dc","n":87},{"city":"Washington, Dc","n":17},{"city":"Bolling Afb","n":16},{"city":"Washington D.C.","n":14},{"city":"Dc","n":8},{"city":"District Of Columbia","n":8},{"city":"Wahington","n":5},{"city":"Washington D.C","n":5},{"city":"Nw Washington","n":5},{"city":"Washinton","n":4},{"city":"Wasington","n":4},{"city":"Washington,","n":4},{"city":"Se","n":4}]},{"code":"ID","name":"Idaho","target":46268,"current":40743,"remaining":5525,"duplicates":null,"cities":[{"city":"Boise","n":11214},{"city":"Meridian","n":3616},{"city":"Idaho Falls","n":3180},{"city":"Coeur D Alene","n":2503},{"city":"Nampa","n":2433},{"city":"Pocatello","n":2411},{"city":"Twin Falls","n":2116},{"city":"Lewiston","n":982},{"city":"Caldwell","n":878},{"city":"Post Falls","n":868},{"city":"Eagle","n":797},{"city":"Moscow","n":771},{"city":"Rexburg","n":691},{"city":"Sandpoint","n":610},{"city":"Ammon","n":476}]},{"code":"ME","name":"Maine","target":43271,"current":38978,"remaining":4293,"duplicates":null,"cities":[{"city":"Portland","n":7026},{"city":"Bangor","n":3468},{"city":"Lewiston","n":2064},{"city":"Augusta","n":1486},{"city":"South Portland","n":1344},{"city":"Scarborough","n":1173},{"city":"Brunswick","n":1150},{"city":"Waterville","n":1011},{"city":"Saco","n":811},{"city":"Auburn","n":706},{"city":"Westbrook","n":706},{"city":"Biddeford","n":606},{"city":"Falmouth","n":524},{"city":"Ellsworth","n":524},{"city":"Presque Isle","n":521}]},{"code":"HI","name":"Hawaii","target":40898,"current":37446,"remaining":3452,"duplicates":null,"cities":[{"city":"Honolulu","n":15140},{"city":"Hilo","n":2239},{"city":"Waipahu","n":1995},{"city":"Aiea","n":1834},{"city":"Kailua","n":1471},{"city":"Wailuku","n":1335},{"city":"Kapolei","n":1208},{"city":"Mililani","n":1027},{"city":"Kailua Kona","n":926},{"city":"Ewa Beach","n":907},{"city":"Tripler Army Medical Center","n":844},{"city":"Kaneohe","n":841},{"city":"Kahului","n":818},{"city":"Lihue","n":678},{"city":"Kihei","n":609}]},{"code":"NH","name":"New Hampshire","target":40720,"current":35005,"remaining":5715,"duplicates":null,"cities":[{"city":"Manchester","n":4799},{"city":"Nashua","n":3616},{"city":"Concord","n":3480},{"city":"Portsmouth","n":2130},{"city":"Keene","n":1597},{"city":"Dover","n":1436},{"city":"Salem","n":1289},{"city":"Bedford","n":1167},{"city":"Exeter","n":830},{"city":"Laconia","n":810},{"city":"Derry","n":748},{"city":"Lebanon","n":640},{"city":"Londonderry","n":538},{"city":"Rochester","n":490},{"city":"Littleton","n":391}]},{"code":"AK","name":"Alaska","target":36035,"current":31646,"remaining":4389,"duplicates":null,"cities":[{"city":"Anchorage","n":14298},{"city":"Fairbanks","n":3559},{"city":"Wasilla","n":2950},{"city":"Juneau","n":1515},{"city":"Bethel","n":1271},{"city":"Palmer","n":949},{"city":"Eagle River","n":907},{"city":"Sitka","n":865},{"city":"Soldotna","n":756},{"city":"Ketchikan","n":718},{"city":"Kenai","n":564},{"city":"Homer","n":448},{"city":"Kodiak","n":352},{"city":"Jber","n":305},{"city":"Seward","n":251}]},{"code":"RI","name":"Rhode Island","target":32157,"current":29888,"remaining":2269,"duplicates":null,"cities":[{"city":"Providence","n":10320},{"city":"Warwick","n":3050},{"city":"Cranston","n":1763},{"city":"Pawtucket","n":1607},{"city":"Woonsocket","n":1290},{"city":"East Providence","n":839},{"city":"Johnston","n":742},{"city":"East Greenwich","n":733},{"city":"Wakefield","n":713},{"city":"Riverside","n":678},{"city":"Middletown","n":662},{"city":"North Kingstown","n":636},{"city":"Westerly","n":582},{"city":"Lincoln","n":540},{"city":"Newport","n":535}]},{"code":"MT","name":"Montana","target":29989,"current":26664,"remaining":3325,"duplicates":null,"cities":[{"city":"Billings","n":4886},{"city":"Missoula","n":4223},{"city":"Bozeman","n":2919},{"city":"Great Falls","n":2280},{"city":"Kalispell","n":2087},{"city":"Helena","n":1952},{"city":"Butte","n":938},{"city":"Hamilton","n":518},{"city":"Whitefish","n":470},{"city":"Polson","n":328},{"city":"Livingston","n":318},{"city":"Miles City","n":315},{"city":"Belgrade","n":277},{"city":"Havre","n":250},{"city":"Lewistown","n":232}]},{"code":"DE","name":"Delaware","target":27926,"current":24836,"remaining":3090,"duplicates":null,"cities":[{"city":"Wilmington","n":7396},{"city":"Newark","n":5211},{"city":"Dover","n":2694},{"city":"Lewes","n":1887},{"city":"New Castle","n":885},{"city":"Middletown","n":866},{"city":"Milford","n":771},{"city":"Bear","n":543},{"city":"Seaford","n":500},{"city":"Georgetown","n":477},{"city":"Smyrna","n":425},{"city":"Hockessin","n":365},{"city":"Millsboro","n":359},{"city":"Rehoboth Beach","n":345},{"city":"Claymont","n":286}]},{"code":"ND","name":"North Dakota","target":27630,"current":24892,"remaining":2738,"duplicates":null,"cities":[{"city":"Fargo","n":7918},{"city":"Bismarck","n":4320},{"city":"Grand Forks","n":2780},{"city":"Minot","n":2169},{"city":"Williston","n":751},{"city":"Dickinson","n":746},{"city":"West Fargo","n":743},{"city":"Jamestown","n":627},{"city":"Mandan","n":622},{"city":"Devils Lake","n":530},{"city":"Wahpeton","n":240},{"city":"Valley City","n":198},{"city":"Grafton","n":138},{"city":"Bottineau","n":92},{"city":"Minot Afb","n":85}]},{"code":"SD","name":"South Dakota","target":23192,"current":20695,"remaining":2497,"duplicates":null,"cities":[{"city":"Sioux Falls","n":7756},{"city":"Rapid City","n":3599},{"city":"Aberdeen","n":961},{"city":"Watertown","n":702},{"city":"Yankton","n":618},{"city":"Spearfish","n":527},{"city":"Fort Meade","n":506},{"city":"Brookings","n":458},{"city":"Mitchell","n":455},{"city":"Pierre","n":392},{"city":"Dakota Dunes","n":372},{"city":"Huron","n":255},{"city":"Hot Springs","n":244},{"city":"Vermillion","n":222},{"city":"Sturgis","n":166}]},{"code":"VT","name":"Vermont","target":19171,"current":17635,"remaining":1536,"duplicates":null,"cities":[{"city":"Burlington","n":3703},{"city":"Rutland","n":1114},{"city":"South Burlington","n":934},{"city":"Brattleboro","n":788},{"city":"Bennington","n":636},{"city":"Saint Albans","n":595},{"city":"Colchester","n":552},{"city":"Montpelier","n":530},{"city":"Williston","n":523},{"city":"Middlebury","n":505},{"city":"White River Junction","n":497},{"city":"Barre","n":481},{"city":"Springfield","n":440},{"city":"St Johnsbury","n":389},{"city":"Newport","n":366}]},{"code":"WY","name":"Wyoming","target":18460,"current":16965,"remaining":1495,"duplicates":null,"cities":[{"city":"Cheyenne","n":3583},{"city":"Casper","n":2546},{"city":"Laramie","n":1775},{"city":"Sheridan","n":1099},{"city":"Gillette","n":927},{"city":"Rock Springs","n":774},{"city":"Jackson","n":745},{"city":"Cody","n":676},{"city":"Evanston","n":490},{"city":"Riverton","n":478},{"city":"Lander","n":434},{"city":"Torrington","n":352},{"city":"Powell","n":317},{"city":"Worland","n":281},{"city":"Douglas","n":279}]},{"code":"VI","name":"U.S. Virgin Islands","target":1254,"current":126,"remaining":1128,"duplicates":null,"cities":[{"city":"Christiansted","n":65},{"city":"St. Thomas","n":15},{"city":"St Thomas","n":13},{"city":"Frederiksted","n":8},{"city":"Charlotte Amalie","n":3},{"city":"St.Thomas","n":2},{"city":"Newport News","n":2},{"city":"Norfolk","n":2},{"city":"Fort Lee","n":1},{"city":"Fredericksburg","n":1},{"city":"Cruz Bay, St John","n":1},{"city":"Hampton","n":1},{"city":"St.Croix","n":1},{"city":"Alexandria","n":1},{"city":"Portsmouth","n":1}]},{"code":"GU","name":"Guam","target":1183,"current":411,"remaining":772,"duplicates":null,"cities":[{"city":"Tamuning","n":226},{"city":"Agana Heights","n":57},{"city":"Dededo","n":28},{"city":"Hagatna","n":19},{"city":"Mangilao","n":18},{"city":"Barrigada","n":9},{"city":"Yigo","n":6},{"city":"Inarajan","n":5},{"city":"Yona","n":5},{"city":"Chalan Pago","n":4},{"city":"Talofofo","n":4},{"city":"Sinajana","n":3},{"city":"Santa Rita","n":3},{"city":"Tutuhan","n":3},{"city":"Upper Tumon","n":3}]},{"code":"MP","name":"N. Mariana Islands","target":322,"current":3,"remaining":319,"duplicates":null,"cities":[{"city":"Shannon","n":1},{"city":"Solomon","n":1},{"city":"Belmont","n":1}]},{"code":"AS","name":"American Samoa","target":229,"current":6,"remaining":223,"duplicates":null,"cities":[{"city":"Tucson","n":3},{"city":"Glendale","n":2},{"city":"West Memphis","n":1}]}];
+  var rows = DATA.slice().sort(function(a,b){return b.remaining-a.remaining;});
+  var st=DATA.reduce(function(s,r){return s+r.target;},0), lv=DATA.reduce(function(s,r){return s+r.current;},0), rm=DATA.reduce(function(s,r){return s+r.remaining;},0);
+  var dupMeasured=DATA.reduce(function(s,r){return s+(r.duplicates||0);},0);
+  var fmt=function(n){return n.toLocaleString("en-US");};
+  document.getElementById("rpStaged").textContent=fmt(st);
+  document.getElementById("rpLive").textContent=fmt(lv);
+  document.getElementById("rpRemaining").textContent=fmt(rm);
+  document.getElementById("rpDup").textContent=fmt(dupMeasured);
+  document.getElementById("rpBody").innerHTML=rows.map(function(r){
+    var dup = r.duplicates==null ? "<span style=\"color:var(--muted)\">not measured</span>" : fmt(r.duplicates);
+    return "<tr style=\"border-bottom:1px solid var(--border)\"><td style=\"padding:8px\">"+r.name+" <span class=\"mono\" style=\"color:var(--muted)\">"+r.code+"</span></td><td style=\"padding:8px;text-align:right\" class=\"tab\">"+fmt(r.target)+"</td><td style=\"padding:8px;text-align:right\" class=\"tab\">"+fmt(r.current)+"</td><td style=\"padding:8px;text-align:right\" class=\"tab\">"+fmt(r.remaining)+"</td><td style=\"padding:8px;text-align:right\" class=\"tab\">"+dup+"</td></tr>";
+  }).join("");
+})();
+</script>
+</body></html>
