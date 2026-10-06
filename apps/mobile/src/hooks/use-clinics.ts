@@ -122,7 +122,6 @@ async function fetchReports(reportExpiry: ReportExpirySettings): Promise<WaitTim
     .from('wait_time_reports')
     .select('*')
     .gte('reported_at', cutoffIso)
-    .or('is_flagged.is.null,is_flagged.eq.false')
     .order('reported_at', { ascending: false })
     .limit(1000);
   if (error) throw error;
@@ -259,6 +258,7 @@ export const useClinics = (
     for (const report of reports) {
       const reportedAtMs = new Date(report.reported_at).getTime();
       if (!Number.isFinite(reportedAtMs)) continue;
+      if (report.is_flagged) continue;
       if (reportedAtMs + windowMs <= nowMs) continue;
       const list = map.get(report.clinic_id) ?? [];
       list.push({
@@ -274,7 +274,8 @@ export const useClinics = (
   const clinicsWithMeta = useMemo<ClinicWithMeta[]>(() => {
     return clinics.map((clinic) => {
       const latest = latestReportByClinic.get(clinic.id);
-      const visibleLatest = latest && isLatestReportActive(latest) ? latest : undefined;
+      // A flagged or expired newest report reads On time; older reports never show through.
+      const visibleLatest = latest && !latest.is_flagged && isLatestReportActive(latest) ? latest : undefined;
       return {
         ...clinic,
         latestWaitMinutes: waitTimeCategoryToMinutes(visibleLatest?.wait_time),

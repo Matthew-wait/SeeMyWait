@@ -1331,11 +1331,13 @@ export default function AdminDashboard() {
 
   const deleteReport = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("wait_time_reports").delete().eq("id", id);
+      // Expire rather than remove: the row moves to Expired and the office reads On Time,
+      // and the older report underneath does not come back as the active one.
+      const { error } = await supabase.from("wait_time_reports").update({ is_flagged: true }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Report deleted."); queryClient.invalidateQueries({ queryKey: ["admin-reports"] }); },
-    onError: () => toast.error("Failed to delete report."),
+    onSuccess: () => { toast.success("Report moved to expired."); queryClient.invalidateQueries({ queryKey: ["admin-reports"] }); },
+    onError: () => toast.error("Failed to expire report."),
   });
 
   const handleLogout = async () => { await supabase.auth.signOut(); navigate("/"); };

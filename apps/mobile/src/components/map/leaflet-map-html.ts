@@ -60,6 +60,7 @@ export function buildLeafletMapHtml(): string {
   html, body, #map { height: 100%; margin: 0; padding: 0; background: #e5e7eb; }
   .smw-pin-wrap { position: relative; width: 36px; height: 48px; filter: drop-shadow(0 2px 2px rgba(15,23,42,0.28)); }
   .smw-pin-wrap svg { display: block; }
+  .smw-back { position: absolute; left: 0; top: 0; }
   .smw-badge { position: absolute; left: 20px; top: -5px; min-width: 18px; height: 18px; box-sizing: border-box;
     padding: 0 4px; border-radius: 9px; background: #1e293b; color: #fff; border: 1.5px solid #fff;
     font: 700 9px/15px system-ui, -apple-system, 'Segoe UI', sans-serif; text-align: center; white-space: nowrap; }
@@ -112,13 +113,23 @@ export function buildLeafletMapHtml(): string {
 
   // Same artwork as the web canvas pin (clinic-pin-layer.ts): teardrop + white dot,
   // with an optional count badge when one pin stands for several offices.
-  function pinIcon(color, count) {
-    var badge = count > 1 ? '<div class="smw-badge">' + (count > 99 ? '99+' : String(count)) + '</div>' : '';
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 24 32">'
+  function pinSvg(color) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 24 32">'
       + '<path fill="' + color + '" stroke="white" stroke-width="1.5" d="M12 .5C5.9.5 1 5.4 1 11.5c0 8 11 19.5 11 19.5s11-11.5 11-19.5C23 5.4 18.1.5 12 .5z"/>'
       + '<circle cx="12" cy="11.5" r="4.3" fill="white"/></svg>';
+  }
+
+  // A stack is drawn as the front pin with up to two pins cascaded behind it, and one
+  // count badge — the same look as the web map (apps/web clinic-pin-layer).
+  function pinIcon(color, count) {
+    var badge = count > 1 ? '<div class="smw-badge">' + (count > 99 ? '99+' : String(count)) + '</div>' : '';
+    var back = '';
+    if (count > 1) {
+      back = '<div class="smw-back" style="left:-8px;top:-6px;opacity:.75">' + pinSvg(color) + '</div>'
+        + '<div class="smw-back" style="left:-4px;top:-3px;opacity:.9">' + pinSvg(color) + '</div>';
+    }
     return L.divIcon({
-      html: '<div class="smw-pin-wrap">' + svg + badge + '</div>',
+      html: '<div class="smw-pin-wrap">' + back + pinSvg(color) + badge + '</div>',
       className: '',
       iconSize: [36, 48],
       iconAnchor: [18, 48],
