@@ -406,9 +406,9 @@ Live database totals at 2026-10-06 12:36Z (17:36 PKT), unchanged from 11:44Z:
 
 Time to completion: not computable while stopped. Completion is not claimed.
 
-## Status update: 2026-10-06 18:38 PKT (UTC+05:00): runner resumed
+## Status update: 2026-10-06 17:38 PKT (UTC+05:00): runner resumed
 
-Runner: adaptive state runner PID 21240 started at 12:37Z (18:37 PKT) from the saved MA cursor with batch size 500, under approval. Committing at 12:38:34Z: 1000-row batches, MA at 167,150 state rows.
+Runner: adaptive state runner PID 21240 started at 12:37Z (17:37 PKT) from the saved MA cursor with batch size 500, under approval. Committing at 12:38:34Z: 1000-row batches, MA at 167,150 state rows.
 
 Leftover session check before start: the query returned no backfill session. The one-row result was an empty response, not a session.
 
