@@ -451,3 +451,30 @@ States done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-s
 Live totals: last verified at 13:40Z (18:40 PKT): done 6,787,730; remaining 1,731,514 with a state, plus 19 with no state; missing coordinates 0; invalid coordinates 0. These will be refreshed at the next live count.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 21:00 PKT (UTC+05:00): runner stopped (HTTP 400)
+
+Runner: PID 21424 stopped at 14:03:12Z (19:03 PKT) with "The remote server returned an error: (400) Bad Request.", state MA. Preceding events: timeout_retry at 13:59:06Z and 14:01:09Z (batch 300, next timeout 120 seconds). Last committed batch: 13:57:04Z (18:57 PKT). Not running at 16:00Z (21:00 PKT). Restart requires approval.
+
+Pattern across stops: each stop came shortly after timeout retries (10:00 and 10:02Z before a 400; 12:50Z before a 502; 13:59 and 14:01Z before this 400). This points to database or gateway load during MA, but that is not confirmed.
+
+Rows done in the last 30 minutes: 0 (no commits after 13:57:04Z).
+Since the 13:50Z restart: 18,400 rows over about 384 s, about 48 rows/s, about 2,880 rows/min. This covers a short window.
+
+States done: 52 of 56. Current state: MA (225,750 state rows at the last status write). Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+States done in the last 30 minutes: 0.
+
+Live database totals at 2026-10-06 16:00Z (21:00 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 6,806,130 |
+| Still left: valid eligible rows missing geog, with state | 1,713,114 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: not computable while stopped. At about 48 rows/s, about 10 hours of running time. At the earlier 101 rows/s average, about 4.7 hours.
+
+Completion is not claimed.
