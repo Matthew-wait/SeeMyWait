@@ -147,3 +147,25 @@ Live database totals at 2026-10-06 06:21Z (11:21 PKT):
 Recorded runner counters are conservative: cumulative recorded state-runner commits are 3,295,585 and may omit unlogged commits. Live counts, not counters, determine completion. Completion is not claimed; the backfill is not finished.
 
 To resume: run `scripts/resume-geog-states.ps1` as the sole worker, after confirming no other runner or database backfill session is active. The script keeps the geog-is-null guard and reads its saved cursor. The global `public.backfill_clinics_geog_batch` must not run alongside it.
+
+## Progress update: 2026-10-06 12:50 PKT (UTC+05:00)
+
+Worker: sole adaptive state runner PID 30456, started 11:27 PKT by the restart from the saved cursor (the earlier PID 7644 was stopped; no other runner or database backfill session was active when checked). Adaptive levels are 300, 500, 1000, and 1500 rows per batch, stepping up after batches under 5 s and down after batches over 12 s. A statement timeout halves the batch with a floor of 300.
+
+Completed: 48/56 jurisdictions. Runner-recorded completion includes VA, CO, and MD, each finished after the runner's own post-state check. Live check of CO and MD has not been run separately.
+Remaining: GA (in progress, 191,650 state rows so far), NJ, IL, WA, MA, NC, OH, CA; then the 19-row no-state pass; then a final sweep.
+
+Throughput since the 11:27 PKT restart: 297 committed batches, 283,976 rows, about 114 rows/s average. Recent 1000-row batches took about 4.8 to 7.3 s. One timeout_retry at 12:29 PKT (batch 750, 60 s timeout) was handled by the runner.
+
+Live database totals at 2026-10-06 07:50Z (12:50 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 5,937,872 |
+| Still left: valid eligible rows missing geog, with state | 2,581,372 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Completion is not claimed. Counts are a live snapshot and change as the runner commits.
