@@ -243,3 +243,28 @@ Live database totals at 2026-10-06 08:59Z (13:59 PKT):
 Time to completion: 2,157,459 rows left. At the 30-minute rate (92.2 rows/s), about 6.5 hours (around 21:30 PKT). At the since-restart average (105.0 rows/s), about 5.7 hours (around 20:40 PKT). Estimates only; the no-state pass and final sweep are not included.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 14:30 PKT (UTC+05:00)
+
+Runner: adaptive state runner PID 30456, running at 09:29Z. Current state: WA (217,100 state rows so far). Status file: batch size 500, timeout 60 seconds.
+
+States done in the last 30 minutes: 0. No state completed in this window; WA is still in progress.
+Overall states done: 51 of 56. Remaining: WA (in progress), MA, NC, OH, CA (5 states), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 30 minutes: 205,600 committed rows across 222 batches, in 1,787 seconds of batch-timestamp span. Average 115.0 rows/s, about 6,902 rows/min.
+Average since the 12:27 PKT restart: 1,164,184 rows over 10,942 s, 106.4 rows/s, about 6,384 rows/min.
+
+Live database totals at 2026-10-06 09:29Z (14:29 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 6,570,904 |
+| Still left: valid eligible rows missing geog, with state | 1,948,340 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: 1,948,359 rows left. At the 30-minute rate (115.0 rows/s), about 4.7 hours (around 19:10 PKT). At the since-restart average (106.4 rows/s), about 5.1 hours (around 19:35 PKT). Estimates only; the no-state pass and final sweep are not included.
+
+Completion is not claimed.
