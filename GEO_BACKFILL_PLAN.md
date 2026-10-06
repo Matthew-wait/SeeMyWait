@@ -416,3 +416,27 @@ States done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-s
 Rows and live totals: to be refreshed at the next live count. The last verified totals were at 12:36Z: done 6,743,230; remaining 1,776,014 with a state, plus 19 with no state; missing coordinates 0; invalid coordinates 0.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 18:40 PKT (UTC+05:00): runner stopped again (HTTP 502)
+
+Runner: PID 21240 stopped at 12:51:58Z (17:52 PKT) with "The remote server returned an error: (502) Bad Gateway", state MA. Its last event before the stop was a timeout_retry at 12:50:31Z (batch 500, next timeout 120 seconds). Not running at 13:40Z. Restart requires approval.
+
+Committed by PID 21240 before the stop: 57 batches, 44,500 rows, last commit 12:48:28Z, MA at 207,350 state rows.
+
+A 502 can commit without returning a response. Lingering check at 13:40Z: no active clinics sessions in pg_stat_activity, so no in-flight batch remains. Completion of the 502 request is still unknown, but the live counts and the geog IS NULL guard make a resume safe.
+
+States done in the last 30 minutes: 0. Overall states done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+Rows done in the last 30 minutes: 44,500 (through 12:48:28Z).
+
+Live database totals at 2026-10-06 13:40Z (18:40 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 6,787,730 |
+| Still left: valid eligible rows missing geog, with state | 1,731,514 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: not computable while stopped. Completion is not claimed.
