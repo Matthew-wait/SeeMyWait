@@ -169,3 +169,27 @@ Live database totals at 2026-10-06 07:50Z (12:50 PKT):
 | Invalid non-null coordinates (reported separately) | 0 |
 
 Completion is not claimed. Counts are a live snapshot and change as the runner commits.
+
+## Status update: 2026-10-06 12:56 PKT (UTC+05:00)
+
+Runner: adaptive state runner PID 30456, running. Current state: NJ (state 49 of 56 complete; GA finished at 07:50:51Z). Batch sizes 300 to 1500 adaptively; status file shows 1500 with a 30-second timeout.
+
+States complete: 49 of 56. Remaining: NJ (in progress), IL, WA, MA, NC, OH, CA (7 states), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 30 minutes (since 12:26 PKT): 222,364 committed rows across 220 batches, in 1,795 seconds of batch-timestamp span. Averages: 123.9 rows/s, about 7,431 rows/min.
+Average since the 12:27 PKT restart: 570,166 rows over 5,307 s, about 107.4 rows/s, about 6,444 rows/min.
+
+Live database totals at 2026-10-06 07:55Z (12:55 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 5,976,136 |
+| Still left: valid eligible rows missing geog, with state | 2,543,108 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion estimate: 2,543,127 rows left. At the 30-minute rate (123.9 rows/s), about 5.7 hours (around 18:40 PKT). At the since-restart average (107.4 rows/s), about 6.6 hours (around 19:30 PKT). These are estimates; the state sizes vary, and the no-state and final sweep add time.
+
+Completion is not claimed.
