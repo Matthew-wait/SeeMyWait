@@ -295,3 +295,26 @@ Live database totals at 2026-10-06 10:02Z (15:02 PKT):
 Time to completion: 1,833,233 rows left. At the 30-minute rate (67.0 rows/s), about 7.6 hours (around 22:40 PKT). At the since-restart average (101.2 rows/s), about 5.0 hours (around 20:05 PKT). The 30-minute rate depends on the current timeouts, so the restart average is the more likely guide if the database recovers. Estimates only; the no-state pass and final sweep are not included.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 15:34 PKT (UTC+05:00): runner stopped
+
+Runner: adaptive state runner PID 30456 is NOT running. No runner process found at 10:34Z. Status file: running=false, state MA, state rows 105,650, batch size 500, timeout 120 seconds, error "The remote server returned an error: (400) Bad Request."
+
+Stop event: 10:04:18Z (15:04 PKT), state MA, error "The remote server returned an error: (400) Bad Request." The runner stopped without a confirmed statement timeout (57014), so it did not retry. This is the safe-stop path. The HTTP 400 is not explained by the log, and it is not known whether the request that received the 400 committed any rows. The last committed batch is 09:58:11Z (300 rows, cursor 5d8edfad-1564-4d93-bc29-586779c0692f). Two timeout_retry events preceded the stop (10:00:13Z and 10:02:16Z, both at batch 300, next timeout 120 seconds).
+
+Cause: not established. The 400 response is an unexpected error from the Supabase management API, not a confirmed statement timeout. No backfill session was checked during this update; a live check is needed before resuming.
+
+Live verification at 10:34Z (15:34 PKT) shows no commits since 10:02Z: done 6,686,030 (unchanged from the 15:02 PKT update). No batches were committed in the last 30 minutes.
+
+States done in the last 30 minutes: 0. Overall states done: 52 of 56. Remaining: MA (in progress, 105,650 state rows), NC, OH, CA (4 states), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 30 minutes: 0.
+Overall rows done: 6,686,030. Remaining: 1,833,214 valid with state, 19 with no state. Missing coordinates: 0. Invalid coordinates: 0.
+
+Average since the 12:27 PKT restart: 1,279,310 committed rows over 12,642 s, 101.2 rows/s, about 6,072 rows/min. This average excludes the stopped period.
+
+Time to completion: not computable while stopped. At the restart average (101.2 rows/s), 1,833,233 remaining rows would take about 5.0 hours of running time after a resume.
+
+Resume requires explicit approval. The runner's geog-is-null guard and saved cursor make a resume from the saved MA cursor safe.
+
+Completion is not claimed.
