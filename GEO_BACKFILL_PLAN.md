@@ -357,9 +357,9 @@ Time to completion: 1,816,433 rows left. At 94.2 rows/s, about 5.4 hours (around
 
 Completion is not claimed.
 
-## Status update: 2026-10-06 17:14 PKT (UTC+05:00): runner stopped
+## Status update: 2026-10-06 16:44 PKT (UTC+05:00): runner stopped
 
-Runner: adaptive state runner PID 38060 is NOT running at 11:44Z (17:14 PKT). The status file still reads running=true, which is stale. The runner exited silently after its last event, a timeout_retry at 11:25:18Z (batch 300, next timeout 120 seconds). No stopped event or error was logged, so the cause is not established. The timeouts preceding the exit were at 11:17:35Z, 11:19:37Z, 11:23:16Z, and 11:25:18Z, all at batch size 300. This is consistent with a database that was slow or busy, but that is not confirmed.
+Runner: adaptive state runner PID 38060 is NOT running at 11:44Z (16:44 PKT). The status file still reads running=true, which is stale. The runner exited silently after its last event, a timeout_retry at 11:25:18Z (batch 300, next timeout 120 seconds). No stopped event or error was logged, so the cause is not established. The timeouts preceding the exit were at 11:17:35Z, 11:19:37Z, 11:23:16Z, and 11:25:18Z, all at batch size 300. This is consistent with a database that was slow or busy, but that is not confirmed.
 
 No restart was attempted. Restarting requires approval.
 
@@ -369,7 +369,7 @@ Overall states done: 52 of 56. Current state: MA (162,850 state rows at the last
 Rows done in the last 30 minutes: 7,200 committed rows across 18 batches, all by PID 38060 before its exit (last commit 11:21:13Z).
 Average since the 16:01 PKT restart: 57,200 rows over 1,162 s, 49.2 rows/s, about 2,954 rows/min. The rate fell during the timeout period.
 
-Live database totals at 2026-10-06 11:44Z (17:14 PKT):
+Live database totals at 2026-10-06 11:44Z (16:44 PKT):
 
 | Live database totals | Rows |
 | --- | ---: |
