@@ -385,3 +385,23 @@ Time to completion: not computable while stopped. At the restart average (49.2 r
 Resume from the saved MA cursor requires approval. The geog-is-null guard keeps a resume safe.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 17:36 PKT (UTC+05:00): runner still stopped
+
+Runner: PID 38060 is NOT running at 12:36Z (17:36 PKT). No resume process is running. Last progress event: timeout_retry at 11:25:18Z. No commits since then, which is about 71 minutes. Restart requires approval.
+
+States done in the last 30 minutes: 0. Overall states done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+Rows done in the last 30 minutes: 0.
+
+Live database totals at 2026-10-06 12:36Z (17:36 PKT), unchanged from 11:44Z:
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 6,743,230 |
+| Still left: valid eligible rows missing geog, with state | 1,776,014 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: not computable while stopped. Completion is not claimed.
