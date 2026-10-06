@@ -312,12 +312,60 @@
                                       ],
                             "Count":  7
                         },
-    "totals_verified_at":  "2026-10-05T13:56:41.8177388Z",
-    "totals_query_elapsed_ms":  81948,
+    "gateway_recovery_states":  {
+                                    "value":  [
+                                                  {
+                                                      "snapshot_at":  "2026-10-05 16:02:51.942251+00",
+                                                      "state":  "AZ",
+                                                      "total":  161728,
+                                                      "with_geog":  125302,
+                                                      "eligible_missing":  36426,
+                                                      "missing_coordinates":  0,
+                                                      "invalid_coordinates":  0
+                                                  },
+                                                  {
+                                                      "snapshot_at":  "2026-10-05 16:02:51.942251+00",
+                                                      "state":  "TN",
+                                                      "total":  143958,
+                                                      "with_geog":  143958,
+                                                      "eligible_missing":  0,
+                                                      "missing_coordinates":  0,
+                                                      "invalid_coordinates":  0
+                                                  }
+                                              ],
+                                    "Count":  2
+                                },
+    "gateway_recovery_verified_at":  "2026-10-05T16:03:00.1982683Z",
+    "overnight_recovery_states":  {
+                                      "value":  [
+                                                    {
+                                                        "snapshot_at":  "2026-10-06 06:14:46.0037+00",
+                                                        "state":  "AZ",
+                                                        "total":  161728,
+                                                        "with_geog":  161728,
+                                                        "eligible_missing":  0,
+                                                        "missing_coordinates":  0,
+                                                        "invalid_coordinates":  0
+                                                    },
+                                                    {
+                                                        "snapshot_at":  "2026-10-06 06:14:46.0037+00",
+                                                        "state":  "VA",
+                                                        "total":  178536,
+                                                        "with_geog":  174633,
+                                                        "eligible_missing":  3903,
+                                                        "missing_coordinates":  0,
+                                                        "invalid_coordinates":  0
+                                                    }
+                                                ],
+                                      "Count":  2
+                                  },
+    "overnight_recovery_verified_at":  "2026-10-06T06:14:52.2313917Z",
+    "totals_verified_at":  "2026-10-06T06:17:00.1727662Z",
+    "totals_query_elapsed_ms":  20275,
     "totals_states":  {
                           "value":  [
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "AK",
                                             "total":  31646,
                                             "with_geog":  31646,
@@ -326,7 +374,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "AL",
                                             "total":  79040,
                                             "with_geog":  79040,
@@ -335,7 +383,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "AR",
                                             "total":  77926,
                                             "with_geog":  77926,
@@ -344,7 +392,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "AS",
                                             "total":  6,
                                             "with_geog":  6,
@@ -353,16 +401,16 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "AZ",
                                             "total":  161728,
-                                            "with_geog":  2677,
-                                            "eligible_missing":  159051,
+                                            "with_geog":  161728,
+                                            "eligible_missing":  0,
                                             "missing_coordinates":  0,
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "CA",
                                             "total":  1104101,
                                             "with_geog":  17782,
@@ -371,7 +419,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "CO",
                                             "total":  181393,
                                             "with_geog":  2867,
@@ -380,7 +428,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "CT",
                                             "total":  96528,
                                             "with_geog":  96528,
@@ -389,7 +437,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "DC",
                                             "total":  50112,
                                             "with_geog":  50112,
@@ -398,7 +446,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "DE",
                                             "total":  24836,
                                             "with_geog":  24836,
@@ -407,7 +455,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "FL",
                                             "total":  589657,
                                             "with_geog":  589657,
@@ -416,7 +464,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "GA",
                                             "total":  202119,
                                             "with_geog":  3205,
@@ -425,7 +473,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "GU",
                                             "total":  411,
                                             "with_geog":  411,
@@ -434,7 +482,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "HI",
                                             "total":  37446,
                                             "with_geog":  37446,
@@ -443,7 +491,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "IA",
                                             "total":  60633,
                                             "with_geog":  60633,
@@ -452,7 +500,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "ID",
                                             "total":  40743,
                                             "with_geog":  40743,
@@ -461,7 +509,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "IL",
                                             "total":  292084,
                                             "with_geog":  81150,
@@ -470,7 +518,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "IN",
                                             "total":  141394,
                                             "with_geog":  141394,
@@ -479,7 +527,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "KS",
                                             "total":  68566,
                                             "with_geog":  68566,
@@ -488,7 +536,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "KY",
                                             "total":  97638,
                                             "with_geog":  97638,
@@ -497,7 +545,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "LA",
                                             "total":  112087,
                                             "with_geog":  112087,
@@ -506,7 +554,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MA",
                                             "total":  242447,
                                             "with_geog":  3808,
@@ -515,7 +563,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MD",
                                             "total":  195646,
                                             "with_geog":  3170,
@@ -524,7 +572,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "ME",
                                             "total":  38978,
                                             "with_geog":  38978,
@@ -533,7 +581,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MI",
                                             "total":  333437,
                                             "with_geog":  333437,
@@ -542,7 +590,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MN",
                                             "total":  143427,
                                             "with_geog":  143427,
@@ -551,7 +599,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MO",
                                             "total":  121130,
                                             "with_geog":  121130,
@@ -560,7 +608,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MP",
                                             "total":  3,
                                             "with_geog":  3,
@@ -569,7 +617,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MS",
                                             "total":  49074,
                                             "with_geog":  49074,
@@ -578,7 +626,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "MT",
                                             "total":  26664,
                                             "with_geog":  26664,
@@ -587,7 +635,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NC",
                                             "total":  248206,
                                             "with_geog":  3992,
@@ -596,7 +644,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "ND",
                                             "total":  24892,
                                             "with_geog":  24892,
@@ -605,7 +653,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NE",
                                             "total":  85867,
                                             "with_geog":  85867,
@@ -614,7 +662,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NH",
                                             "total":  35005,
                                             "with_geog":  35005,
@@ -623,7 +671,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NJ",
                                             "total":  206133,
                                             "with_geog":  3399,
@@ -632,7 +680,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NM",
                                             "total":  60536,
                                             "with_geog":  60536,
@@ -641,7 +689,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NV",
                                             "total":  118599,
                                             "with_geog":  118599,
@@ -650,7 +698,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "NY",
                                             "total":  613942,
                                             "with_geog":  613942,
@@ -659,7 +707,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "OH",
                                             "total":  375850,
                                             "with_geog":  6158,
@@ -668,7 +716,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "OK",
                                             "total":  104029,
                                             "with_geog":  104029,
@@ -677,7 +725,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "OR",
                                             "total":  141871,
                                             "with_geog":  141871,
@@ -686,7 +734,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "PA",
                                             "total":  301390,
                                             "with_geog":  301390,
@@ -695,7 +743,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "PR",
                                             "total":  21025,
                                             "with_geog":  21025,
@@ -704,7 +752,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "RI",
                                             "total":  29888,
                                             "with_geog":  29888,
@@ -713,7 +761,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "SC",
                                             "total":  105707,
                                             "with_geog":  105707,
@@ -722,7 +770,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "SD",
                                             "total":  20695,
                                             "with_geog":  20695,
@@ -731,16 +779,16 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "TN",
                                             "total":  143958,
-                                            "with_geog":  137315,
-                                            "eligible_missing":  6643,
+                                            "with_geog":  143958,
+                                            "eligible_missing":  0,
                                             "missing_coordinates":  0,
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "TX",
                                             "total":  542173,
                                             "with_geog":  542173,
@@ -749,7 +797,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "UT",
                                             "total":  84422,
                                             "with_geog":  84422,
@@ -758,16 +806,16 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "VA",
                                             "total":  178536,
-                                            "with_geog":  2887,
-                                            "eligible_missing":  175649,
+                                            "with_geog":  177113,
+                                            "eligible_missing":  1423,
                                             "missing_coordinates":  0,
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "VI",
                                             "total":  126,
                                             "with_geog":  126,
@@ -776,7 +824,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "VT",
                                             "total":  17635,
                                             "with_geog":  17635,
@@ -785,7 +833,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "WA",
                                             "total":  232814,
                                             "with_geog":  6238,
@@ -794,7 +842,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "WI",
                                             "total":  133512,
                                             "with_geog":  133512,
@@ -803,7 +851,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "WV",
                                             "total":  74540,
                                             "with_geog":  74540,
@@ -812,7 +860,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  "WY",
                                             "total":  16965,
                                             "with_geog":  16965,
@@ -821,7 +869,7 @@
                                             "invalid_coordinates":  0
                                         },
                                         {
-                                            "snapshot_at":  "2026-10-05 13:55:23.299606+00",
+                                            "snapshot_at":  "2026-10-06 06:16:42.338988+00",
                                             "state":  null,
                                             "total":  47,
                                             "with_geog":  28,

@@ -45,19 +45,20 @@
                       "IN",
                       "OR",
                       "MN",
-                      "TN"
+                      "TN",
+                      "AZ"
                   ],
-    "last_city":  "Phoenix",
-    "current_state":  "AZ",
+    "last_city":  "Wytheville",
+    "current_state":  "VA",
     "timeout_seconds":  120,
-    "pid":  8280,
-    "updated_at":  "2026-10-05T15:00:47.0328326Z",
-    "resumed_at":  "2026-10-05T12:10:13.6453967Z",
-    "state_rows_updated":  92000,
+    "pid":  5176,
+    "updated_at":  "2026-10-06T06:17:10.5252562Z",
+    "resumed_at":  "2026-10-06T06:14:29.5219514Z",
+    "state_rows_updated":  174784,
     "running":  true,
-    "batch_size":  125,
+    "batch_size":  62,
     "started_at":  "2026-10-04T06:57:37.6827476Z",
     "recovery_note":  "Recovered last intact committed cursor after all-NUL status and trailing-NUL log. Recorded counters may omit unlogged committed rows; live OR pending verification, not counters, determines completion.",
-    "rows_updated":  3036572,
-    "last_id":  "cb237950-450e-493f-aac8-44bf2254cf55"
+    "rows_updated":  3278282,
+    "last_id":  "796c7724-5681-4ea3-910a-1c82948aa583"
 }

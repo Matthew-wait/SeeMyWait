@@ -11,10 +11,10 @@ Project: ziisjgtvqmturpljnvfh. Inventory: October 4, 2026.
 
 The database global UUID cursor does not describe state completion and will remain unchanged. State progress is saved in geog-state-backfill-status.json; events are in geog-state-backfill-progress.jsonl. Completion describes rows present at verification time; future imports require another pass.
 
-Progress as of 2026-10-05 18:57:11 PKT (UTC+05:00): 43/56 jurisdictions completed and independently live-verified; 13 jurisdictions remain including current state TN, followed by the no-state pass and final eligibility sweep. OR and MN are now complete. Existing sole worker PID 8280 remains running; no duplicate was launched. Current adaptive settings: 125 rows / 120 seconds after earlier confirmed TN statement timeouts. Current TN recorded commits: 137,125; cumulative recorded state-runner commits: 2,940,054. Recorded counters may omit commits whose checkpoint/log writes were corrupted during the earlier recovery and are distinct from total existing geog. Latest three confirmed batches committed 375 rows in 8.026 seconds of measured request time. Worker stderr is empty. Full-table live verification at 2026-10-05 18:55:23 PKT confirms zero eligible missing geog in all 43 completed jurisdictions and zero coordinate exceptions globally. No overall completion is claimed.
+Progress as of 2026-10-06 11:15:11 PKT (UTC+05:00): 45/56 jurisdictions completed and verified; 11 remain including current state VA, followed by the no-state pass and final eligibility sweep. Arizona independently verified complete on October 6 at 11:14:46 PKT: all 161,728 rows have geog, with zero eligible missing and zero missing or invalid coordinates. Sole worker PID 5176 is confirmed running after safe resume at 2026-10-06 11:14:29 PKT with preserved adaptive settings of 62 rows / 120 seconds. Current-state recorded commits: 171,994; cumulative recorded state-runner commits: 3,275,492. Since this resume, 496 rows were confirmed committed in 8 batches, totaling 41.963 seconds of measured request time. Counters may omit earlier unlogged commits and are distinct from total existing geog. VA live snapshot at 2026-10-06 11:14:46 PKT counted 174,633 rows with geog and 3,903 eligible missing, with zero coordinate exceptions; subsequent commits continue reducing this remainder. Worker stderr is empty. The global table remains the last full-database snapshot dated October 5 at 18:55:23 PKT; no fresh global count is claimed. No overall completion is claimed.
 
 
-| Live database totals at 2026-10-05 18:55:23 PKT | Rows |
+| Last full-database snapshot at 2026-10-05 18:55:23 PKT | Rows |
 | --- | ---: |
 | All clinic rows | 8,519,263 |
 | Done: rows with geog already populated | 5,028,877 |
@@ -75,9 +75,9 @@ Islamabad/Rawalpindi update (October 5): all 27 manually added clinics were inde
 | 41 | IN | 139182 | Done (verified) |
 | 42 | OR | 139583 | Done (verified) |
 | 43 | MN | 141187 | Done (verified) |
-| 44 | TN | 141643 | In progress |
-| 45 | AZ | 159051 | Pending |
-| 46 | VA | 175649 | Pending |
+| 44 | TN | 141643 | Done (verified) |
+| 45 | AZ | 159051 | Done (verified) |
+| 46 | VA | 175649 | In progress |
 | 47 | CO | 178526 | Pending |
 | 48 | MD | 192476 | Pending |
 | 49 | GA | 198914 | Pending |
@@ -112,4 +112,10 @@ Authentication recovery (2026-10-05 16:25 PKT): replacement authorized access pa
 Checkpoint recovery (2026-10-05 17:10 PKT): previous worker PID 23388 was absent and no database backfill session remained. Status JSON consisted of 1,883 NUL bytes, and the event log had 205 trailing NUL bytes; cause is consistent with interrupted filesystem writes but is not established. Preserved both originals as geog-state-backfill-status.corrupt-20261005-120951.json and geog-state-backfill-progress.backup-20261005-120951.jsonl. Trimmed only the trailing NUL corruption and rebuilt the last intact OR/Canby cursor from committed events (15,000 logged state rows, 2,538,159 cumulative recorded rows). Live OR coverage was 1,000 rows ahead of logged commits relative to inventory, so counters are conservative; existing geog rows are skipped safely, and completion uses live eligibility checks. IN independently verified complete at 141,394 rows, all with geog. Resumed sole runner PID 8280 without resetting progress or replaying geog writes.
 
 
+
+
+Gateway recovery (2026-10-05 21:02 PKT): old PID 8280 stopped at 20:21:58 PKT with HTTP 502 Bad Gateway. Authorized read-only access succeeded afterward; no local or database backfill batch remained active. Preserved AZ/Show Low cursor bf23fdd6-91a8-4cd0-bac8-84520f84fae9 was verified to have geog, with no eligible missing rows at or before it. The failed request may have committed rows without a response, so its outcome was not added to counters. Safe resume retains the geog-is-null guard and skips any already committed rows. No global worker or duplicate state worker was launched.
+
+
+Overnight recovery (2026-10-06 11:14 PKT): saved PID 28312 was absent; running=true was stale from the last batch at October 5 22:48:51 PKT. No stopped event established the exit cause. Authorized live checks found no local or database backfill worker. Saved VA/Woodbridge cursor 24301a49-cfd3-4e00-ac3b-f797cb1c7b9d has geog, with zero eligible missing at or before it, while VA still had eligible missing rows. Preserved all checkpoint values and safely resumed sole existing runner PID 5176; no global worker was launched. Unknown unlogged commits were not added to recorded counters, and geog-is-null guard skips existing writes.
 
