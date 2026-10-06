@@ -69,7 +69,12 @@ export function OnboardingPage() {
       void finish();
       return;
     }
-    listRef.current?.scrollToIndex({ index: index + 1, animated: true });
+    const next = index + 1;
+    // Set state directly rather than relying on onMomentumScrollEnd to catch
+    // up — that handler can miss a programmatic (non-gesture) scroll on
+    // React Native Web, leaving the button's label/step stuck.
+    setIndex(next);
+    listRef.current?.scrollToOffset({ offset: next * SCREEN_WIDTH, animated: true });
   }, [finish, index, steps.length]);
 
   return (
@@ -88,6 +93,7 @@ export function OnboardingPage() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        getItemLayout={(_, i) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * i, index: i })}
         onMomentumScrollEnd={(e) => {
           const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
           setIndex(Math.max(0, Math.min(steps.length - 1, next)));

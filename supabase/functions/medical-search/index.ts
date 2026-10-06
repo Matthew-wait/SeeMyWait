@@ -178,12 +178,23 @@ async function handleSearch(sb: SupabaseClient, body: Record<string, unknown>): 
 
   // ── DB first ──
   const safe = query.replace(/[,()*%]/g, " ").trim();
-  const { data: dbRows } = await sb
+  const { data: dbRows, error: dbError } = await sb
     .from("clinics")
     .select("id, name, address, latitude, longitude, npi")
     .eq("is_active", true)
     .or(`name.ilike.*${safe}*,address.ilike.*${safe}*`)
     .limit(10);
+
+  // A failed (e.g. timed-out) DB search must NOT be treated as "0 matches" —
+  // that would silently poison the NPPES dedup below: an already-saved
+  // clinic the DB query just couldn't confirm would then show up as a brand
+  // new "Verify" result instead of being recognized. Mark degraded and skip
+  // the NPPES top-up instead, so the UI can say search is degraded rather
+  // than lying about whether this place is already saved.
+  if (dbError) {
+    console.error("[medical-search] DB search failed:", dbError.message);
+    return json({ ok: true, results: [], limited: false, degraded: true });
+  }
 
   const dbResults = (dbRows ?? []).map((c) => ({
     source: "db" as const,
