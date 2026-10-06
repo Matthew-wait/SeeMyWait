@@ -50,9 +50,9 @@ const LIST_BATCH = 50;
 function RadiusNotice({ radiusMiles, onSuggestClinic }: { radiusMiles: number; onSuggestClinic: () => void }) {
   const radiusLabel = radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`;
   return (
-    <p className="pt-0 pb-1.5 text-[11px] leading-snug text-muted-foreground">
+    <p className="pt-0 pb-1.5 text-center text-[11px] leading-snug text-muted-foreground">
       You're seeing doctor offices within <span className="font-medium text-foreground">{radiusLabel}</span> of your location.
-      Use search to find a specific one further away — and{" "}
+      Use search to find a specific one further away and{" "}
       <button
         type="button"
         onClick={onSuggestClinic}
@@ -192,7 +192,7 @@ export function ClinicListPanel({
               : "No nearby doctor offices found."}
         </p>
         {!isSearching && (
-          <div className="text-left">
+          <div className="text-center">
             <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />
           </div>
         )}

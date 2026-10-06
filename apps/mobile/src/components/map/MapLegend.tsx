@@ -12,15 +12,16 @@ const LEGEND_ITEMS: { key: string; label: string; color: string }[] = [
 type Props = {
   top?: number;
   right?: number;
+  isDark?: boolean;
 };
 
-export const MapLegend = ({ top = 88, right = 8 }: Props) => {
+export const MapLegend = ({ top = 88, right = 8, isDark = false }: Props) => {
   const [open, setOpen] = useState(false);
 
   return (
     <View style={[styles.anchor, { top, right }]} pointerEvents="box-none">
       <Pressable
-        style={({ pressed }) => [styles.pill, pressed && styles.pillPressed]}
+        style={({ pressed }) => [styles.pill, isDark && styles.pillDark, pressed && styles.pillPressed]}
         onPress={() => setOpen((v) => !v)}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
@@ -29,16 +30,16 @@ export const MapLegend = ({ top = 88, right = 8 }: Props) => {
         <View style={[styles.pillDot, { backgroundColor: '#eab308' }]} />
         <View style={[styles.pillDot, { backgroundColor: '#f97316' }]} />
         <View style={[styles.pillDot, { backgroundColor: '#ef4444' }]} />
-        <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color="#334155" style={styles.pillChevron} />
+        <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color={isDark ? '#e2e8f0' : '#334155'} style={styles.pillChevron} />
       </Pressable>
 
       {open ? (
-        <View style={styles.card}>
-          <Text style={styles.title}>WAIT TIME LEGEND</Text>
+        <View style={[styles.card, isDark && styles.cardDark]}>
+          <Text style={[styles.title, isDark && styles.titleDark]}>WAIT TIME LEGEND</Text>
           {LEGEND_ITEMS.map((item) => (
             <View key={item.key} style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-              <Text style={styles.legendLabel}>{item.label}</Text>
+              <Text style={[styles.legendLabel, isDark && styles.legendLabelDark]}>{item.label}</Text>
             </View>
           ))}
         </View>
@@ -48,6 +49,10 @@ export const MapLegend = ({ top = 88, right = 8 }: Props) => {
 };
 
 const styles = StyleSheet.create({
+  pillDark: { backgroundColor: '#1e293b', borderColor: '#334155' },
+  cardDark: { backgroundColor: '#1e293b', borderColor: '#334155' },
+  titleDark: { color: '#f1f5f9' },
+  legendLabelDark: { color: '#e2e8f0' },
   anchor: {
     position: 'absolute',
     zIndex: 28,

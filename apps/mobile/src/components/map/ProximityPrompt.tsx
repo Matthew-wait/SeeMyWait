@@ -4,6 +4,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { directionsUrl, viewOnMapUrl } from '@seemywait/core';
 
 import type { ClinicWithMeta } from '@/src/hooks/use-clinics';
+import { useTheme } from '@/src/hooks/use-theme';
 import { waitTierVisual } from '@/src/lib/wait-tier-style';
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   onDismiss: () => void;
   onQuickReport?: (minutes: number) => void;
   submitting?: boolean;
+  /** Browse taps only: draw the driving route from the user to this office on the map. */
+  onViewOnMap?: (clinic: ClinicWithMeta) => void;
 };
 
 type ReportBucket = {
@@ -31,6 +34,21 @@ const REPORT_BUCKETS: ReportBucket[] = [
 ];
 
 const styles = StyleSheet.create({
+  // Dark theme (the sheet was light-only). Same palette as the rest of the dark UI.
+  cardDark: { backgroundColor: '#111c30', borderColor: '#334155' },
+  dragHandleDark: { backgroundColor: '#475569' },
+  closeBtnDark: { backgroundColor: '#1e293b' },
+  titleDark: { color: '#f1f5f9' },
+  subtitleDark: { color: '#cbd5e1' },
+  addressDark: { color: '#94a3b8' },
+  sectionLabelDark: { color: '#f1f5f9' },
+  bucketBtnDark: { backgroundColor: '#172033', borderColor: '#334155' },
+  bucketLabelDark: { color: '#e2e8f0' },
+  directionsBtnDark: { backgroundColor: '#172033', borderColor: '#334155' },
+  directionsBtnTextDark: { color: '#e2e8f0' },
+  viewOnMapBtnDark: { backgroundColor: 'rgba(37,99,235,0.18)', borderColor: '#1e40af' },
+  viewOnMapBtnTextDark: { color: '#93c5fd' },
+  mapsLinkTextDark: { color: '#94a3b8' },
   overlayRoot: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 60,
@@ -187,6 +205,24 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     textAlign: 'center',
   },
+  viewOnMapBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    backgroundColor: '#eff6ff',
+    marginBottom: 8,
+  },
+  viewOnMapBtnText: {
+    color: '#1d4ed8',
+    fontSize: 14,
+    fontWeight: '700',
+  },
   directionsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -238,7 +274,9 @@ export const ProximityPrompt = ({
   onDismiss,
   onQuickReport,
   submitting,
+  onViewOnMap,
 }: Props) => {
+  const { isDark } = useTheme();
   const hasRecentReport = clinic.latestWaitMinutes != null;
   // Same source of truth as the list card / map pins, so the popup's wait status
   // matches. No active report => green "On time" (not a neutral "no reports" line).
@@ -259,18 +297,20 @@ export const ProximityPrompt = ({
   };
 
   return (
-    <View style={styles.overlayRoot}>
-      <View style={styles.backdrop} />
-      <View style={styles.cardWrap}>
-        <View style={styles.card} accessibilityViewIsModal>
-          <View style={styles.dragHandle} accessibilityLabel="Sheet handle" />
+    // "proximity" is a non-blocking card (as on web): no backdrop, the map and search
+    // stay usable underneath. "browse" (a tapped office) is a modal sheet.
+    <View style={styles.overlayRoot} pointerEvents={variant === 'proximity' ? 'box-none' : 'auto'}>
+      {variant === 'browse' ? <View style={styles.backdrop} /> : null}
+      <View style={styles.cardWrap} pointerEvents="box-none">
+        <View style={[styles.card, isDark && styles.cardDark]} accessibilityViewIsModal>
+          <View style={[styles.dragHandle, isDark && styles.dragHandleDark]} accessibilityLabel="Sheet handle" />
           <Pressable
-            style={styles.closeBtn}
+            style={[styles.closeBtn, isDark && styles.closeBtnDark]}
             onPress={onDismiss}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Dismiss">
-            <Feather name="x" size={18} color="#0f172a" />
+            <Feather name="x" size={18} color={isDark ? '#e2e8f0' : '#0f172a'} />
           </Pressable>
 
           <View style={styles.headerRow}>
@@ -278,15 +318,15 @@ export const ProximityPrompt = ({
               <MaterialCommunityIcons name="stethoscope" size={22} color="#fff" />
             </View>
             <View style={styles.headerText}>
-              <Text style={styles.title} numberOfLines={2}>
+              <Text style={[styles.title, isDark && styles.titleDark]}>
                 {variant === 'browse' ? clinic.name : `You're near ${clinic.name}`}
               </Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.subtitle, isDark && styles.subtitleDark]}>
                 {canReport ? 'Report the current wait time?' : 'Doctor office details and navigation'}
               </Text>
               <View style={styles.addressRow}>
                 <Feather name="map-pin" size={12} color="#64748b" />
-                <Text style={styles.address}>
+                <Text style={[styles.address, isDark && styles.addressDark]}>
                   {clinic.address}
                 </Text>
               </View>
@@ -304,19 +344,19 @@ export const ProximityPrompt = ({
 
           {canReport ? (
             <>
-              <Text style={styles.sectionLabel}>Report Wait Time</Text>
+              <Text style={[styles.sectionLabel, isDark && styles.sectionLabelDark]}>Report Wait Time</Text>
               <View style={styles.bucketGrid}>
                 <View style={styles.bucketRowLine}>
                   {visibleBuckets.slice(0, 2).map((bucket) => (
                     <Pressable
                       key={bucket.key}
-                      style={({ pressed }) => [styles.bucketBtn, pressed && styles.bucketBtnPressed]}
+                      style={({ pressed }) => [styles.bucketBtn, isDark && styles.bucketBtnDark, pressed && styles.bucketBtnPressed]}
                       disabled={submitting}
                       onPress={() => onQuickReport?.(bucket.minutes)}
                       accessibilityRole="button"
                       accessibilityLabel={bucket.label}>
                       <Swatch kind={bucket.swatch} />
-                      <Text style={styles.bucketLabel} numberOfLines={2}>
+                      <Text style={[styles.bucketLabel, isDark && styles.bucketLabelDark]}>
                         {bucket.label}
                       </Text>
                     </Pressable>
@@ -327,13 +367,13 @@ export const ProximityPrompt = ({
                     {visibleBuckets.slice(2, 4).map((bucket) => (
                       <Pressable
                         key={bucket.key}
-                        style={({ pressed }) => [styles.bucketBtn, pressed && styles.bucketBtnPressed]}
+                        style={({ pressed }) => [styles.bucketBtn, isDark && styles.bucketBtnDark, pressed && styles.bucketBtnPressed]}
                         disabled={submitting}
                         onPress={() => onQuickReport?.(bucket.minutes)}
                         accessibilityRole="button"
                         accessibilityLabel={bucket.label}>
                         <Swatch kind={bucket.swatch} />
-                        <Text style={styles.bucketLabel} numberOfLines={2}>
+                        <Text style={[styles.bucketLabel, isDark && styles.bucketLabelDark]}>
                           {bucket.label}
                         </Text>
                       </Pressable>
@@ -351,13 +391,24 @@ export const ProximityPrompt = ({
             </View>
           )}
 
+          {variant === 'browse' && onViewOnMap ? (
+            <Pressable
+              style={[styles.viewOnMapBtn, isDark && styles.viewOnMapBtnDark]}
+              onPress={() => onViewOnMap(clinic)}
+              accessibilityRole="button"
+              accessibilityLabel="View on map">
+              <Feather name="map" size={16} color="#1d4ed8" />
+              <Text style={[styles.viewOnMapBtnText, isDark && styles.viewOnMapBtnTextDark]}>View on map</Text>
+            </Pressable>
+          ) : null}
+
           <Pressable
-            style={styles.directionsBtn}
+            style={[styles.directionsBtn, isDark && styles.directionsBtnDark]}
             onPress={openDirections}
             accessibilityRole="button"
             accessibilityLabel="Get directions">
             <Feather name="navigation" size={16} color="#334155" />
-            <Text style={styles.directionsBtnText}>Get Directions</Text>
+            <Text style={[styles.directionsBtnText, isDark && styles.directionsBtnTextDark]}>Get Directions</Text>
           </Pressable>
 
           <Pressable
@@ -367,7 +418,7 @@ export const ProximityPrompt = ({
             accessibilityRole="button"
             accessibilityLabel="View on Google Maps">
             <Feather name="external-link" size={13} color="#64748b" />
-            <Text style={styles.mapsLinkText}>View on Google Maps</Text>
+            <Text style={[styles.mapsLinkText, isDark && styles.mapsLinkTextDark]}>View on Google Maps</Text>
           </Pressable>
         </View>
       </View>

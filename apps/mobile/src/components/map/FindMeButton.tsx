@@ -11,12 +11,16 @@ type Props = {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  isDark?: boolean;
 };
 
-export const FindMeButton = ({ onPress, loading, disabled }: Props) => {
+export const FindMeButton = ({ onPress, loading, disabled, isDark = false }: Props) => {
   return (
-    <Pressable onPress={onPress} style={[styles.button, disabled && styles.buttonDisabled]} disabled={disabled}>
-      <Feather name={loading ? 'loader' : 'crosshair'} size={18} color="#0284c7" />
+    <Pressable
+      onPress={onPress}
+      style={[styles.button, isDark && styles.buttonDark, disabled && styles.buttonDisabled]}
+      disabled={disabled}>
+      <Feather name={loading ? 'loader' : 'crosshair'} size={18} color={isDark ? '#38bdf8' : '#0284c7'} />
       <Text style={styles.hiddenLabel}>{loading ? 'Locating' : 'Find Me'}</Text>
     </Pressable>
   );
@@ -41,6 +45,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
+  },
+  buttonDark: {
+    backgroundColor: '#1e293b',
+    borderColor: '#334155',
   },
   buttonDisabled: {
     opacity: 0.5,

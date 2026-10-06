@@ -470,7 +470,10 @@ const Index = () => {
                     setSearch("");
                     setCandidate(null);
                     setFocusedPlace(null);
+                    setFocusedColor(undefined);
                     setDropdownOpen(false);
+                    // Back to where the user started: their own location, not the last match.
+                    if (userLocation) setCenterOn({ lat: userLocation.lat, lng: userLocation.lng, zoom: 14 });
                   }}
                   className="shrink-0 text-muted-foreground hover:text-foreground"
                 >

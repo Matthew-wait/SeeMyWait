@@ -27,9 +27,19 @@ type Props = {
   onSuggestClinic?: () => void;
   /** Admin report radius (metres); decides which offices show the Report action. */
   reportGeofenceMeters: number;
+  /** Set when the nearby load failed; shown instead of a silent empty list. */
+  loadError?: boolean;
+  /** Search mode (web): the list shows the search's saved-office matches, not the nearby list. */
+  isSearching?: boolean;
+  searchQuery?: string;
+  /** False until a location is known — nearby offices can't be shown without one (web). */
+  hasLocation?: boolean;
+  locating?: boolean;
+  onRetryLocation?: () => void;
 };
 
 const COLLAPSED_PREVIEW_COUNT = 6;
+const PANEL_HEIGHT = 300;
 /** Same as the web list: 50 at a time, Load more adds 50 from the rows already loaded. */
 const LIST_BATCH = 50;
 
@@ -48,10 +58,20 @@ export const ClinicListPanel = ({
   radiusMiles,
   onSuggestClinic,
   reportGeofenceMeters,
+  loadError = false,
+  isSearching = false,
+  searchQuery = '',
+  hasLocation = true,
+  locating = false,
+  onRetryLocation,
 }: Props) => {
   const { isDark } = useTheme();
   const [listCap, setListCap] = useState<number>(LIST_BATCH);
-  const shownCount = totalCount ?? clinics.length;
+  // Count = what the list shows (web: listToShow.length). The server count is only a
+  // "more within the radius" hint below, never the number in the header.
+  const shownCount = clinics.length;
+  const showNearbyNotice = !isSearching && hasLocation;
+  const moreInRadius = !isSearching && totalCount != null && totalCount > clinics.length ? totalCount - clinics.length : 0;
   const clinicsToShow = expanded ? clinics.slice(0, listCap) : clinics.slice(0, COLLAPSED_PREVIEW_COUNT);
   const [openReportHistoryByClinicId, setOpenReportHistoryByClinicId] = useState<Record<string, boolean>>({});
   const formatReportedTime = (iso: string): string => {
@@ -72,9 +92,30 @@ export const ClinicListPanel = ({
         accessibilityLabel="Show nearby doctor offices panel">
         <Feather name="chevron-up" size={18} color="#000000" />
         <Text style={[styles.collapsedLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
-          Nearby doctor offices ({shownCount})
+          {isSearching ? `Show Results (${shownCount})` : `Show Doctor Offices Nearby (${shownCount})`}
         </Text>
       </Pressable>
+    );
+  }
+
+  // Without a location, "nearby" can't mean anything: ask for it instead of showing
+  // an unfiltered list (web's "We couldn't determine your location" state).
+  if (!isSearching && !hasLocation) {
+    return (
+      <View style={[styles.panel, { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#dbe3ec' }]}>
+        <View style={styles.locationPrompt}>
+          <Text style={[styles.locationPromptText, { color: isDark ? '#94a3b8' : '#475569' }]}>
+            We couldn't determine your location, so nearby doctor offices can't be shown reliably. Enable location access, or use search to find a specific one by name.
+          </Text>
+          <Pressable
+            style={[styles.locationPromptBtn, locating && { opacity: 0.5 }]}
+            onPress={onRetryLocation}
+            disabled={locating}
+            accessibilityRole="button">
+            <Text style={styles.locationPromptBtnText}>{locating ? 'Locating…' : 'Enable Location'}</Text>
+          </Pressable>
+        </View>
+      </View>
     );
   }
 
@@ -87,7 +128,9 @@ export const ClinicListPanel = ({
       <View style={[styles.headerWrap, { borderBottomColor: isDark ? '#334155' : '#e2e8f0' }]}>
         <View style={styles.headerRow}>
           <Text style={[styles.heading, { color: isDark ? '#f1f5f9' : '#0f172a' }]} numberOfLines={1}>
-            Nearby Doctor Offices ({shownCount})
+            {isSearching
+              ? `${shownCount} result${shownCount !== 1 ? 's' : ''} for "${searchQuery.trim()}"`
+              : `Doctor Offices Nearby (${shownCount})`}
           </Text>
           <Pressable
             onPress={onToggleCollapsed}
@@ -98,32 +141,42 @@ export const ClinicListPanel = ({
             <Feather name="chevron-down" size={20} color="#000000" />
           </Pressable>
         </View>
-        {radiusMiles !== undefined && userLocation ? (
+        {radiusMiles !== undefined && showNearbyNotice ? (
           <Text style={[styles.radiusNotice, { color: isDark ? '#94a3b8' : '#64748b' }]}>
             You're seeing doctor offices within{' '}
             <Text style={{ fontWeight: '600', color: isDark ? '#e2e8f0' : '#0f172a' }}>
-              {radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} miles`}
+              {radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} ${radiusMiles === 1 ? 'mile' : 'miles'}`}
             </Text>{' '}
-            of your location. Use search to find a specific one further away, and{' '}
+            of your location. Use search to find a specific one further away and{' '}
             <Text
               style={{ fontWeight: '600', color: isDark ? '#7dd3fc' : '#0369a1' }}
               onPress={onSuggestClinic}
               accessibilityRole="link">
               suggest it to the admin
-            </Text>
-            .
+            </Text>{' '}
+            if it isn't listed yet.
           </Text>
         ) : null}
-        {isLoadingMore ? (
+        {moreInRadius > 0 && !isLoadingMore ? (
+          <Text style={[styles.radiusNotice, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            {moreInRadius.toLocaleString('en-US')} more within {radiusMiles} {radiusMiles === 1 ? 'mile' : 'miles'} — zoom out or pan to see them.
+          </Text>
+        ) : null}
+        {loadError ? (
+          <Text style={[styles.radiusNotice, { color: isDark ? '#fca5a5' : '#b91c1c' }]}>
+            Nearby doctor offices could not be loaded.
+          </Text>
+        ) : null}
+        {isLoadingMore && !isSearching ? (
           <View style={styles.loadingMoreRow}>
             <ActivityIndicator size="small" color={isDark ? '#38bdf8' : '#0284c7'} />
             <Text style={[styles.loadingMoreText, { color: isDark ? '#94a3b8' : '#475569' }]}>
-              Finding more nearby offices…
+              Finding more within {radiusMiles} {radiusMiles === 1 ? 'mile' : 'miles'}…
             </Text>
           </View>
         ) : null}
       </View>
-      <ScrollView contentContainerStyle={styles.listContent} scrollEnabled>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.listContent} scrollEnabled>
         {clinicsToShow.map((clinic, index) => {
           const routeDistance = routeDistanceByClinicId[clinic.id];
           const tier = waitTierVisual(clinic.latestWaitMinutes);
@@ -216,7 +269,15 @@ export const ClinicListPanel = ({
             </Pressable>
           );
         })}
-        {clinics.length === 0 ? <Text style={[styles.empty, { color: isDark ? '#94a3b8' : '#64748b' }]}>No doctor offices found.</Text> : null}
+        {clinics.length === 0 ? (
+          <Text style={[styles.empty, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+            {isSearching
+              ? `No results for "${searchQuery.trim()}"`
+              : totalCount != null && totalCount > 0
+                ? 'No doctor offices on screen right now — zoom out or pan the map to see nearby offices.'
+                : 'No nearby doctor offices found.'}
+          </Text>
+        ) : null}
       </ScrollView>
       {expanded && clinics.length > listCap ? (
         <Pressable onPress={() => setListCap((cap) => cap + LIST_BATCH)} style={styles.expandBtn} accessibilityRole="button">
@@ -237,11 +298,16 @@ export const ClinicListPanel = ({
 };
 
 const styles = StyleSheet.create({
+  locationPrompt: { padding: 16, gap: 12, alignItems: 'center' },
+  locationPromptText: { fontSize: 12, textAlign: 'center', lineHeight: 17 },
+  locationPromptBtn: { borderWidth: 1, borderColor: 'rgba(37,99,235,0.3)', backgroundColor: 'rgba(37,99,235,0.05)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7 },
+  locationPromptBtnText: { fontSize: 12, fontWeight: '700', color: '#2563eb' },
   radiusNotice: {
     fontSize: 11,
     lineHeight: 15,
     paddingHorizontal: 16,
     paddingBottom: 6,
+    textAlign: 'center',
   },
   loadingMoreRow: {
     flexDirection: 'row',
@@ -292,7 +358,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
     borderWidth: 1,
     borderColor: '#dbe3ec',
-    maxHeight: 340,
+    // Fixed height (not content-sized): rows arriving or leaving used to grow and
+    // shrink the sheet, and the map above it, on every batch. The list scrolls inside.
+    height: PANEL_HEIGHT,
+  },
+  scroll: {
+    flex: 1,
   },
   listContent: {
     padding: 12,

@@ -1,10 +1,12 @@
-import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 import type { ClinicWithMeta } from '@/src/hooks/use-clinics';
 import type { LatLng } from '@/src/lib/geolocation';
 
 import { FIND_ME_MAP_LAYOUT, ZOOM_FIND_ME_GAP } from '@/src/components/map/FindMeButton';
+import { buildLeafletMapHtml, type MapBounds, type MapClinicPoint, type MapToRnMessage, type RnToMapMessage } from '@/src/components/map/leaflet-map-html';
 import { waitTierVisual } from '@/src/lib/wait-tier-style';
 
 type Props = {
@@ -12,63 +14,29 @@ type Props = {
   userLocation: LatLng | null;
   searchArea: { center: LatLng; radiusMeters: number } | null;
   nearbyRadiusMeters: number;
-  centerOn: LatLng | null;
+  centerOn: (LatLng & { zoom?: number }) | null;
   onCenterApplied: () => void;
   onClinicPress?: (clinic: ClinicWithMeta) => void;
   /** An unsaved search result being previewed for verification (distinct pin). */
   candidate?: LatLng | null;
   /** Tap on an empty map point (for "add a place here"). */
   onMapPress?: (coord: LatLng) => void;
-  /**
-   * Tap on a native POI icon. Dead with OSM tiles (mapType="none" has no
-   * clickable POI layer) — kept optional so existing callers don't break.
-   */
+  /** Kept for API parity with the old native-map version; Leaflet has no POI layer, so unused. */
   onPoiPress?: (poi: { placeId?: string; name?: string; coordinate: LatLng }) => void;
+  /** Driving route polyline to draw (from the user to a chosen office), or null. */
+  route?: [number, number][] | null;
+  /** Tap on a pin that stands for 2+ offices at the same spot. */
+  onStackPress?: (clinics: ClinicWithMeta[]) => void;
+  /** Visible map rectangle after each pan/zoom — the list follows this, like web. */
+  onBoundsChange?: (bounds: MapBounds) => void;
+  /** A focused search result: its pin in its wait colour, and the view moves to it. */
+  focused?: { latitude: number; longitude: number; color: string } | null;
 };
 
 /** Same cap as the web viewport query (clinics_in_view). */
 const MAX_VISIBLE_PINS = 1000;
 
-const DEFAULT_REGION = {
-  latitude: 25.7617,
-  longitude: -80.1918,
-  latitudeDelta: 0.15,
-  longitudeDelta: 0.15,
-};
-
-type MapHandle = {
-  animateToRegion: (region: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  }, duration: number) => void;
-  fitToCoordinates: (
-    points: { latitude: number; longitude: number }[],
-    options: {
-      edgePadding: { top: number; right: number; left: number; bottom: number };
-      animated: boolean;
-    }
-  ) => void;
-};
-
-type Region = {
-  latitude: number;
-  longitude: number;
-  latitudeDelta: number;
-  longitudeDelta: number;
-};
-
-type MapsParts = {
-  NativeMap: ComponentType<any>;
-  NativeCircle: ComponentType<any>;
-  NativeMarker: ComponentType<any>;
-  NativeUrlTile: ComponentType<any>;
-};
-
-// Free OpenStreetMap raster tiles (matches web's Leaflet+OSM setup) instead of
-// Google's/Apple's native map tiles — no Maps API billing for the base layer.
-const OSM_TILE_URL_TEMPLATE = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const HTML = buildLeafletMapHtml();
 
 export const MapView = ({
   clinics,
@@ -80,233 +48,128 @@ export const MapView = ({
   onClinicPress,
   candidate,
   onMapPress,
-  onPoiPress,
+  route,
+  onStackPress,
+  onBoundsChange,
+  focused = null,
 }: Props) => {
-  const mapRef = useRef<MapHandle | null>(null);
-  const currentRegionRef = useRef<Region>(DEFAULT_REGION);
-  // Pins are drawn only for the visible area (same idea as the web map's viewport query),
-  // so the full nearby radius never becomes thousands of native markers at once.
-  const [viewport, setViewport] = useState<Region | null>(null);
-  const [mapsParts, setMapsParts] = useState<MapsParts | null>(null);
+  const webRef = useRef<WebView>(null);
+  const readyRef = useRef(false);
+  const pendingRef = useRef<RnToMapMessage[]>([]);
+  const clinicsById = useMemo(() => new Map(clinics.map((c) => [c.id, c])), [clinics]);
 
-  useEffect(() => {
-    let mounted = true;
-    void import('react-native-maps')
-      .then((mapsModule) => {
-        if (!mounted || !mapsModule.default || !mapsModule.Circle || !mapsModule.Marker || !mapsModule.UrlTile) return;
-        setMapsParts({
-          NativeMap: mapsModule.default,
-          NativeCircle: mapsModule.Circle,
-          NativeMarker: mapsModule.Marker,
-          NativeUrlTile: mapsModule.UrlTile,
-        });
-      })
-      .catch(() => {
-        setMapsParts(null);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const region = useMemo(() => {
-    if (centerOn) {
-      return {
-        latitude: centerOn.latitude,
-        longitude: centerOn.longitude,
-        // Street-level zoom, close to the Google Maps app's "my location".
-        latitudeDelta: 0.012,
-        longitudeDelta: 0.012,
-      };
-    }
-    return DEFAULT_REGION;
-  }, [centerOn]);
-
-  useEffect(() => {
-    if (!centerOn || !mapRef.current) return;
-    mapRef.current.animateToRegion(region, 350);
-    onCenterApplied();
-  }, [centerOn, onCenterApplied, region]);
-
-  useEffect(() => {
-    if (!mapRef.current || clinics.length === 0) return;
-    if (searchArea) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: searchArea.center.latitude,
-          longitude: searchArea.center.longitude,
-          latitudeDelta: Math.max(0.03, searchArea.radiusMeters / 40000),
-          longitudeDelta: Math.max(0.03, searchArea.radiusMeters / 40000),
-        },
-        450
-      );
+  const send = (msg: RnToMapMessage) => {
+    if (!readyRef.current) {
+      pendingRef.current.push(msg);
       return;
     }
-    if (!userLocation && clinics.length > 1) {
-      mapRef.current.fitToCoordinates(
-        clinics.slice(0, 100).map((clinic) => ({
-          latitude: clinic.latitude,
-          longitude: clinic.longitude,
-        })),
-        {
-          edgePadding: { top: 160, right: 30, left: 30, bottom: 170 },
-          animated: true,
-        }
-      );
-    }
-  }, [clinics, searchArea, userLocation]);
-
-  // Region-delta zoom works identically on Google (Android) and Apple (iOS)
-  // providers, unlike camera.zoom which is unreliable on Apple Maps.
-  const MIN_DELTA = 0.002;
-  const MAX_DELTA = 60;
-
-  const scaleZoom = (factor: number) => {
-    if (!mapRef.current) return;
-    const r = currentRegionRef.current;
-    const next: Region = {
-      latitude: r.latitude,
-      longitude: r.longitude,
-      latitudeDelta: Math.min(MAX_DELTA, Math.max(MIN_DELTA, r.latitudeDelta * factor)),
-      longitudeDelta: Math.min(MAX_DELTA, Math.max(MIN_DELTA, r.longitudeDelta * factor)),
-    };
-    currentRegionRef.current = next;
-    mapRef.current.animateToRegion(next, 250);
+    webRef.current?.postMessage(JSON.stringify(msg));
   };
-
-  const zoomIn = () => scaleZoom(0.5);
-  const zoomOut = () => scaleZoom(2);
-
-  if (!mapsParts) {
-    return (
-      <View style={styles.mapFallback}>
-        <Text style={styles.fallbackTitle}>Map preview mode</Text>
-        <Text style={styles.fallbackText}>Install a dev build to enable native maps.</Text>
-        <Text style={styles.fallbackText}>Clinics visible: {clinics.length}</Text>
-        {searchArea ? (
-          <Text style={styles.fallbackText}>Search radius: {Math.round(searchArea.radiusMeters)} m</Text>
-        ) : null}
-      </View>
-    );
-  }
-
-  const { NativeMap, NativeCircle, NativeMarker, NativeUrlTile } = mapsParts;
 
   const visibleClinics = useMemo(() => {
     const valid = clinics.filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
-    if (!viewport) return valid.slice(0, MAX_VISIBLE_PINS);
-    const halfLat = viewport.latitudeDelta / 2;
-    const halfLng = viewport.longitudeDelta / 2;
-    const out: typeof valid = [];
-    for (const c of valid) {
-      if (Math.abs(c.latitude - viewport.latitude) > halfLat) continue;
-      if (Math.abs(c.longitude - viewport.longitude) > halfLng) continue;
-      out.push(c);
-      if (out.length >= MAX_VISIBLE_PINS) break;
-    }
-    return out;
-  }, [clinics, viewport]);
+    return valid.slice(0, MAX_VISIBLE_PINS);
+  }, [clinics]);
 
-  // mapType="none" hides the native Apple/Google base layer; the UrlTile
-  // overlay below renders free OpenStreetMap raster tiles instead, so the
-  // base map itself never calls Google's or Apple's tile APIs. All
-  // Places/Geocoding calls go through the medical-search edge function, not here.
-  const provider = undefined;
+  const clinicPoints = useMemo<MapClinicPoint[]>(
+    () =>
+      visibleClinics.map((c) => ({
+        id: c.id,
+        lat: c.latitude,
+        lng: c.longitude,
+        name: c.name || c.doctor_name || 'Clinic',
+        address: c.address,
+        pin: waitTierVisual(c.latestWaitMinutes).pin,
+      })),
+    [visibleClinics]
+  );
+
+  // Offices arrive in batches; rebuilding every marker per batch re-renders the
+  // whole layer repeatedly on a fresh load. Wait for the stream to settle first.
+  useEffect(() => {
+    const id = window.setTimeout(() => send({ type: 'setClinics', clinics: clinicPoints }), 250);
+    return () => window.clearTimeout(id);
+  }, [clinicPoints]);
+
+  useEffect(() => {
+    send({ type: 'setUserLocation', location: userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null });
+  }, [userLocation]);
+
+  useEffect(() => {
+    send({
+      type: 'setSearchArea',
+      area: searchArea
+        ? { lat: searchArea.center.latitude, lng: searchArea.center.longitude, radiusMeters: searchArea.radiusMeters }
+        : null,
+    });
+  }, [searchArea]);
+
+  useEffect(() => {
+    send({ type: 'setNearbyRadius', radiusMeters: nearbyRadiusMeters });
+  }, [nearbyRadiusMeters]);
+
+  useEffect(() => {
+    send({ type: 'setCandidate', candidate: candidate ? { lat: candidate.latitude, lng: candidate.longitude } : null });
+  }, [candidate]);
+
+  useEffect(() => {
+    send({ type: 'setRoute', geometry: route ?? null });
+  }, [route]);
+
+  useEffect(() => {
+    send({
+      type: 'setFocus',
+      focus: focused ? { lat: focused.latitude, lng: focused.longitude, color: focused.color } : null,
+    });
+  }, [focused]);
+
+  useEffect(() => {
+    if (!centerOn) return;
+    send({ type: 'centerOn', location: { lat: centerOn.latitude, lng: centerOn.longitude }, zoom: centerOn.zoom ?? 16 });
+    onCenterApplied();
+  }, [centerOn, onCenterApplied]);
+
+  const handleMessage = (event: WebViewMessageEvent) => {
+    let msg: MapToRnMessage;
+    try {
+      msg = JSON.parse(event.nativeEvent.data);
+    } catch {
+      return;
+    }
+    if (msg.type === 'ready') {
+      readyRef.current = true;
+      for (const queued of pendingRef.current) webRef.current?.postMessage(JSON.stringify(queued));
+      pendingRef.current = [];
+      return;
+    }
+    if (msg.type === 'clinicPress') {
+      const clinic = clinicsById.get(msg.id);
+      if (clinic) onClinicPress?.(clinic);
+      return;
+    }
+    if (msg.type === 'mapPress') {
+      onMapPress?.({ latitude: msg.lat, longitude: msg.lng });
+      return;
+    }
+    if (msg.type === 'stackPress') {
+      const stack = msg.ids.map((id) => clinicsById.get(id)).filter((c): c is ClinicWithMeta => Boolean(c));
+      if (stack.length) onStackPress?.(stack);
+      return;
+    }
+    if (msg.type === 'boundsChanged') onBoundsChange?.(msg.bounds);
+  };
 
   return (
     <View style={styles.mapWrap}>
-      <NativeMap
-        ref={(instance: unknown) => {
-          mapRef.current = instance as MapHandle | null;
-        }}
+      <WebView
+        ref={webRef}
+        source={{ html: HTML }}
         style={StyleSheet.absoluteFill}
-        provider={provider}
-        mapType="none"
-        userInterfaceStyle="light"
-        initialRegion={region}
-        onRegionChangeComplete={(nextRegion: Region) => {
-          currentRegionRef.current = nextRegion;
-          setViewport(nextRegion);
-        }}
-        onPress={(e: any) => {
-          const c = e?.nativeEvent?.coordinate;
-          if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
-            onMapPress?.({ latitude: c.latitude, longitude: c.longitude });
-          }
-        }}
-        showsCompass={false}
-        showsMyLocationButton={false}
-        showsUserLocation={false}
-        zoomEnabled
-        scrollEnabled
-        zoomTapEnabled
-        pitchEnabled={false}
-        rotateEnabled={false}>
-        <NativeUrlTile urlTemplate={OSM_TILE_URL_TEMPLATE} maximumZ={19} flipY={false} />
-        {userLocation ? (
-          <>
-            <NativeCircle
-              center={userLocation}
-              radius={120}
-              fillColor="rgba(14,165,233,0.15)"
-              strokeColor="rgba(14,165,233,0.55)"
-              strokeWidth={1.2}
-            />
-            {/* Small red dot marking the exact user location */}
-            <NativeCircle center={userLocation} radius={7} fillColor="#ef4444" strokeColor="#ef4444" strokeWidth={1} />
-          </>
-        ) : null}
-        {searchArea ? (
-          <NativeCircle
-            center={searchArea.center}
-            radius={searchArea.radiusMeters}
-            fillColor="rgba(59,130,246,0.12)"
-            strokeColor="rgba(59,130,246,0.6)"
-            strokeWidth={2}
-          />
-        ) : null}
-        {userLocation && !searchArea ? (
-          <NativeCircle
-            center={userLocation}
-            radius={nearbyRadiusMeters}
-            fillColor="rgba(59,130,246,0.07)"
-            strokeColor="rgba(37,99,235,0.65)"
-            strokeWidth={1.8}
-          />
-        ) : null}
-        {visibleClinics.map((clinic) => {
-            const tier = waitTierVisual(clinic.latestWaitMinutes);
-            // NativeMarker sometimes doesn't repaint pinColor if key doesn't change.
-            return (
-              <NativeMarker
-                key={`${clinic.id}-${tier.pin}`}
-                coordinate={{ latitude: clinic.latitude, longitude: clinic.longitude }}
-                pinColor={tier.pin}
-                title={clinic.name || clinic.doctor_name || 'Clinic'}
-                description={clinic.address}
-                onPress={() => onClinicPress?.(clinic)}
-              />
-            );
-          })}
-        {candidate ? (
-          <NativeMarker
-            key="candidate"
-            coordinate={{ latitude: candidate.latitude, longitude: candidate.longitude }}
-            pinColor="#2563eb"
-            title="Is this the place?"
-            zIndex={999}
-          />
-        ) : null}
-      </NativeMap>
-      <View style={styles.zoomCard}>
-        <Pressable style={styles.zoomBtn} onPress={zoomIn}>
-          <Text style={styles.zoomText}>+</Text>
-        </Pressable>
-        <Pressable style={styles.zoomBtn} onPress={zoomOut}>
-          <Text style={styles.zoomText}>-</Text>
-        </Pressable>
-      </View>
+        originWhitelist={['*']}
+        onMessage={handleMessage}
+        javaScriptEnabled
+        domStorageEnabled
+      />
     </View>
   );
 };
@@ -314,22 +177,6 @@ export const MapView = ({
 const styles = StyleSheet.create({
   mapWrap: {
     flex: 1,
-  },
-  mapFallback: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    paddingTop: 120,
-    paddingHorizontal: 16,
-    gap: 6,
-  },
-  fallbackTitle: {
-    color: '#111827',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  fallbackText: {
-    color: '#374151',
-    fontSize: 13,
   },
   zoomCard: {
     position: 'absolute',
