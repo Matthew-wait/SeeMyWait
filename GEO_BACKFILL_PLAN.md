@@ -318,3 +318,14 @@ Time to completion: not computable while stopped. At the restart average (101.2 
 Resume requires explicit approval. The runner's geog-is-null guard and saved cursor make a resume from the saved MA cursor safe.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 16:02 PKT (UTC+05:00): runner resumed
+
+Runner: adaptive state runner PID 38060 started at 11:01:26Z (16:01 PKT) from the saved MA cursor, with batch size 500 and no settings reset. It is running and committing at 11:02:41Z. Five batches committed so far (3,300 rows), with state MA at 108,950 state rows.
+
+Before the start, one geog-related session was seen in pg_stat_activity. It was not identified and was not cancelled; it had finished by the next check, and no session matched at 11:02Z. The earlier runner stop (HTTP 400 at 10:04:18Z, PID 30456) remains unexplained.
+
+States done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+Live totals at the 10:34Z check, carried forward until the next live count: done 6,686,030; remaining 1,833,214 with a state and 19 with no state; missing coordinates 0; invalid coordinates 0.
+
+Completion is not claimed.
