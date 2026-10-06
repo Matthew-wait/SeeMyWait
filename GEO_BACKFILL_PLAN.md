@@ -268,3 +268,30 @@ Live database totals at 2026-10-06 09:29Z (14:29 PKT):
 Time to completion: 1,948,359 rows left. At the 30-minute rate (115.0 rows/s), about 4.7 hours (around 19:10 PKT). At the since-restart average (106.4 rows/s), about 5.1 hours (around 19:35 PKT). Estimates only; the no-state pass and final sweep are not included.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 15:02 PKT (UTC+05:00)
+
+Runner: adaptive state runner PID 30456, running at 10:02Z. Current state: MA (105,650 state rows so far). Status file: batch size 300, timeout 120 seconds.
+
+Timeouts: four timeout_retry events since 09:37Z (MA, batch sizes 750, 500, 300, 300). The runner stepped down to 300-row batches with a 120-second timeout after the last two. This is the cause of the lower recent rate.
+
+States done in the last 30 minutes: 0 by the 14:32 to 15:02 PKT window. WA completed at 09:31:56Z (14:31:56 PKT), four seconds before the window opened.
+Overall states done: 52 of 56. Remaining: MA (in progress), NC, OH, CA (4 states), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 30 minutes: 104,650 committed rows across 133 batches, in 1,563 seconds of batch-timestamp span. Average 67.0 rows/s, about 4,018 rows/min.
+Average since the 12:27 PKT restart: 1,279,310 rows over 12,642 s, 101.2 rows/s, about 6,072 rows/min.
+
+Live database totals at 2026-10-06 10:02Z (15:02 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 6,686,030 |
+| Still left: valid eligible rows missing geog, with state | 1,833,214 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: 1,833,233 rows left. At the 30-minute rate (67.0 rows/s), about 7.6 hours (around 22:40 PKT). At the since-restart average (101.2 rows/s), about 5.0 hours (around 20:05 PKT). The 30-minute rate depends on the current timeouts, so the restart average is the more likely guide if the database recovers. Estimates only; the no-state pass and final sweep are not included.
+
+Completion is not claimed.
