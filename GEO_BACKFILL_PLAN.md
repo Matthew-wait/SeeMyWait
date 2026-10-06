@@ -405,3 +405,14 @@ Live database totals at 2026-10-06 12:36Z (17:36 PKT), unchanged from 11:44Z:
 | Invalid non-null coordinates (reported separately) | 0 |
 
 Time to completion: not computable while stopped. Completion is not claimed.
+
+## Status update: 2026-10-06 18:38 PKT (UTC+05:00): runner resumed
+
+Runner: adaptive state runner PID 21240 started at 12:37Z (18:37 PKT) from the saved MA cursor with batch size 500, under approval. Committing at 12:38:34Z: 1000-row batches, MA at 167,150 state rows.
+
+Leftover session check before start: the query returned no backfill session. The one-row result was an empty response, not a session.
+
+States done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+Rows and live totals: to be refreshed at the next live count. The last verified totals were at 12:36Z: done 6,743,230; remaining 1,776,014 with a state, plus 19 with no state; missing coordinates 0; invalid coordinates 0.
+
+Completion is not claimed.
