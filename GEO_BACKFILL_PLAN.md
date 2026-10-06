@@ -193,3 +193,28 @@ Live database totals at 2026-10-06 07:55Z (12:55 PKT):
 Time to completion estimate: 2,543,127 rows left. At the 30-minute rate (123.9 rows/s), about 5.7 hours (around 18:40 PKT). At the since-restart average (107.4 rows/s), about 6.6 hours (around 19:30 PKT). These are estimates; the state sizes vary, and the no-state and final sweep add time.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 13:28 PKT (UTC+05:00)
+
+Runner: adaptive state runner PID 30456, running at 08:27Z. Current state: IL (46,700 state rows so far in this state). Status file: batch size 500, timeout 60 seconds.
+
+States done in the last 30 minutes: 1 (NJ, finished 08:18:04Z).
+Overall states done: 50 of 56. Remaining: IL (in progress), WA, MA, NC, OH, CA (6 states), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 30 minutes: 201,684 committed rows across 213 batches, in 1,796 seconds of batch-timestamp span. Average 112.3 rows/s, about 6,736 rows/min.
+Average since the 12:27 PKT restart: 782,350 rows over 7,191 s, 108.8 rows/s, about 6,528 rows/min.
+
+Live database totals at 2026-10-06 08:27Z (13:27 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 6,189,570 |
+| Still left: valid eligible rows missing geog, with state | 2,329,674 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: 2,329,693 rows left. At the 30-minute rate (112.3 rows/s), about 5.8 hours (around 19:15 PKT). At the since-restart average (108.8 rows/s), about 5.95 hours (around 19:25 PKT). These are estimates; the no-state pass and final sweep are not included.
+
+Completion is not claimed.
