@@ -47,6 +47,13 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 - Renew the distribution certificate before 2027-06-30.
 - Android build and Play Store upload: wait for go-ahead.
 
+## Bug: admin invite link opens the Vercel site, not the password page
+
+- Reproduced 2026-10-06: the invitation email for seemywait@gmail.com opens the Vercel site URL instead of a page where the admin sets a password.
+- Likely cause: Supabase Auth URL settings (Site URL and redirect URLs) point at the Vercel domain or are not set for invites.
+- To check: Supabase dashboard → Authentication → URL Configuration. Site URL should be https://www.seemywait.com, and the redirect list should include the admin login page.
+- Admin accounts: seemywait@gmail.com is the only admin. The old seeyourwait@gmail.com account was deleted.
+
 ## Later (when time allows)
 
 - Fill the NPI gaps for every state, starting with Florida (about 37,600 checkpointed-but-missing offices need a checkpoint fix and a retry). Full per-state list, causes and steps: docs/NPI-GAP-LOG.md. Regenerate it with scripts/npi-gap-report.mjs after each run.
