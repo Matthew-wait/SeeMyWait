@@ -2,7 +2,7 @@
 
 Required reading for new agents: docs/INDEXING-LOG.md (all indexes on the clinics table), docs/MAP-AND-LISTING-RULES.md (map, listing and admin rules), and docs/NPI-GAP-LOG.md (which states are missing offices and how to fill them).
 
-Last updated 2026-10-05. Local dev server: http://127.0.0.1:8085 (admin at /admin).
+Last updated 2026-10-06. Local dev server: http://127.0.0.1:8085 (admin at /admin).
 Git: work is committed locally. Nothing is pushed unless the user asks.
 
 ## Decided
@@ -17,6 +17,18 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 - Admin layout: full-width header, 1440px content cap, tiles for total, state, city, pending, reports.
 - Admin login: landing logo, simplified full-width header.
 - Office sheet (public site): View on map (route), Get Directions.
+
+### 2026-10-06 session
+- **Map pin clustering** (public + Admin map): `supercluster`-based clustering in `apps/web/src/lib/clinic-pin-layer.ts`, canvas-rendered, so dense areas don't show hundreds of raw pins. Tapping a cluster zooms in.
+- **Same-building picker**: pins within 10px of each other at the current zoom group into a "stack"; tapping opens `ClinicStackPicker` (portal-based popup, escapes Admin's `overflow-hidden` map container) listing each office to pick from. See docs/MAP-AND-LISTING-RULES.md.
+- **Cooldown is now global per device**, not per office (previously a device could spam reports across different offices back-to-back). Index added in migration `20261006140000_global_device_cooldown_index.sql`.
+- **Report expiry decoupled from cooldown, and made per-category**: 30/60/90-min reports each have their own admin-configurable expiry window (`report_expiry_30min_minutes` / `_60min_minutes` / `_90plus_minutes` in `app_settings`, migration `20261006150000_per_category_report_expiry.sql`). On Time stays a fixed 60-minute window. Ported to mobile too (`apps/mobile/src/lib/wait-time-report.ts`, `use-app-settings.ts`, `use-clinics.ts`).
+- **Realtime push updates**: an already-open clinic view now updates within ~1s of another user's report via Supabase Realtime on `wait_time_reports` (migration `20261006160000_wait_time_reports_realtime.sql`, enables `REPLICA IDENTITY FULL` + adds the table to the `supabase_realtime` publication — user ran this migration directly, confirmed applied). 60s poll remains as a fallback.
+- **Fixed a "resurrection" bug**: an old/superseded report could incorrectly reappear as the active one after the newer report's own expiry or flag status should have superseded it permanently. Standing rule now: only the single most recent report ever counts, full stop — never fall back to an older one, whether the newer one lost its status via expiry or via an admin flag. Fixed in `wait-time-utils.ts` (`getAverageWaitTime`) and `AdminDashboard.tsx` (`mostRecentReportByClinic` / `isReportActive`); confirmed already correct in mobile's `use-clinics.ts`. Callers must not pre-filter `is_flagged=false` in their queries, or the function never sees a flagged row to know to stop there.
+- **Admin Reports flag/unflag**: restored after being removed (should not have been removed without re-confirming with the user first — noted as a standing lesson). Flagging a report now cascades to every other currently-"active" report on the same clinic, not just the one clicked.
+- **Admin Doctors "Reset Filters" button**: returns state/city/specialty/radius/search/letter filters to the page's fresh-load defaults.
+- **Admin Doctors "Hide/Show" (soft-hide)**: new reversible visibility toggle (eye icon) on `is_active`, separate from Delete. Hidden offices are excluded from all public queries but still show (dimmed, labelled "Hidden") in the Admin list. See the "Doctor office visibility" section in docs/MAP-AND-LISTING-RULES.md for the RLS fix this needed (migration `20261006170000_admin_view_inactive_clinics.sql`) — worth reading before touching other admin-only mutations on `clinics`.
+- Settings save switched from looped `.update()` calls to a single `.upsert(..., { onConflict: "key" })`, fixing a silent no-op when an `app_settings` row didn't exist yet.
 
 ## Waiting on the user
 - Confirm the admin login header looks right.
@@ -43,10 +55,12 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 
 ## Next (mobile)
 - Port to mobile: 50-per-batch nearby list, count, admin-set report radius and cooldown, map changes.
+- Port the 2026-10-06 session's web changes to mobile where not already done: map pin clustering + same-building picker (mobile has neither yet), realtime push updates (mobile still polls only), the Hide/Show visibility toggle has no mobile-side effect needed since it's an admin-only, web-only action — but mobile's own clinic list query must already respect `is_active` (confirm it does). Per-category report expiry and global cooldown are already ported (see above).
 - Store status: iOS submitted, processing. Android submitted, in review.
 
 ## Data operations
 - NY import still running. Geo backfill incomplete, so some offices may not show on the map or in search. Check with the geog state verification file.
+- **Unresolved (2026-10-06): a heavy `count(*) ... filter (where ...)` query (120s statement timeout, full-table I/O on the 8.5M-row `clinics` table) was seen running as two concurrent connections in `pg_stat_activity`, and appears to starve unrelated single-row UPDATEs (e.g. the Hide/Show toggle times out with `"canceling statement due to statement timeout"` behind it — confirmed unrelated to RLS, reproduces identically with the service-role key). Exact source not yet identified — not in `AdminDashboard.tsx` (its own total count uses the cheap `count: "estimated"`), not in `resume-geog-backfill.ps1` or `resume-geog-states.ps1` as searched. Likely a verification/progress-check query run manually or periodically against the geo backfill — check for another open SQL Editor tab or terminal before debugging further.
 - Duplicate-skip versus real-gap reconciliation: not finished. Retry pass for real gaps is planned.
 - Gap to fill later: docs/NPI-GAP-LOG.md lists every state (staged vs live, checkpointed vs not run) and how to fill each gap. Regenerate with scripts/npi-gap-report.mjs after each import run. Florida: 63,292 gap, of which about 37,600 need a checkpoint fix and retry.
 

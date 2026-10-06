@@ -35,15 +35,17 @@ import {
   LogOut, Loader2, Check, X, Trash2, Search,
   LayoutDashboard, Users, FileText, Activity, Plus, Pencil,
   Upload, FileSpreadsheet, AlertCircle, Settings, RotateCcw,
-  Map as MapIcon, MapPin, Crosshair,
+  Map as MapIcon, MapPin, Crosshair, Eye, EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MapView } from "@/components/map/MapView";
+import { ClinicStackPicker } from "@/components/map/ClinicStackPicker";
 import { SearchResultsDropdown } from "@/components/map/SearchResultsDropdown";
 import { VerifyPlaceCard } from "@/components/map/VerifyPlaceCard";
 import { useMedicalSearch } from "@/hooks/use-medical-search";
 import { reverseGeocode } from "@/lib/google-places-client";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
+import { getErrorMessage } from "@/lib/utils";
 
 type Clinic = {
   id: string;
@@ -789,6 +791,9 @@ export default function AdminDashboard() {
   const [adminLoc, setAdminLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenterOn, setMapCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [mapFocus, setMapFocus] = useState<Clinic | null>(null);
+  /** A tapped pin standing in for 2+ offices at the same spot — picker shown
+   *  before picking any one of them to edit. */
+  const [mapClinicStack, setMapClinicStack] = useState<{ clinics: ClinicWithWaitTime[]; anchor: { x: number; y: number } } | null>(null);
   const [doctorsView, setDoctorsView] = useState<"list" | "map">("list");
 
   useEffect(() => {
@@ -884,6 +889,24 @@ export default function AdminDashboard() {
       return (data || []) as Clinic[];
     },
   });
+  /** Back to exactly the state the Doctors tab is in on a fresh page load. */
+  const handleResetFilters = useCallback(() => {
+    setFilterState("FL");
+    setFilterCity("Miami");
+    setSpecialtyFilter("");
+    setRadiusMiles("");
+    setSearchQuery("");
+    setLetterFilter("");
+    setClinicsLimit(50);
+  }, []);
+  const filtersAreDefault =
+    filterState === "FL" &&
+    filterCity === "Miami" &&
+    !specialtyFilter &&
+    !radiusMiles &&
+    !searchQuery &&
+    !letterFilter;
+
   const clinicsHasMore = (clinics?.length ?? 0) === clinicsLimit;
   const visibleClinics = useMemo(() => {
     const r = Number(radiusMiles);
@@ -960,12 +983,37 @@ export default function AdminDashboard() {
     [expiry30MinMinutes, expiry60MinMinutes, expiry90PlusMinutes]
   );
 
+  // Only the single most recent report per clinic is ever eligible to be
+  // "Active" — matches getAverageWaitTime's rule (wait-time-utils.ts). Once a
+  // newer report supersedes an older one, the older one is permanently done:
+  // it reads as Expired immediately, and stays that way even after the
+  // newer report's own (possibly shorter) window elapses, or gets flagged —
+  // it must NOT get "promoted" back to Active just because an older report's
+  // longer window hasn't run out yet. The "most recent" lookup below
+  // deliberately does NOT skip flagged reports — if it did, flagging the
+  // current report would make this code blind to it and fall back to
+  // whichever (older) report is now the most recent UNFLAGGED one, which is
+  // exactly the resurrection this is meant to prevent. Flag status is
+  // instead checked only on whichever report actually wins "most recent".
+  const mostRecentReportByClinic = useMemo(() => {
+    const latest = new Map<string, WaitTimeReportRow>();
+    for (const r of recentReports ?? []) {
+      const existing = latest.get(r.clinic_id);
+      if (!existing || new Date(r.reported_at).getTime() > new Date(existing.reported_at).getTime()) {
+        latest.set(r.clinic_id, r);
+      }
+    }
+    return latest;
+  }, [recentReports]);
+
   const isReportActive = useCallback(
     (r: WaitTimeReportRow) => {
-      const ageMinutes = (Date.now() - new Date(r.reported_at).getTime()) / 60000;
+      const mostRecent = mostRecentReportByClinic.get(r.clinic_id);
+      if (!mostRecent || mostRecent.id !== r.id || mostRecent.is_flagged) return false;
+      const ageMinutes = (Date.now() - new Date(mostRecent.reported_at).getTime()) / 60000;
       return ageMinutes <= reportExpiryMinutesFor(r.wait_time as WaitTimeCategory, reportExpiry);
     },
-    [reportExpiry]
+    [mostRecentReportByClinic, reportExpiry]
   );
 
   const filteredReports = useMemo(() => {
@@ -993,10 +1041,12 @@ export default function AdminDashboard() {
         { key: "report_expiry_60min_minutes", value: expiry60MinMinutes },
         { key: "report_expiry_90plus_minutes", value: expiry90PlusMinutes },
       ];
-      for (const u of updates) {
-        const { error } = await supabase.from("app_settings").update({ value: u.value }).eq("key", u.key);
-        if (error) throw error;
-      }
+      // upsert (not update): a key with no existing row — e.g. a setting
+      // added after this admin's last page load, before its seed migration
+      // ran — would otherwise match zero rows and silently save nothing,
+      // while still reporting success.
+      const { error } = await supabase.from("app_settings").upsert(updates, { onConflict: "key" });
+      if (error) throw error;
       toast.success("Settings saved!");
       queryClient.invalidateQueries({ queryKey: ["admin-app-settings"] });
       queryClient.invalidateQueries({ queryKey: ["app-settings"] });
@@ -1119,6 +1169,28 @@ export default function AdminDashboard() {
     },
   });
 
+  // ── HIDE / SHOW (soft — unlike delete, fully reversible) ──
+  // `is_active` is already respected by every public-facing read path (the
+  // nearby map/list RPCs, mobile's fallback fetch, and the search edge
+  // function all filter on it) — this just exposes the existing column in
+  // the admin UI instead of adding anything new.
+  const toggleClinicActive = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const { error } = await supabase.from("clinics").update({ is_active: isActive }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, { isActive }) => {
+      toast.success(isActive ? "Doctor office is visible again." : "Doctor office hidden from the app.");
+      queryClient.invalidateQueries({ queryKey: ["admin-clinics"] });
+    },
+    onError: (err) => {
+      // Surface the real reason instead of a generic message — without this,
+      // a failure here is a dead end with nothing to go on.
+      console.error("[toggleClinicActive] failed:", err);
+      toast.error(`Failed to update visibility: ${getErrorMessage(err, "unknown error")}`);
+    },
+  });
+
   // ── DELETE ──
   const deleteClinic = useMutation({
     mutationFn: async (id: string) => {
@@ -1232,8 +1304,18 @@ export default function AdminDashboard() {
   });
 
   const flagReport = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("wait_time_reports").update({ is_flagged: true }).eq("id", id);
+    mutationFn: async (report: WaitTimeReportRow) => {
+      // Flagging shouldn't leave a second active-looking report for the same
+      // clinic sitting right behind the one just hidden — flag every report
+      // for that clinic currently showing as Active together, not just the
+      // single row that was clicked.
+      const idsToFlag = new Set(
+        (recentReports ?? [])
+          .filter((r: WaitTimeReportRow) => r.clinic_id === report.clinic_id && isReportActive(r))
+          .map((r: WaitTimeReportRow) => r.id)
+      );
+      idsToFlag.add(report.id);
+      const { error } = await supabase.from("wait_time_reports").update({ is_flagged: true }).in("id", [...idsToFlag]);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Report flagged."); queryClient.invalidateQueries({ queryKey: ["admin-reports"] }); },
@@ -1549,6 +1631,21 @@ export default function AdminDashboard() {
                   className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
                 />
               </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-transparent select-none" aria-hidden="true">Reset</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  disabled={filtersAreDefault}
+                  className="h-9 gap-1.5"
+                  title="Reset all filters back to how this tab loads by default"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reset
+                </Button>
+              </div>
               <div className="ml-auto">
                 <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
                 <button type="button" onClick={() => setDoctorsView("list")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>List</button>
@@ -1606,11 +1703,18 @@ export default function AdminDashboard() {
                     {visibleClinics.map((c) => (
                       <TableRow
                         key={c.id}
-                        className="cursor-pointer transition-colors hover:bg-primary/5"
+                        className={`cursor-pointer transition-colors hover:bg-primary/5 ${c.is_active ? "" : "opacity-50"}`}
                         onClick={() => { if (c.latitude && c.longitude) setMapCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 16 }); }}
                       >
                         <TableCell>
-                          <p className="font-medium text-foreground text-sm leading-tight">{c.name}</p>
+                          <p className="font-medium text-foreground text-sm leading-tight">
+                            {c.name}
+                            {!c.is_active && (
+                              <span className="ml-1.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Hidden
+                              </span>
+                            )}
+                          </p>
                           {c.phone && (
                             <p className="text-xs text-muted-foreground mt-0.5">{c.phone}</p>
                           )}
@@ -1653,6 +1757,19 @@ export default function AdminDashboard() {
                               title="Edit"
                             >
                               <Pencil className="h-3.5 w-3.5 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-amber-500/10"
+                              onClick={() => toggleClinicActive.mutate({ id: c.id, isActive: !c.is_active })}
+                              title={c.is_active ? "Hide from app (reversible)" : "Unhide — make visible again"}
+                            >
+                              {c.is_active ? (
+                                <EyeOff className="h-3.5 w-3.5 text-amber-600" />
+                              ) : (
+                                <Eye className="h-3.5 w-3.5 text-amber-600" />
+                              )}
                             </Button>
                             <Button
                               variant="ghost"
@@ -1780,6 +1897,7 @@ export default function AdminDashboard() {
               const row = clinics?.find((x) => x.id === c.id);
               if (row) setEditClinic(row);
             }}
+            onClinicStackClick={(stackClinics, point) => setMapClinicStack({ clinics: stackClinics, anchor: point })}
             onEmptyClick={() => {}}
             onMapPointClick={handleMapPointClick}
             candidate={
@@ -1790,6 +1908,19 @@ export default function AdminDashboard() {
             pendingPoint={pendingPoint}
             nearbyRadiusMiles={Number(nearbyRadius) > 0 ? Number(nearbyRadius) : 5}
           />
+
+          {mapClinicStack && (
+            <ClinicStackPicker
+              clinics={mapClinicStack.clinics}
+              anchor={mapClinicStack.anchor}
+              onSelect={(c) => {
+                const row = clinics?.find((x) => x.id === c.id);
+                if (row) setEditClinic(row);
+                setMapClinicStack(null);
+              }}
+              onClose={() => setMapClinicStack(null)}
+            />
+          )}
 
           {/* Locate-me: sits just above the zoom pill (bottom-left cluster) */}
           <button
@@ -1958,7 +2089,7 @@ export default function AdminDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 hover:bg-destructive/10"
-                                onClick={() => flagReport.mutate(r.id)}
+                                onClick={() => flagReport.mutate(r)}
                                 title="Flag"
                               >
                                 <X className="h-4 w-4 text-destructive" />
@@ -2082,14 +2213,6 @@ export default function AdminDashboard() {
                   {savingSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Save Settings
                 </Button>
-                <div className="rounded-xl border border-border/40 bg-muted/20 p-3">
-                  <p className="text-xs font-semibold text-foreground">Legal & Operational Checklist</p>
-                  <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-muted-foreground">
-                    <li>NDA signed by all parties before release work starts.</li>
-                    <li>Client-owned Apple/Google developer accounts are active.</li>
-                    <li>Terms and Privacy pages reviewed and published.</li>
-                  </ul>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

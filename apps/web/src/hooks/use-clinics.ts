@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ export interface Clinic {
 export interface ClinicReport {
   wait_time: WaitTimeCategory;
   reported_at: string;
+  is_flagged?: boolean | null;
 }
 
 export interface ClinicWithWaitTime extends Clinic {
@@ -81,11 +82,14 @@ async function fetchClinicsWithWaitTimes(
   // and the 3-hour history list shown in the office cards.
   const fetchWindowMinutes = Math.max(maxExpiryMinutes(reportExpiry), HISTORY_WINDOW_MINUTES);
   const cutoffIso = new Date(Date.now() - fetchWindowMinutes * 60 * 1000).toISOString();
+  // Flagged rows are NOT filtered out here — getAverageWaitTime needs to see
+  // them to know the most recent report for a clinic is flagged, and stop
+  // there (On Time) instead of silently falling back to an older report as
+  // if the flagged one had never existed.
   const { data: reports } = await supabase
     .from("wait_time_reports")
-    .select("clinic_id, wait_time, reported_at")
-    .gte("reported_at", cutoffIso)
-    .eq("is_flagged", false);
+    .select("clinic_id, wait_time, reported_at, is_flagged")
+    .gte("reported_at", cutoffIso);
 
   const reportsByClinic = (reports || []).reduce<Record<string, ClinicReport[]>>(
     (acc, r) => {
@@ -93,6 +97,7 @@ async function fetchClinicsWithWaitTimes(
       acc[r.clinic_id].push({
         wait_time: r.wait_time as WaitTimeCategory,
         reported_at: r.reported_at,
+        is_flagged: r.is_flagged,
       });
       return acc;
     },
@@ -108,8 +113,10 @@ async function fetchClinicsWithWaitTimes(
 
   const result: ClinicWithWaitTime[] = validClinics.map((c) => {
     const allReports = reportsByClinic[c.id] || [];
+    // The visible "recent activity" history, unlike waitTime above, should
+    // never show a flagged report.
     const recentReports = allReports
-      .filter((r) => new Date(r.reported_at).getTime() >= historyCutoffMs)
+      .filter((r) => !r.is_flagged && new Date(r.reported_at).getTime() >= historyCutoffMs)
       .sort(
         (a, b) =>
           new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()
@@ -193,15 +200,36 @@ export function useNearbyClinicsProgressive(
     enabled: hasLocation && settingsReady,
     queryFn: async ({ signal }) => {
       const cutoff = new Date(Date.now() - Math.max(maxExpiryMinutes(reportExpiry), HISTORY_WINDOW_MINUTES) * 60_000).toISOString();
+      // Flagged rows are NOT filtered out here — see the comment on
+      // getAverageWaitTime for why it needs to see them.
       const { data, error } = await supabase.from("wait_time_reports")
-        .select("clinic_id, wait_time, reported_at").gte("reported_at", cutoff)
-        .eq("is_flagged", false).abortSignal(signal);
+        .select("clinic_id, wait_time, reported_at, is_flagged").gte("reported_at", cutoff)
+        .abortSignal(signal);
       if (error) throw error;
       return data ?? [];
     },
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
   });
+
+  // Push-based refresh: another user's report lands within ~1s instead of
+  // waiting on the 60s poll above. The poll stays as a fallback (reconnects,
+  // missed events) — this just makes the common case fast.
+  const reportsRefetchRef = useRef(reports.refetch);
+  reportsRefetchRef.current = reports.refetch;
+  useEffect(() => {
+    if (!hasLocation || !settingsReady) return;
+    const channel = supabase
+      .channel("wait-time-reports-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wait_time_reports" },
+        () => { void reportsRefetchRef.current(); }
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [hasLocation, settingsReady]);
+
   const count = useQuery({
     queryKey: ["nearby-count", userLat, userLon, fullRadiusMiles],
     enabled: hasLocation && settingsReady,
@@ -229,7 +257,9 @@ export function useNearbyClinicsProgressive(
         const allReports = byClinic.get(c.id) ?? [];
         return { ...c, distance: c.distance_miles,
           waitTime: getAverageWaitTime(allReports, reportExpiry),
-          recentReports: allReports.filter(r => Date.parse(r.reported_at) >= historyCutoff)
+          // Unlike waitTime above, the visible "recent activity" history
+          // should never show a flagged report.
+          recentReports: allReports.filter(r => !r.is_flagged && Date.parse(r.reported_at) >= historyCutoff)
             .sort((a,b) => Date.parse(b.reported_at) - Date.parse(a.reported_at)) };
       });
   }, [rows, reports.data, reports.dataUpdatedAt, reportExpiry]);

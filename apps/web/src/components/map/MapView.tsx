@@ -109,8 +109,8 @@ interface MapViewProps {
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
   /** A pin that's actually standing in for 2+ offices at the same spot (e.g.
    *  same building — supercluster can never visually separate them no matter
-   *  the zoom). `point` is the on-screen container position, for anchoring a
-   *  picker popup near the tap. */
+   *  the zoom). `point` is the viewport-relative position (not container-
+   *  relative), for anchoring a portaled picker popup near the tap. */
   onClinicStackClick?: (clinics: ClinicWithWaitTime[], point: { x: number; y: number }) => void;
   onEmptyClick: () => void;
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
@@ -208,7 +208,12 @@ function MapViewInner({
             .map((p) => clinicsByIdRef.current.get(p.id))
             .filter((c): c is ClinicWithWaitTime => Boolean(c));
           if (stackClinics.length > 1 && onClinicStackClickRef.current) {
-            onClinicStackClickRef.current(stackClinics, { x: hit.x, y: hit.y });
+            // Viewport-relative (not container-relative) so the picker can be
+            // portaled to <body> and never clipped by a map container that
+            // happens to have overflow-hidden (e.g. the admin dashboard's
+            // rounded-corner map, unlike the public page's).
+            const rect = containerRef.current!.getBoundingClientRect();
+            onClinicStackClickRef.current(stackClinics, { x: rect.left + hit.x, y: rect.top + hit.y });
             return;
           }
           if (stackClinics[0]) { onClinicClickRef.current(stackClinics[0]); return; }

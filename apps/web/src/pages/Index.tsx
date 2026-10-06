@@ -13,7 +13,8 @@ import { FindMeButton } from "@/components/map/FindMeButton";
 import { SearchResultsDropdown } from "@/components/map/SearchResultsDropdown";
 import { VerifyPlaceCard } from "@/components/map/VerifyPlaceCard";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
-import { ReportExpiryByCategory, WAIT_TIME_HEX_COLORS } from "@/lib/wait-time-utils";
+import { ReportExpiryByCategory, WAIT_TIME_HEX_COLORS, getAverageWaitTime } from "@/lib/wait-time-utils";
+import { supabase } from "@/integrations/supabase/client";
 import { useMedicalSearch } from "@/hooks/use-medical-search";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import {
@@ -205,6 +206,52 @@ const Index = () => {
       (result) => byId.get(result.id) ?? dbResultToClinic(result)
     );
   }, [clinics, dbSearchResults, isSearching, dbResultToClinic]);
+
+  // The open bottom sheet was a frozen snapshot from the moment it was
+  // clicked — another user's new report (now pushed in near-live via the
+  // realtime subscription inside useNearbyClinicsProgressive) silently
+  // updated the list/map behind it but never the sheet itself. Re-sync it
+  // to the latest matching entry whenever the underlying data refreshes.
+  useEffect(() => {
+    if (!selectedClinic || !clinics) return;
+    const fresh = clinics.find((c) => c.id === selectedClinic.id);
+    if (fresh && fresh !== selectedClinic) setSelectedClinic(fresh);
+  }, [clinics, selectedClinic]);
+
+  // The re-sync above only works for a clinic that's actually part of the
+  // live-polled `clinics` array (nearby-radius results). A clinic opened via
+  // search — especially one outside the user's current radius, e.g. found
+  // while the user is somewhere else entirely — is never a member of that
+  // array, so it would sit frozen forever with no path to a live update.
+  // Subscribe directly to THIS one clinic's reports, independent of radius.
+  const selectedClinicId = selectedClinic?.id;
+  useEffect(() => {
+    if (!selectedClinicId) return;
+
+    const refreshWaitTime = async () => {
+      const { data, error } = await supabase
+        .from("wait_time_reports")
+        .select("wait_time, reported_at")
+        .eq("clinic_id", selectedClinicId)
+        .eq("is_flagged", false)
+        .order("reported_at", { ascending: false })
+        .limit(50);
+      if (error) return;
+      const waitTime = getAverageWaitTime(data ?? [], reportExpiry);
+      setSelectedClinic((prev) => (prev && prev.id === selectedClinicId ? { ...prev, waitTime } : prev));
+    };
+
+    const channel = supabase
+      .channel(`selected-clinic-reports-${selectedClinicId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wait_time_reports", filter: `clinic_id=eq.${selectedClinicId}` },
+        () => { void refreshWaitTime(); }
+      )
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, [selectedClinicId, reportExpiry]);
 
   // Frame the map on the search hits (only when no candidate pin owns the view).
   const matchedLocationsKey = dbSearchResults

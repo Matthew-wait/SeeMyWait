@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { MapPin, Stethoscope, X } from "lucide-react";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
@@ -6,7 +7,7 @@ import { WAIT_TIME_BG_COLORS } from "@/lib/wait-time-utils";
 
 interface ClinicStackPickerProps {
   clinics: ClinicWithWaitTime[];
-  /** Map-container pixel position of the tapped pin, to anchor the popup near it. */
+  /** Viewport pixel position of the tapped pin, to anchor the popup near it. */
   anchor: { x: number; y: number };
   onSelect: (clinic: ClinicWithWaitTime) => void;
   onClose: () => void;
@@ -38,10 +39,13 @@ export function ClinicStackPicker({ clinics, anchor, onSelect, onClose }: Clinic
   const left = Math.max(12, Math.min(anchor.x - width / 2, window.innerWidth - width - 12));
   const openUpward = anchor.y > 320;
 
-  return (
+  // Portaled to <body> (position: fixed, viewport-relative coords) so the
+  // popup is never clipped by a map container with overflow-hidden — the
+  // admin dashboard's rounded-corner map has one, the public page's doesn't.
+  return createPortal(
     <div
       ref={ref}
-      className="pointer-events-auto absolute z-[80] animate-in fade-in zoom-in-95 duration-150 rounded-2xl border border-border/40 bg-card/95 shadow-2xl backdrop-blur-xl"
+      className="pointer-events-auto fixed z-[80] animate-in fade-in zoom-in-95 duration-150 rounded-2xl border border-border/40 bg-card/95 shadow-2xl backdrop-blur-xl"
       style={{
         left,
         width,
@@ -89,6 +93,7 @@ export function ClinicStackPicker({ clinics, anchor, onSelect, onClose }: Clinic
           </button>
         ))}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

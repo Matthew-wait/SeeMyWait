@@ -1,5 +1,5 @@
 import { REPORT_WAIT_GEOFENCE_METERS } from "@/lib/report-geofence";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,33 +79,59 @@ export default function ClinicDetail() {
   } = useQuery({
     queryKey: ["reports", id],
     queryFn: async () => {
+      // Flagged rows are NOT filtered out here — see the comment on
+      // getAverageWaitTime for why it needs to see them.
       const { data, error } = await supabase
         .from("wait_time_reports")
-        .select("wait_time, reported_at")
+        .select("wait_time, reported_at, is_flagged")
         .eq("clinic_id", id!)
-        .eq("is_flagged", false)
         .order("reported_at", { ascending: false })
         .limit(50);
       if (error) throw error;
       return (data || []).map((r) => ({
         wait_time: r.wait_time as WaitTimeCategory,
         reported_at: r.reported_at,
+        is_flagged: r.is_flagged,
       }));
     },
     enabled: !!id,
+    // Fallback for a tab that's open and sitting on this exact page (the
+    // realtime subscription below handles the common case within ~1s; this
+    // just covers reconnects/missed events).
+    refetchInterval: 60_000,
   });
 
+  // Push-based refresh: this page previously only refreshed on the viewer's
+  // OWN report submit (refetchReports below) or a window refocus — another
+  // user's report never showed up while you just sat on the page looking at it.
+  const refetchReportsRef = useRef(refetchReports);
+  refetchReportsRef.current = refetchReports;
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`wait-time-reports-live-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wait_time_reports", filter: `clinic_id=eq.${id}` },
+        () => { void refetchReportsRef.current(); }
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [id]);
+
   const waitTime = getAverageWaitTime(reports || [], reportExpiry);
+  // Unlike waitTime above, the visible "recent activity" history should
+  // never show a flagged report.
   const recentReportCount = useMemo(() => {
     if (!reports) return 0;
     const cutoff = Date.now() - HISTORY_WINDOW_MINUTES * 60 * 1000;
-    return reports.filter((r) => new Date(r.reported_at).getTime() >= cutoff).length;
+    return reports.filter((r) => !r.is_flagged && new Date(r.reported_at).getTime() >= cutoff).length;
   }, [reports]);
   const recentReports = useMemo(() => {
     if (!reports) return [];
     const historyCutoff = Date.now() - HISTORY_WINDOW_MINUTES * 60 * 1000;
     return reports
-      .filter((r) => new Date(r.reported_at).getTime() >= historyCutoff)
+      .filter((r) => !r.is_flagged && new Date(r.reported_at).getTime() >= historyCutoff)
       .slice(0, 5);
   }, [reports]);
 

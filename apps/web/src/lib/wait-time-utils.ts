@@ -97,30 +97,41 @@ export function reportExpiryMinutesFor(
  * popup all read from this). `lastReported: null` marks the default so callers
  * can hide the "reported X ago" line; the badge stays green either way.
  *
- * Each report's own category decides how long it stays active — a 30-min
- * report and a 90+-min report don't share one flat expiry window.
+ * Only the single most recent report ever counts — once a newer report
+ * supersedes an older one, the older one is done for good. It does NOT
+ * resurface just because the newer one's (possibly shorter) category window
+ * has since elapsed, or because an admin flagged it — e.g. a 30-min report
+ * that ages out (or gets flagged) after a 90-min report preceded it must
+ * revert straight to On Time, not reveal the older 90-min report still
+ * technically sitting inside its own longer window. `reports` must include
+ * flagged rows (not pre-filtered) so this can see and correctly stop at them
+ * — a caller that pre-filters `is_flagged=false` would make a flagged report
+ * invisible here, which is exactly the "falls back to an older report"
+ * resurrection this function exists to prevent.
  */
 export function getAverageWaitTime(
-  reports: { wait_time: WaitTimeCategory; reported_at: string }[],
+  reports: { wait_time: WaitTimeCategory; reported_at: string; is_flagged?: boolean | null }[],
   expiry: ReportExpiryByCategory
 ): WaitTimeSummary {
-  const nowMs = Date.now();
-  // Compare on epoch ms, not ISO strings: PostgREST returns "…+00:00" offsets
-  // while Date#toISOString() returns "…Z", so a lexicographic `>` mis-orders
-  // reports around the cutoff second.
-  const active = reports.filter((r) => {
-    const ageMinutes = (nowMs - new Date(r.reported_at).getTime()) / 60000;
-    return ageMinutes <= reportExpiryMinutesFor(r.wait_time, expiry);
-  });
-
-  if (active.length === 0) {
+  if (reports.length === 0) {
     return { category: "on_time", label: WAIT_TIME_LABELS.on_time, lastReported: null };
   }
 
-  const sorted = [...active].sort(
+  // Compare on epoch ms, not ISO strings: PostgREST returns "…+00:00" offsets
+  // while Date#toISOString() returns "…Z", so a lexicographic `>` mis-orders
+  // reports around the cutoff second.
+  const latest = [...reports].sort(
     (a, b) => new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime()
-  );
-  const latest = sorted[0];
+  )[0];
+
+  if (latest.is_flagged) {
+    return { category: "on_time", label: WAIT_TIME_LABELS.on_time, lastReported: null };
+  }
+
+  const ageMinutes = (Date.now() - new Date(latest.reported_at).getTime()) / 60000;
+  if (ageMinutes > reportExpiryMinutesFor(latest.wait_time, expiry)) {
+    return { category: "on_time", label: WAIT_TIME_LABELS.on_time, lastReported: null };
+  }
 
   return {
     category: latest.wait_time,
