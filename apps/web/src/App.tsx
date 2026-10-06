@@ -15,6 +15,7 @@ const SuggestClinic = lazy(() => import("./pages/SuggestClinic"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminReset = lazy(() => import("./pages/AdminReset"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -45,6 +46,7 @@ const App = () => {
               <Route path="/suggest" element={<SuggestClinic />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/reset" element={<AdminReset />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />

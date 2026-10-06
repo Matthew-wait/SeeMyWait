@@ -16,6 +16,42 @@ export default function AdminLogin() {
   // Set when the page is opened from a password-reset or invitation link.
   const [settingPassword, setSettingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  // Own reset flow: request an email, with a one-minute cooldown before resending.
+  const [forgot, setForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (cooldownUntil <= Date.now()) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
+
+  const sendResetEmail = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/password-reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "We could not send the email.");
+      setResetSent(true);
+      setCooldownUntil(Date.now() + 60_000);
+      setNow(Date.now());
+      toast.success("If that email belongs to an admin, a reset link is on its way.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "We could not send the email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const secondsLeft = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
@@ -126,6 +162,21 @@ export default function AdminLogin() {
                 Save password
               </Button>
             </form>
+            ) : forgot ? (
+            <div className="space-y-4">
+              <form onSubmit={sendResetEmail} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Admin email</Label>
+                  <Input id="reset-email" type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || secondsLeft > 0}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {resetSent ? (secondsLeft > 0 ? `Resend in ${secondsLeft}s` : "Resend reset email") : "Send reset link"}
+                </Button>
+              </form>
+              {resetSent && <p className="text-center text-xs text-muted-foreground">Check the inbox and spam folder. The link works once and expires in one hour.</p>}
+              <button type="button" className="w-full text-center text-sm text-primary underline-offset-2 hover:underline" onClick={() => setForgot(false)}>Back to sign in</button>
+            </div>
             ) : (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
@@ -141,6 +192,11 @@ export default function AdminLogin() {
                 Sign In
               </Button>
             </form>
+            )}
+            {!settingPassword && !forgot && (
+              <button type="button" className="mt-4 w-full text-center text-sm text-primary underline-offset-2 hover:underline" onClick={() => setForgot(true)}>
+                Forgot password?
+              </button>
             )}
           </CardContent>
         </Card>
