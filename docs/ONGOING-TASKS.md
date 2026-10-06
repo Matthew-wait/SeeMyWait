@@ -69,3 +69,10 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 - Specialty is stored as free text, so the dropdown matches the exact stored value.
 - Route line uses OSRM's public server, which has usage limits.
 - Radius filter only applies to rows already loaded.
+
+## Admin "Delete" on wait reports = expire (note)
+
+- Admin Delete on a report no longer removes the row. It sets `is_flagged = true`, the same as Flag.
+- Effect: the report moves to the Expired tab, the office reads On Time, and older reports for that office do not come back as active.
+- Mobile applies the same rule: a flagged newest report reads On Time, and flagged reports are hidden from the recent-activity history.
+- Open point: deleted and flagged reports look the same in the database. If the admin ever needs to tell them apart, add a separate column.

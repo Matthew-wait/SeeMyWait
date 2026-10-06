@@ -60,6 +60,8 @@ type UseClinicsResult = {
   isLoadingMore: boolean;
   /** Exact number of active offices inside the nearby radius (single server count, not downloaded). */
   totalCount: number | null;
+  /** Set when the nearby load fails; cleared on the next successful load. */
+  error: Error | null;
   refresh: () => Promise<void>;
 };
 
@@ -120,7 +122,6 @@ async function fetchReports(reportExpiry: ReportExpirySettings): Promise<WaitTim
     .from('wait_time_reports')
     .select('*')
     .gte('reported_at', cutoffIso)
-    .or('is_flagged.is.null,is_flagged.eq.false')
     .order('reported_at', { ascending: false })
     .limit(1000);
   if (error) throw error;
@@ -136,7 +137,10 @@ export const useClinics = (
   reportExpiry: ReportExpirySettings,
   userLat?: number,
   userLon?: number,
-  radiusMiles: number = 100
+  radiusMiles: number = 100,
+  /** Stay idle until the caller knows whether a location is available (avoids a
+   *  generic first fetch that is immediately replaced once the location arrives). */
+  enabled: boolean = true
 ): UseClinicsResult => {
   const hasLocation = userLat !== undefined && userLon !== undefined;
 
@@ -145,6 +149,7 @@ export const useClinics = (
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
   const [nowMs, setNowMs] = useState<number>(Date.now());
   // Guards against a slow in-flight load overwriting a newer one's result
   // (e.g. location arrives mid-fetch and re-triggers this effect).
@@ -160,6 +165,7 @@ export const useClinics = (
     const isCurrent = () => loadTokenRef.current === token;
     setLoading(true);
     setIsLoadingMore(false);
+    setError(null);
 
     try {
       if (!hasLocation) {
@@ -174,14 +180,16 @@ export const useClinics = (
         return;
       }
 
-      // Reports and the exact count are cheap, so they run alongside the batches.
-      const reportsPromise = fetchReports(reportExpiry);
-      const countPromise = supabase
-        .rpc('nearby_clinic_count', { p_lat: userLat, p_lng: userLon, p_radius_miles: radiusMiles })
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return Number(data ?? 0);
-        });
+      // Reports and the exact count run alongside the batches. Neither is required
+      // to show offices: the count can hit the database statement timeout on a
+      // large radius, and reports failing should not hide the office list. Failures
+      // fall back (count -> visible list length, reports -> previous reports).
+      const reportsPromise = fetchReports(reportExpiry).catch(() => null);
+      const countPromise: Promise<number | null> = Promise.resolve(
+        supabase
+          .rpc('nearby_clinic_count', { p_lat: userLat, p_lng: userLon, p_radius_miles: radiusMiles })
+          .then(({ data, error }) => (error ? null : Number(data ?? 0)))
+      ).catch(() => null);
 
       let firstBatchShown = false;
       await loadNearbyBatches(userLat!, userLon!, radiusMiles, isCurrent, (partial) => {
@@ -197,23 +205,25 @@ export const useClinics = (
       });
       const [fetchedReports, count] = await Promise.all([reportsPromise, countPromise]);
       if (!isCurrent()) return;
-      setReports(fetchedReports);
+      if (fetchedReports) setReports(fetchedReports);
       setTotalCount(count);
       setLoading(false);
       setIsLoadingMore(false);
-    } catch (error) {
+    } catch (caught) {
       if (!isCurrent()) return;
       setLoading(false);
       setIsLoadingMore(false);
-      throw error;
+      setError(caught instanceof Error ? caught : new Error('Nearby doctor offices could not be loaded.'));
+      throw caught;
     }
   }, [hasLocation, radiusMiles, reportExpiry, userLat, userLon]);
 
   useEffect(() => {
+    if (!enabled) return;
     void load().catch(() => {
       // Keep whatever loaded; the next refresh (location, settings, or pull) retries.
     });
-  }, [load]);
+  }, [enabled, load]);
 
   const isLatestReportActive = useCallback(
     (report: WaitTimeReport): boolean => {
@@ -248,6 +258,7 @@ export const useClinics = (
     for (const report of reports) {
       const reportedAtMs = new Date(report.reported_at).getTime();
       if (!Number.isFinite(reportedAtMs)) continue;
+      if (report.is_flagged) continue;
       if (reportedAtMs + windowMs <= nowMs) continue;
       const list = map.get(report.clinic_id) ?? [];
       list.push({
@@ -263,7 +274,8 @@ export const useClinics = (
   const clinicsWithMeta = useMemo<ClinicWithMeta[]>(() => {
     return clinics.map((clinic) => {
       const latest = latestReportByClinic.get(clinic.id);
-      const visibleLatest = latest && isLatestReportActive(latest) ? latest : undefined;
+      // A flagged or expired newest report reads On time; older reports never show through.
+      const visibleLatest = latest && !latest.is_flagged && isLatestReportActive(latest) ? latest : undefined;
       return {
         ...clinic,
         latestWaitMinutes: waitTimeCategoryToMinutes(visibleLatest?.wait_time),
@@ -279,6 +291,7 @@ export const useClinics = (
     loading,
     isLoadingMore,
     totalCount,
+    error,
     refresh: load,
   };
 };

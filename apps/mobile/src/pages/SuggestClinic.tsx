@@ -640,7 +640,7 @@ export const SuggestClinicPage = () => {
             ]}
           />
           <View style={styles.stepCard}>
-            <View style={styles.stepIcon}>
+            <View style={[styles.stepIcon, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
               <Feather name="clipboard" size={16} color={isDark ? '#cbd5e1' : '#334155'} />
             </View>
             <Text style={[styles.stepCardTitle, { color: isDark ? '#f1f5f9' : '#111827' }]}>You Report</Text>
@@ -649,7 +649,7 @@ export const SuggestClinicPage = () => {
             </Text>
           </View>
           <View style={styles.stepCard}>
-            <View style={styles.stepIcon}>
+            <View style={[styles.stepIcon, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
               <Ionicons name="search-outline" size={16} color={isDark ? '#cbd5e1' : '#334155'} />
             </View>
             <Text style={[styles.stepCardTitle, { color: isDark ? '#f1f5f9' : '#111827' }]}>Admin Reviews</Text>
@@ -658,7 +658,7 @@ export const SuggestClinicPage = () => {
             </Text>
           </View>
           <View style={styles.stepCard}>
-            <View style={styles.stepIcon}>
+            <View style={[styles.stepIcon, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
               <MaterialCommunityIcons name="check-decagram-outline" size={16} color="#16a34a" />
             </View>
             <Text style={[styles.stepCardTitle, { color: isDark ? '#f1f5f9' : '#111827' }]}>Approved & Visible</Text>

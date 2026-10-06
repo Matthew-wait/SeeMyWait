@@ -216,6 +216,14 @@ export class ClinicPinLayer extends L.Layer {
         ctx.save();
         ctx.shadowColor = "rgba(15,23,42,0.28)"; ctx.shadowBlur = 4; ctx.shadowOffsetY = 2;
         const image = this.image(item.stack[0].color);
+        // Stacks are cascaded: two back pins peek out behind the front one (same look as mobile).
+        if (item.stack.length > 1 && image.complete && image.naturalWidth) {
+          ctx.globalAlpha = 0.9;
+          ctx.drawImage(image, item.x - 18 - 4, item.y - 48 - 3, 36, 48);
+          ctx.globalAlpha = 0.75;
+          ctx.drawImage(image, item.x - 18 - 8, item.y - 48 - 6, 36, 48);
+          ctx.globalAlpha = 1;
+        }
         if (image.complete && image.naturalWidth) ctx.drawImage(image, item.x - 18, item.y - 48, 36, 48);
         ctx.restore();
         if (item.stack.length > 1) drawStackBadge(ctx, item.x, item.y, item.stack.length);

@@ -31,15 +31,18 @@ config.resolver.nodeModulesPaths = [
 // extraNodeModules is only a fallback for modules resolution can't otherwise
 // find, so it doesn't prevent that; resolveRequest forces every requester,
 // regardless of where it lives, onto this app's single copy.
-const forcedSingleCopy = {
-  react: path.resolve(projectRoot, "node_modules/react"),
-  "react/jsx-runtime": path.resolve(projectRoot, "node_modules/react/jsx-runtime.js"),
-  "react/jsx-dev-runtime": path.resolve(projectRoot, "node_modules/react/jsx-dev-runtime.js"),
-  "react-dom": path.resolve(projectRoot, "node_modules/react-dom"),
-};
+// Any import of react/react-dom/scheduler, including subpaths like
+// react-dom/client, gets resolved as if the requesting file lived inside
+// this app's own node_modules — so Metro's normal directory walk finds this
+// app's copy first, no matter which package (root-hoisted or not) asked.
+const forcedPackages = ["react", "react-dom", "scheduler"];
+const forceOrigin = path.join(projectRoot, "node_modules", ".force-react-resolution", "x.js");
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (Object.prototype.hasOwnProperty.call(forcedSingleCopy, moduleName)) {
-    return { type: "sourceFile", filePath: forcedSingleCopy[moduleName] };
+  const isForced =
+    forcedPackages.includes(moduleName) ||
+    forcedPackages.some((pkg) => moduleName.startsWith(`${pkg}/`));
+  if (isForced) {
+    return context.resolveRequest({ ...context, originModulePath: forceOrigin }, moduleName, platform);
   }
   return context.resolveRequest(context, moduleName, platform);
 };
