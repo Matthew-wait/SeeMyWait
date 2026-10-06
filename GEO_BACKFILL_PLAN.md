@@ -11,7 +11,7 @@ Project: ziisjgtvqmturpljnvfh. Inventory: October 4, 2026.
 
 The database global UUID cursor does not describe state completion and will remain unchanged. State progress is saved in geog-state-backfill-status.json; events are in geog-state-backfill-progress.jsonl. Completion describes rows present at verification time; future imports require another pass.
 
-Progress as of 2026-10-06 11:17:24 PKT (UTC+05:00): 45/56 jurisdictions completed and verified; 11 remain including current state VA, followed by the no-state pass and final eligibility sweep. Sole worker PID 5176 is confirmed running with adaptive settings of 62 rows / 120 seconds. Current-state recorded commits: 175,094; cumulative recorded state-runner commits: 3,278,592. Recorded counters may omit earlier unlogged commits during documented interruption/recovery and are distinct from total existing geog. Fresh full-table live verification at 2026-10-06 11:16:42 PKT independently confirmed zero eligible missing geog in 45 jurisdictions and zero missing or invalid coordinates globally. Completion is determined by live eligibility verification, not counters. Existing sequential worker continues; no duplicate or global worker was launched. No overall completion is claimed.
+Stopped by explicit user request at 2026-10-06 11:22:41 PKT (UTC+05:00). Confirmed local SeeMyWait runner PID 5176 was stopped; no replacement or global runner was launched. 46/56 jurisdictions are completed and verified; 10 remain, with current checkpoint in CO. Saved CO/Aurora cursor b1a27b88-0c60-412f-9c4b-183fbfb3504b was live-verified to have geog. Preserved checkpoint values: 17,000 recorded CO commits and 3,296,085 cumulative recorded commits. Recorded counters may omit earlier unlogged commits and the final in-flight request; no additional commits are claimed without a confirmed response. Global table below remains the last full-database snapshot at October 6 11:16:42 PKT. No background continuation or overall completion is claimed.
 
 
 | Live database totals at 2026-10-06 11:16:42 PKT | Rows |
@@ -77,8 +77,8 @@ Islamabad/Rawalpindi update (October 5): all 27 manually added clinics were inde
 | 43 | MN | 141187 | Done (verified) |
 | 44 | TN | 141643 | Done (verified) |
 | 45 | AZ | 159051 | Done (verified) |
-| 46 | VA | 175649 | In progress |
-| 47 | CO | 178526 | Pending |
+| 46 | VA | 175649 | Done (verified) |
+| 47 | CO | 178526 | Stopped (checkpoint preserved) |
 | 48 | MD | 192476 | Pending |
 | 49 | GA | 198914 | Pending |
 | 50 | NJ | 202734 | Pending |
@@ -118,3 +118,32 @@ Gateway recovery (2026-10-05 21:02 PKT): old PID 8280 stopped at 20:21:58 PKT wi
 
 
 Overnight recovery (2026-10-06 11:14 PKT): saved PID 28312 was absent; running=true was stale from the last batch at October 5 22:48:51 PKT. No stopped event established the exit cause. Authorized live checks found no local or database backfill worker. Saved VA/Woodbridge cursor 24301a49-cfd3-4e00-ac3b-f797cb1c7b9d has geog, with zero eligible missing at or before it, while VA still had eligible missing rows. Preserved all checkpoint values and safely resumed sole existing runner PID 5176; no global worker was launched. Unknown unlogged commits were not added to recorded counters, and geog-is-null guard skips existing writes.
+
+
+Stop verification at 2026-10-06 11:22:56 PKT (UTC+05:00): no local SeeMyWait state/global runner remained, and the authorized pg_stat_activity check returned no active or leftover backfill batch. The final database request finished after the local runner stop; its commit outcome was not added to counters. No postgres or Supabase internal session was terminated. Work is stopped until explicit new instructions.
+
+
+## Progress update: 2026-10-06 11:22 PKT (UTC+05:00)
+
+Worker status: sole state runner PID 5176 has exited; no runner process remains. The status file still reads `running: true`, which is stale. Its saved cursor (CO/Aurora, `last_id` b1a27b88-0c60-412f-9c4b-183fbfb3504b, `state_rows_updated` 17000) matches the last committed event in the progress log (06:21:56Z). No duplicate or global worker is running, and no leftover backfill session was seen in pg_stat_activity. The cause of the exit is not recorded in the log; it was stopped by the operator.
+
+Completed and verified: 46/56 jurisdictions. VA was completed by the runner and re-verified live at 06:21Z (zero eligible missing with valid coordinates).
+
+Remaining jurisdictions (10): CO (in progress, cursor saved), MD, GA, NJ, IL, WA, MA, NC, OH, CA. After these: the no-state pass (19 rows), then a final sweep for newly added or missed rows.
+
+Throughput: last 40 committed batches of 500 rows took 240 s of batch time (about 70 rows/s; 16,931 rows over a 250 s wall span, about 66 rows/s). Batch size 500 in the status file; timeout_seconds 30. The 62-row / 120-second adaptive settings in the earlier handoff are not in the current status file.
+
+Live database totals at 2026-10-06 06:21Z (11:21 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 5,387,720 |
+| Still left: valid eligible rows missing geog, with state | 3,131,524 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Recorded runner counters are conservative: cumulative recorded state-runner commits are 3,295,585 and may omit unlogged commits. Live counts, not counters, determine completion. Completion is not claimed; the backfill is not finished.
+
+To resume: run `scripts/resume-geog-states.ps1` as the sole worker, after confirming no other runner or database backfill session is active. The script keeps the geog-is-null guard and reads its saved cursor. The global `public.backfill_clinics_geog_batch` must not run alongside it.
