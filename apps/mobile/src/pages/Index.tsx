@@ -29,7 +29,7 @@ import { getCurrentPosition, getDisplayPosition, type LatLng, reverseGeocodeAddr
 import { maxAccuracyMetersForReport } from '@/src/lib/report-wait-geofence';
 import { supabase } from '@/src/lib/supabase';
 import { showToast } from '@/src/lib/toast';
-import { computeExpiryTimeFromMinutesIso, waitMinutesToCategory } from '@/src/lib/wait-time-report';
+import { computeExpiryTimeIso, waitMinutesToCategory } from '@/src/lib/wait-time-report';
 
 type CityFilter = 'all' | 'Miami' | 'Miami Beach' | 'Hialeah' | 'Coral Gables' | 'Doral';
 
@@ -72,7 +72,11 @@ export const IndexPage = () => {
     totalCount: clinicsTotalCount,
     refresh: refreshClinics,
   } = useClinics(
-    settings.reportCooldownMinutes,
+    {
+      reportExpiry30MinMinutes: settings.reportExpiry30MinMinutes,
+      reportExpiry60MinMinutes: settings.reportExpiry60MinMinutes,
+      reportExpiry90PlusMinutes: settings.reportExpiry90PlusMinutes,
+    },
     userLocation?.latitude,
     userLocation?.longitude,
     settings.nearbyRadiusMiles
@@ -266,10 +270,11 @@ export const IndexPage = () => {
 
         const fingerprint = await getDeviceFingerprint();
         const windowStart = new Date(Date.now() - settings.reportCooldownMinutes * 60 * 1000).toISOString();
+        // Global per-device cooldown: one report anywhere locks this device out of
+        // reporting ANY clinic (not just this one) until the cooldown window passes.
         const duplicateCheck = await supabase
           .from('wait_time_reports')
           .select('id')
-          .eq('clinic_id', clinic.id)
           .eq('device_fingerprint', fingerprint)
           .gte('reported_at', windowStart)
           .limit(1);
@@ -288,7 +293,13 @@ export const IndexPage = () => {
           clinic_id: clinic.id,
           wait_time: category,
           device_fingerprint: fingerprint,
-          expiry_time: computeExpiryTimeFromMinutesIso(settings.reportCooldownMinutes),
+          // Each category reverts to On Time on its own admin-configured
+          // schedule — not the (unrelated) per-device report cooldown.
+          expiry_time: computeExpiryTimeIso(category, {
+            reportExpiry30MinMinutes: settings.reportExpiry30MinMinutes,
+            reportExpiry60MinMinutes: settings.reportExpiry60MinMinutes,
+            reportExpiry90PlusMinutes: settings.reportExpiry90PlusMinutes,
+          }),
         });
         if (error) throw error;
 
@@ -315,7 +326,14 @@ export const IndexPage = () => {
         setPromptSubmitting(false);
       }
     },
-    [refreshClinics, settings.reportCooldownMinutes]
+    [
+      refreshClinics,
+      settings.reportCooldownMinutes,
+      settings.reportExpiry30MinMinutes,
+      settings.reportExpiry60MinMinutes,
+      settings.reportExpiry90PlusMinutes,
+      settings.reportGeofenceMeters,
+    ]
   );
 
   const openClinicPopup = useCallback(
@@ -487,7 +505,15 @@ export const IndexPage = () => {
           <View style={styles.inputWrap}>
             <Feather name="search" size={15} color={isDark ? '#e2e8f0' : '#111827'} />
             <TextInput
-              style={[styles.input, { backgroundColor: isDark ? '#172033' : '#fff', color: isDark ? '#e2e8f0' : '#111827' }]}
+              style={[
+                styles.input,
+                { backgroundColor: isDark ? '#172033' : '#fff', color: isDark ? '#e2e8f0' : '#111827' },
+                // react-native-web renders TextInput as a plain <input>, which picks up the
+                // browser's default focus outline/ring. Suppress it — the card's own border
+                // already shows focus state. No-op on native iOS/Android; cast needed since
+                // `outlineStyle` isn't in RN's TextStyle, only react-native-web's.
+                { outlineStyle: 'none' } as any,
+              ]}
               placeholder="Search doctor office or location..."
               value={search}
               onChangeText={

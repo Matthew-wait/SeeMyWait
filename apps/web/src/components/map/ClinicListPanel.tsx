@@ -4,16 +4,8 @@ import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
 import { formatDistanceToNow, format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { WaitTimeCategory, WAIT_TIME_MINUTES_LABEL } from "@/lib/wait-time-utils";
+import { WAIT_TIME_MINUTES_LABEL, WAIT_TIME_BG_COLORS } from "@/lib/wait-time-utils";
 import { useWindowedList } from "@/hooks/use-windowed-list";
-import { nearbyCountLabel } from "@/lib/nearby-clinics";
-
-const WAIT_BG: Record<WaitTimeCategory, string> = {
-  on_time: "bg-green-500/10 border-green-500/25",
-  "30_min": "bg-yellow-500/10 border-yellow-500/25",
-  "1_hour": "bg-orange-500/10 border-orange-500/25",
-  "1.5_hours_plus": "bg-red-500/10 border-red-500/25",
-};
 
 interface ClinicListPanelProps {
   clinics: ClinicWithWaitTime[];
@@ -39,8 +31,10 @@ interface ClinicListPanelProps {
    *  the initial short list doesn't look like the final result. */
   isLoadingMore?: boolean;
   hasMore?: boolean;
-  /** Exact count of offices in the radius, from the server (not the loaded rows). */
-  total?: number;
+  /** Exact count of offices in the whole admin radius, from the server — used
+   *  only to tell the user how many more exist outside the current viewport,
+   *  never as the headline count (that's always what's actually on screen). */
+  totalInRadius?: number;
   onLoadMore?: () => void;
   loadError?: boolean;
   onRetryLoad?: () => void;
@@ -82,7 +76,7 @@ export function ClinicListPanel({
   locating,
   isLoadingMore = false,
   hasMore = false,
-  total,
+  totalInRadius,
   onLoadMore,
   loadError = false,
   onRetryLoad,
@@ -138,7 +132,7 @@ export function ClinicListPanel({
           <PanelBottomOpen className="h-4 w-4" />
           {isSearching
             ? `Show Results (${listToShow.length})`
-            : `Show Nearby Doctor Offices (${nearbyCountLabel(listToShow.length, hasMore)})`}
+            : `Show Doctor Offices Nearby (${listToShow.length})`}
         </button>
       </div>
     );
@@ -187,10 +181,15 @@ export function ClinicListPanel({
         </div>
       );
     }
+    const offScreenOnly = !isSearching && (totalInRadius ?? 0) > 0;
     return (
       <div className="shrink-0 bg-background border-t border-border/30 pb-4 text-center">
         <p className="px-3 pt-4 text-xs text-muted-foreground">
-          {isSearching ? `No results for "${searchQuery}"` : "No nearby doctor offices found."}
+          {isSearching
+            ? `No results for "${searchQuery}"`
+            : offScreenOnly
+              ? "No doctor offices on screen right now — zoom out or pan the map to see nearby offices."
+              : "No nearby doctor offices found."}
         </p>
         {!isSearching && (
           <div className="text-left">
@@ -208,9 +207,15 @@ export function ClinicListPanel({
           <h3 className="min-w-0 text-sm font-semibold text-foreground">
             {isSearching
               ? `${clinics.length} result${clinics.length !== 1 ? "s" : ""} for "${searchQuery}"`
-              : `Nearby Doctor Offices (${total !== undefined ? total.toLocaleString("en-US") : nearbyCountLabel(nearbyClinics.length, hasMore)})`}
+              : `Doctor Offices Nearby (${nearbyClinics.length})`}
           </h3>
           {!isSearching && hasLocation && <RadiusNotice radiusMiles={radiusMiles} onSuggestClinic={onSuggestClinic} />}
+          {!isSearching && !isLoadingMore && totalInRadius !== undefined && totalInRadius > nearbyClinics.length && (
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              {(totalInRadius - nearbyClinics.length).toLocaleString("en-US")} more within {radiusMiles}{" "}
+              {radiusMiles === 1 ? "mile" : "miles"} — zoom out or pan to see them.
+            </p>
+          )}
           {!isSearching && isLoadingMore && (
             <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -252,7 +257,7 @@ export function ClinicListPanel({
                 }
               }}
               className={`w-full cursor-pointer text-left rounded-xl border p-3 transition-all hover:shadow-sm active:scale-[0.99] ${
-                clinic.waitTime ? WAIT_BG[clinic.waitTime.category] : "border-border/30 bg-card"
+                clinic.waitTime ? WAIT_TIME_BG_COLORS[clinic.waitTime.category] : "border-border/30 bg-card"
               } hover:border-primary/20`}
             >
               <div className="flex items-start gap-3">

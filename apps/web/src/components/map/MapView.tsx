@@ -3,21 +3,28 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
 import { hasValidCoords } from "@/lib/geolocation";
-import { WaitTimeCategory } from "@/lib/wait-time-utils";
+import { WAIT_TIME_HEX_COLORS } from "@/lib/wait-time-utils";
 import { tileUrlTemplate, TILE_ATTRIBUTION, TILE_MAX_ZOOM } from "@/lib/map-tiles";
 import { MapZoomControls } from "@/components/map/MapZoomControls";
 import { MapPin } from "lucide-react";
 import { ClinicPinLayer } from "@/lib/clinic-pin-layer";
 
-const WAIT_COLORS: Record<WaitTimeCategory, string> = {
-  on_time: "#22c55e",
-  "30_min": "#eab308",
-  "1_hour": "#f97316",
-  "1.5_hours_plus": "#ef4444",
-};
 /** Unsaved candidate awaiting verification — deliberately distinct from wait colours. */
 const CANDIDATE_COLOR = "#2563eb";
 const DEFAULT_CENTER: L.LatLngTuple = [25.7617, -80.1918];
+const EARTH_RADIUS_METERS = 6371000;
+
+/** Rough (great-circle-ignoring) bounding box for a radius in miles around a
+ *  point — good enough for "zoom to fit the admin radius circle" framing. */
+function boundsForRadius(lat: number, lng: number, radiusMiles: number): L.LatLngBounds {
+  const radiusMeters = radiusMiles * 1609.34;
+  const latDelta = (radiusMeters / EARTH_RADIUS_METERS) * (180 / Math.PI);
+  const lngDelta = latDelta / Math.cos((lat * Math.PI) / 180);
+  return L.latLngBounds(
+    [lat - latDelta, lng - lngDelta],
+    [lat + latDelta, lng + lngDelta]
+  );
+}
 
 /** One-time CSS: strip Leaflet's default divIcon chrome + style the coord popup
  *  and attribution to match the app surface. Injected once per document. */
@@ -100,6 +107,11 @@ interface MapViewProps {
   clinics: ClinicWithWaitTime[];
   userLocation: { lat: number; lng: number } | null;
   onClinicClick: (clinic: ClinicWithWaitTime) => void;
+  /** A pin that's actually standing in for 2+ offices at the same spot (e.g.
+   *  same building — supercluster can never visually separate them no matter
+   *  the zoom). `point` is the on-screen container position, for anchoring a
+   *  picker popup near the tap. */
+  onClinicStackClick?: (clinics: ClinicWithWaitTime[], point: { x: number; y: number }) => void;
   onEmptyClick: () => void;
   centerOn?: { lat: number; lng: number; zoom?: number } | null;
   /** Driving route from the user to a chosen office, drawn as a line. */
@@ -118,12 +130,16 @@ interface MapViewProps {
   onPoiClick?: (poi: PoiTap) => void;
   /** Tapping an empty map point. */
   onMapPointClick?: (point: { lat: number; lng: number }) => void;
+  /** Fires after every pan/zoom settles, so the list below can show only
+   *  what's currently visible on screen instead of the whole radius. */
+  onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
 }
 
 function MapViewInner({
   clinics,
   userLocation,
   onClinicClick,
+  onClinicStackClick,
   onEmptyClick,
   centerOn,
   route = null,
@@ -134,6 +150,7 @@ function MapViewInner({
   fitToClinics = false,
   pendingPoint = null,
   onMapPointClick,
+  onBoundsChange,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -143,16 +160,20 @@ function MapViewInner({
   const candidateMarkerRef = useRef<L.Marker | null>(null);
   const focusedMarkerRef = useRef<L.Marker | null>(null);
   const pendingMarkerRef = useRef<L.Marker | null>(null);
+  const onBoundsChangeRef = useRef(onBoundsChange);
+  onBoundsChangeRef.current = onBoundsChange;
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [hover, setHover] = useState<{ id: string; extra: number; x: number; y: number } | null>(null);
   const hoverIdRef = useRef<string | null>(null);
 
   // Keep the latest callbacks reachable from stable map listeners.
   const onClinicClickRef = useRef(onClinicClick);
+  const onClinicStackClickRef = useRef(onClinicStackClick);
   const onEmptyClickRef = useRef(onEmptyClick);
   const onMapPointClickRef = useRef(onMapPointClick);
   onClinicClickRef.current = onClinicClick;
+  onClinicStackClickRef.current = onClinicStackClick;
   onEmptyClickRef.current = onEmptyClick;
   onMapPointClickRef.current = onMapPointClick;
 
@@ -176,9 +197,22 @@ function MapViewInner({
       }).addTo(map);
 
       map.on("click", (e: L.LeafletMouseEvent) => {
-        const pin = clinicLayerRef.current?.pick(e.containerPoint);
-        const clinic = pin && clinicsByIdRef.current.get(pin.id);
-        if (clinic) { onClinicClickRef.current(clinic); return; }
+        const hit = clinicLayerRef.current?.pick(e.containerPoint);
+        if (hit?.kind === "cluster") {
+          const zoom = clinicLayerRef.current!.expansionZoom(hit.clusterId);
+          map.flyTo([hit.lat, hit.lng], zoom, { duration: 0.4 });
+          return;
+        }
+        if (hit?.kind === "pin") {
+          const stackClinics = hit.stack
+            .map((p) => clinicsByIdRef.current.get(p.id))
+            .filter((c): c is ClinicWithWaitTime => Boolean(c));
+          if (stackClinics.length > 1 && onClinicStackClickRef.current) {
+            onClinicStackClickRef.current(stackClinics, { x: hit.x, y: hit.y });
+            return;
+          }
+          if (stackClinics[0]) { onClinicClickRef.current(stackClinics[0]); return; }
+        }
         if (onMapPointClickRef.current) {
           onMapPointClickRef.current({ lat: e.latlng.lat, lng: e.latlng.lng });
         } else {
@@ -188,15 +222,21 @@ function MapViewInner({
 
       map.on("mousemove", (e: L.LeafletMouseEvent) => {
         const hit = clinicLayerRef.current?.locate(e.containerPoint);
-        const id = hit ? hit.pin.id : null;
+        const pinHit = hit?.kind === "pin" ? hit : undefined;
+        const id = pinHit ? pinHit.stack[0].id : null;
         if (id === hoverIdRef.current) {
-          if (hit) setHover((h) => (h ? { ...h, x: hit.x, y: hit.y } : h));
+          if (pinHit) setHover((h) => (h ? { ...h, x: pinHit.x, y: pinHit.y } : h));
           return;
         }
         hoverIdRef.current = id;
-        setHover(hit ? { id, x: hit.x, y: hit.y } : null);
+        setHover(pinHit ? { id, extra: pinHit.stack.length - 1, x: pinHit.x, y: pinHit.y } : null);
       });
       map.on("mouseout", () => { hoverIdRef.current = null; setHover(null); });
+      map.on("moveend zoomend", () => {
+        if (!onBoundsChangeRef.current) return;
+        const b = map.getBounds();
+        onBoundsChangeRef.current({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
+      });
       clinicLayerRef.current = new ClinicPinLayer().addTo(map);
       // Dedicated pane above the pins so the user's own location is never hidden.
       map.createPane("userLocationPane");
@@ -237,18 +277,30 @@ function MapViewInner({
     clinicsByIdRef.current = new Map(clinics.map(c => [c.id,c]));
     clinicLayerRef.current.setPins(clinics.filter(c => hasValidCoords(c.latitude,c.longitude))
       .map(c => ({id:c.id,name:c.name,latitude:c.latitude,longitude:c.longitude,
-        color:WAIT_COLORS[c.waitTime?.category ?? "on_time"]})));
+        color:WAIT_TIME_HEX_COLORS[c.waitTime?.category ?? "on_time"]})));
   }, [clinics, status]);
 
   // Geolocation usually resolves after the map has mounted on its Miami
-  // default, so centre on the user the first time a valid location arrives.
+  // default, so centre on the user the first time a valid location arrives —
+  // zoomed out just enough to fit the whole admin-configured radius (so a
+  // 5-mile setting and a 25-mile setting both open already "zoomed to fit"
+  // instead of a fixed zoom that's too tight or too loose depending on radius).
   const initialLocationCenteredRef = useRef(false);
   useEffect(() => {
     if (status !== "ready" || !mapRef.current || initialLocationCenteredRef.current) return;
     if (!userLocation || !hasValidCoords(userLocation.lat, userLocation.lng)) return;
     initialLocationCenteredRef.current = true;
-    mapRef.current.setView([userLocation.lat, userLocation.lng], 14);
-  }, [userLocation, status]);
+    const bounds = boundsForRadius(userLocation.lat, userLocation.lng, nearbyRadiusMiles);
+    mapRef.current.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 });
+    // fitBounds's own moveend already fires the map's "moveend" listener above,
+    // but that listener isn't attached until this same tick — fire once more
+    // directly so the list panel doesn't start out unsynced from the map.
+    requestAnimationFrame(() => {
+      if (!mapRef.current || !onBoundsChangeRef.current) return;
+      const b = mapRef.current.getBounds();
+      onBoundsChangeRef.current({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
+    });
+  }, [userLocation, nearbyRadiusMiles, status]);
 
   // User location dot + nearby-radius circle.
   useEffect(() => {
@@ -417,6 +469,11 @@ function MapViewInner({
             <p className="truncate text-xs font-semibold text-foreground">{c.name}</p>
             <p className="truncate text-[11px] text-muted-foreground">{c.address}</p>
             {c.specialty && <p className="truncate text-[11px] text-muted-foreground">{c.specialty}</p>}
+            {hover.extra > 0 && (
+              <p className="mt-0.5 text-[11px] font-medium text-primary">
+                +{hover.extra} more office{hover.extra !== 1 ? "s" : ""} here
+              </p>
+            )}
           </div>
         );
       })()}

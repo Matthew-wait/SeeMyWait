@@ -7,11 +7,13 @@ import { getCurrentPosition } from "@/lib/geolocation";
 import { MapView } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
 import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
+import { ClinicStackPicker } from "@/components/map/ClinicStackPicker";
 import { ClinicListPanel } from "@/components/map/ClinicListPanel";
 import { FindMeButton } from "@/components/map/FindMeButton";
 import { SearchResultsDropdown } from "@/components/map/SearchResultsDropdown";
 import { VerifyPlaceCard } from "@/components/map/VerifyPlaceCard";
 import { ClinicWithWaitTime } from "@/hooks/use-clinics";
+import { ReportExpiryByCategory, WAIT_TIME_HEX_COLORS } from "@/lib/wait-time-utils";
 import { useMedicalSearch } from "@/hooks/use-medical-search";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import {
@@ -25,12 +27,23 @@ import { AddDoctorPrefill } from "@/lib/add-doctor-prefill";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+// Stable module-level reference (not recreated each render) so it's safe to
+// use directly in a React Query key while settings are still loading.
+const DEFAULT_REPORT_EXPIRY: ReportExpiryByCategory = {
+  report_expiry_30min_minutes: 30,
+  report_expiry_60min_minutes: 60,
+  report_expiry_90plus_minutes: 90,
+};
+
 const Index = () => {
   const [search, setSearch] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(true);
   const [centerOn, setCenterOn] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<ClinicWithWaitTime | null>(null);
+  /** A tapped pin standing in for 2+ offices at the same spot — picker shown
+   *  before opening any one of them. */
+  const [clinicStack, setClinicStack] = useState<{ clinics: ClinicWithWaitTime[]; anchor: { x: number; y: number } } | null>(null);
   /** Office the user asked to see on the map with a driving route from their location. */
   const [routeTo, setRouteTo] = useState<ClinicWithWaitTime | null>(null);
   const [route, setRoute] = useState<{ geometry: [number, number][]; miles: number; minutes: number } | null>(null);
@@ -57,6 +70,10 @@ const Index = () => {
     latitude: number;
     longitude: number;
   } | null>(null);
+  /** Pin colour for `focusedPlace` — the clinic's actual wait-status colour
+   *  (green/yellow/orange/red), not a generic "selected" blue, so a search
+   *  result's pin matches its badge in the list below. */
+  const [focusedColor, setFocusedColor] = useState<string | undefined>(undefined);
   /** NPPES result awaiting explicit verification — pinned on the map, not saved. */
   const [candidate, setCandidate] = useState<NpiSearchResult | null>(null);
 
@@ -67,16 +84,24 @@ const Index = () => {
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
   const navigate = useNavigate();
 
+  /** Current map viewport — the browse list is filtered to this so it always
+   *  matches what's actually visible on screen, instead of dumping the whole
+   *  radius into a long paginated list. */
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+
   const { data: appSettings, isPending: settingsLoading } = useAppSettings();
   const nearbyRadiusMiles = appSettings?.nearby_radius_miles ?? 5;
   const reportCooldownMinutes = appSettings?.report_cooldown_minutes ?? 60;
+  // Each wait-time category reverts to On Time on its own schedule — not one
+  // flat window shared with the device cooldown above.
+  const reportExpiry: ReportExpiryByCategory = appSettings ?? DEFAULT_REPORT_EXPIRY;
 
   // Load the nearest 1,000; load more only when requested.
   // Keep the existing loading indicator until every geographic page finishes.
   const { data: clinics, isInitialLoading: isLoading, isLoadingMore, hasMore, total: nearbyTotal, loadMore, error: nearbyError, refetch } = useNearbyClinicsProgressive(
     userLocation?.lat,
     userLocation?.lng,
-    reportCooldownMinutes,
+    reportExpiry,
     nearbyRadiusMiles,
     !settingsLoading
   );
@@ -208,15 +233,54 @@ const Index = () => {
       .sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
   }, [clinicsWithinNearbyRadius, isWithinConfiguredRadius]);
 
+  // Same list, narrowed to whatever's currently on screen — keeps the browse
+  // list in sync with the map instead of showing hundreds of rows for offices
+  // the user can't even see right now. Falls back to the full nearby list
+  // until the map reports its first viewport.
+  const visibleNearbyClinics = useMemo(() => {
+    if (!mapBounds) return nearbyClinics;
+    return nearbyClinics.filter(
+      (c) =>
+        c.latitude <= mapBounds.north &&
+        c.latitude >= mapBounds.south &&
+        c.longitude <= mapBounds.east &&
+        c.longitude >= mapBounds.west
+    );
+  }, [nearbyClinics, mapBounds]);
+
   const handleFindMe = useCallback(() => {
     if (userLocation) {
       setCenterOn({ lat: userLocation.lat, lng: userLocation.lng, zoom: 14 });
     }
   }, [userLocation]);
 
+  /** "Clear" on the route banner — a route is always to some specific,
+   *  possibly far-away office (the whole point of "View on map"/directions),
+   *  so leaving the search text and the zoomed-out route view behind would
+   *  strand the user there. Reset everything back to their own location. */
+  const handleClearRoute = useCallback(() => {
+    setRouteTo(null);
+    setRoute(null);
+    setSearch("");
+    setFocusedPlace(null);
+    setFocusedColor(undefined);
+    setDropdownOpen(false);
+    if (userLocation) {
+      setCenterOn({ lat: userLocation.lat, lng: userLocation.lng, zoom: 14 });
+    }
+  }, [userLocation]);
+
   const handleClinicClick = useCallback((clinic: ClinicWithWaitTime) => {
+    setClinicStack(null);
     setSelectedClinic(clinic);
   }, []);
+
+  const handleClinicStackClick = useCallback(
+    (clinics: ClinicWithWaitTime[], point: { x: number; y: number }) => {
+      setClinicStack({ clinics, anchor: point });
+    },
+    []
+  );
 
   const handleEmptyClick = useCallback(() => {
     // No-op: detail flow is navigation-based now
@@ -245,14 +309,16 @@ const Index = () => {
         // Open immediately from the search result itself — don't depend on
         // the separately fetched nearby-clinics snapshot happening to
         // include it, which silently did nothing when it didn't.
-        const clinic = clinics?.find((c) => c.id === result.id);
-        setSelectedClinic(clinic ?? dbResultToClinic(result));
-        if (!clinic) refetch(); // top up the snapshot for report/refresh actions
+        const clinic = clinics?.find((c) => c.id === result.id) ?? dbResultToClinic(result);
+        setSelectedClinic(clinic);
+        setFocusedColor(WAIT_TIME_HEX_COLORS[clinic.waitTime?.category ?? "on_time"]);
+        if (!clinics?.some((c) => c.id === result.id)) refetch(); // top up the snapshot for report/refresh actions
         return;
       }
 
       setSelectedClinic(null);
       setFocusedPlace(null);
+      setFocusedColor(undefined);
       setCandidate(result);
     },
     [clinics, refetch, dbResultToClinic]
@@ -349,7 +415,7 @@ const Index = () => {
                 onFocus={() => {
                   if (search.trim()) setDropdownOpen(true);
                 }}
-                className="flex-1 border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 px-0"
+                className="flex-1 border-0 bg-transparent h-10 sm:h-12 text-xs sm:text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
               />
               {search && (
                 <button
@@ -407,9 +473,10 @@ const Index = () => {
             covers the initial-fetch UX.
           */}
           <MapView
-            clinics={displayedClinics}
+            clinics={routeTo ? [routeTo] : displayedClinics}
             userLocation={userLocation}
             onClinicClick={handleClinicClick}
+            onClinicStackClick={handleClinicStackClick}
             onEmptyClick={handleEmptyClick}
             // "Tap empty map to add a missing place" is only for the browse
             // state. With a search active, an empty-space tap must never be
@@ -427,13 +494,24 @@ const Index = () => {
                 : null
             }
             focusedPlace={focusedPlace}
+            focusedColor={focusedColor}
             pendingPoint={pendingPoint}
             nearbyRadiusMiles={nearbyRadiusMiles}
+            onBoundsChange={isSearching ? undefined : setMapBounds}
           />
 
           <FindMeButton onClick={handleFindMe} visible={!!userLocation} />
 
           <MapLegend />
+
+          {clinicStack && (
+            <ClinicStackPicker
+              clinics={clinicStack.clinics}
+              anchor={clinicStack.anchor}
+              onSelect={handleClinicClick}
+              onClose={() => setClinicStack(null)}
+            />
+          )}
 
           {/* Item 7b — "Add here" affordance for a tapped empty point. */}
           {pendingPoint && !candidate && !selectedClinic && (
@@ -483,7 +561,7 @@ const Index = () => {
                     : userLocation ? "Finding route…" : "Enable location to see the route"}
                 </p>
               </div>
-              <button type="button" onClick={() => { setRouteTo(null); setRoute(null); }} className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/5">
+              <button type="button" onClick={handleClearRoute} className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/5">
                 Clear
               </button>
             </div>
@@ -501,18 +579,24 @@ const Index = () => {
         </div>
 
         {/* Clinic list panel */}
+        {/*
+          Once the user has drilled into one specific office (View on map /
+          directions), the list below shows just that office — not the full
+          search/browse list it was picked from, which no longer matches
+          what's actually being looked at on the map.
+        */}
         <ClinicListPanel
-          clinics={displayedClinics}
-          nearbyClinics={nearbyClinics}
+          clinics={routeTo ? [routeTo] : displayedClinics}
+          nearbyClinics={routeTo ? [routeTo] : visibleNearbyClinics}
+          totalInRadius={isSearching ? undefined : nearbyTotal}
           isSearching={isSearching}
-          autoCollapse={isSearching && dropdownOpen}
+          autoCollapse={(isSearching && dropdownOpen) || Boolean(clinicStack)}
           searchQuery={search.trim()}
           radiusMiles={nearbyRadiusMiles}
           hasLocation={!!userLocation}
           locating={locating}
           isLoadingMore={!isSearching && isLoadingMore}
           hasMore={!isSearching && hasMore}
-          total={isSearching ? undefined : nearbyTotal}
           onLoadMore={loadMore}
           loadError={!isSearching && Boolean(nearbyError)}
           onRetryLoad={() => { void refetch(); }}

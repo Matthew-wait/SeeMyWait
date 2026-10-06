@@ -36,18 +36,39 @@ export const waitTimeCategoryToMinutes = (raw: string | null | undefined): numbe
   }
 };
 
-/** Minutes from `reported_at` until the row is inactive for patients (tune per product). */
-const EXPIRY_MINUTES_BY_CATEGORY: Record<WaitTimeCategory, number> = {
-  on_time: 120,
-  '30_min': 240,
-  '1_hour': 360,
-  '1.5_hours_plus': 480,
+/** The three admin-configurable per-category expiry settings (from
+ *  `useAppSettings`) — each wait time reverts to On Time on its own
+ *  schedule, not one flat window shared with the device cooldown. */
+export interface ReportExpirySettings {
+  reportExpiry30MinMinutes: number;
+  reportExpiry60MinMinutes: number;
+  reportExpiry90PlusMinutes: number;
+}
+
+/** An "On Time" report reverting to On Time has no visible effect (the
+ *  badge shows On Time either way), so unlike the other three it isn't
+ *  admin-configurable — just a fixed "how long this counts as fresh" value. */
+const ON_TIME_EXPIRY_MINUTES = 60;
+
+export const expiryMinutesForCategory = (
+  category: WaitTimeCategory,
+  settings: ReportExpirySettings
+): number => {
+  switch (category) {
+    case 'on_time':
+      return ON_TIME_EXPIRY_MINUTES;
+    case '30_min':
+      return settings.reportExpiry30MinMinutes;
+    case '1_hour':
+      return settings.reportExpiry60MinMinutes;
+    case '1.5_hours_plus':
+      return settings.reportExpiry90PlusMinutes;
+    default:
+      return 24 * 60;
+  }
 };
 
-export const expiryMinutesForCategory = (category: WaitTimeCategory): number =>
-  EXPIRY_MINUTES_BY_CATEGORY[category] ?? 24 * 60;
-
-/** `wait_time_reports.expiry_time` from explicit TTL minutes (e.g. app_settings cooldown). */
+/** `wait_time_reports.expiry_time` from explicit TTL minutes. */
 export const computeExpiryTimeFromMinutesIso = (minutes: number): string => {
   const safeMinutes = Number.isFinite(minutes) && minutes > 0 ? minutes : 1;
   const ms = safeMinutes * 60 * 1000;
@@ -55,6 +76,6 @@ export const computeExpiryTimeFromMinutesIso = (minutes: number): string => {
 };
 
 /** `wait_time_reports.expiry_time` — timestamptz when this report stops showing in the app. */
-export const computeExpiryTimeIso = (category: WaitTimeCategory): string => {
-  return computeExpiryTimeFromMinutesIso(expiryMinutesForCategory(category));
+export const computeExpiryTimeIso = (category: WaitTimeCategory, settings: ReportExpirySettings): string => {
+  return computeExpiryTimeFromMinutesIso(expiryMinutesForCategory(category, settings));
 };

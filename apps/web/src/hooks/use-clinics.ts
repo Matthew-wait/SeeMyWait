@@ -2,7 +2,12 @@ import { useEffect } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAverageWaitTime, WaitTimeCategory } from "@/lib/wait-time-utils";
+import {
+  getAverageWaitTime,
+  ON_TIME_REPORT_EXPIRY_MINUTES,
+  ReportExpiryByCategory,
+  WaitTimeCategory,
+} from "@/lib/wait-time-utils";
 import { getDistanceMiles } from "@/lib/geolocation";
 import { fetchNearbyBatch, loadAllNearbyPages, mergeNearbyPages, NearbyBatchCursor } from "@/lib/nearby-clinics";
 
@@ -36,12 +41,22 @@ export interface ClinicWithWaitTime extends Clinic {
 
 const HISTORY_WINDOW_MINUTES = 180; // last 3 hours
 
+/** Longest of the per-category expiry windows — used to size the report
+ *  fetch so it's never narrower than whichever category takes longest to expire. */
+function maxExpiryMinutes(expiry: ReportExpiryByCategory): number {
+  return Math.max(
+    ON_TIME_REPORT_EXPIRY_MINUTES,
+    expiry.report_expiry_30min_minutes,
+    expiry.report_expiry_60min_minutes,
+    expiry.report_expiry_90plus_minutes
+  );
+}
 
 async function fetchClinicsWithWaitTimes(
   searchQuery: string | undefined,
   userLat: number | undefined,
   userLon: number | undefined,
-  reportExpiryMinutes: number,
+  reportExpiry: ReportExpiryByCategory,
   radiusMiles: number
 ): Promise<ClinicWithWaitTime[]> {
   const hasLocation = userLat !== undefined && userLon !== undefined;
@@ -64,7 +79,7 @@ async function fetchClinicsWithWaitTimes(
 
   // Fetch a window large enough to cover both the wait-time aggregation
   // and the 3-hour history list shown in the office cards.
-  const fetchWindowMinutes = Math.max(reportExpiryMinutes, HISTORY_WINDOW_MINUTES);
+  const fetchWindowMinutes = Math.max(maxExpiryMinutes(reportExpiry), HISTORY_WINDOW_MINUTES);
   const cutoffIso = new Date(Date.now() - fetchWindowMinutes * 60 * 1000).toISOString();
   const { data: reports } = await supabase
     .from("wait_time_reports")
@@ -102,7 +117,7 @@ async function fetchClinicsWithWaitTimes(
 
     return {
       ...c,
-      waitTime: getAverageWaitTime(allReports, reportExpiryMinutes),
+      waitTime: getAverageWaitTime(allReports, reportExpiry),
       recentReports,
       // Prefer the RPC's real SQL-computed distance; fall back to a JS
       // haversine calc for the non-geo (search/no-location) fetch path.
@@ -121,21 +136,27 @@ async function fetchClinicsWithWaitTimes(
   return result;
 }
 
+const DEFAULT_REPORT_EXPIRY: ReportExpiryByCategory = {
+  report_expiry_30min_minutes: 30,
+  report_expiry_60min_minutes: 60,
+  report_expiry_90plus_minutes: 90,
+};
+
 export function useClinics(
   searchQuery?: string,
   userLat?: number,
   userLon?: number,
-  reportExpiryMinutes: number = 180,
+  reportExpiry: ReportExpiryByCategory = DEFAULT_REPORT_EXPIRY,
   radiusMiles: number = 100
 ) {
   return useQuery({
-    queryKey: ["clinics", searchQuery, userLat, userLon, reportExpiryMinutes, radiusMiles],
+    queryKey: ["clinics", searchQuery, userLat, userLon, reportExpiry, radiusMiles],
     // Re-evaluate periodically so a pin reverts to the default once its
     // report ages out of the expiry window, even if the user hasn't acted.
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     queryFn: () =>
-      fetchClinicsWithWaitTimes(searchQuery, userLat, userLon, reportExpiryMinutes, radiusMiles),
+      fetchClinicsWithWaitTimes(searchQuery, userLat, userLon, reportExpiry, radiusMiles),
   });
 }
 
@@ -143,7 +164,7 @@ export function useClinics(
 export function useNearbyClinicsProgressive(
   userLat: number | undefined,
   userLon: number | undefined,
-  reportExpiryMinutes: number,
+  reportExpiry: ReportExpiryByCategory,
   fullRadiusMiles: number,
   settingsReady = true
 ) {
@@ -168,10 +189,10 @@ export function useNearbyClinicsProgressive(
   }, [hasNextPage, isFetchingNextPage, isError, loadedPages, fetchNextPage]);
 
   const reports = useQuery({
-    queryKey: ["nearby-wait-reports", reportExpiryMinutes],
+    queryKey: ["nearby-wait-reports", reportExpiry],
     enabled: hasLocation && settingsReady,
     queryFn: async ({ signal }) => {
-      const cutoff = new Date(Date.now() - Math.max(reportExpiryMinutes, HISTORY_WINDOW_MINUTES) * 60_000).toISOString();
+      const cutoff = new Date(Date.now() - Math.max(maxExpiryMinutes(reportExpiry), HISTORY_WINDOW_MINUTES) * 60_000).toISOString();
       const { data, error } = await supabase.from("wait_time_reports")
         .select("clinic_id, wait_time, reported_at").gte("reported_at", cutoff)
         .eq("is_flagged", false).abortSignal(signal);
@@ -207,11 +228,11 @@ export function useNearbyClinicsProgressive(
       .map(c => {
         const allReports = byClinic.get(c.id) ?? [];
         return { ...c, distance: c.distance_miles,
-          waitTime: getAverageWaitTime(allReports, reportExpiryMinutes),
+          waitTime: getAverageWaitTime(allReports, reportExpiry),
           recentReports: allReports.filter(r => Date.parse(r.reported_at) >= historyCutoff)
             .sort((a,b) => Date.parse(b.reported_at) - Date.parse(a.reported_at)) };
       });
-  }, [rows, reports.data, reports.dataUpdatedAt, reportExpiryMinutes]);
+  }, [rows, reports.data, reports.dataUpdatedAt, reportExpiry]);
   const isInitialLoading = hasLocation && (!settingsReady || nearby.isPending);
   return {
     data, isInitialLoading, isLoading: isInitialLoading,

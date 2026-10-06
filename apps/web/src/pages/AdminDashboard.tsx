@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { getDistanceMiles } from "@/lib/geolocation";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { WaitTimeBadge } from "@/components/WaitTimeBadge";
-import { WaitTimeCategory } from "@/lib/wait-time-utils";
+import { ReportExpiryByCategory, WaitTimeCategory, reportExpiryMinutesFor } from "@/lib/wait-time-utils";
 import { addMedicalPlace, addErrorMessage, isNpi, NpiSearchResult, MedicalSearchResult, AddedClinic } from "@/lib/medical-search";
 import {
   clinicIdentityKey,
@@ -765,8 +765,13 @@ export default function AdminDashboard() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [showActiveReports, setShowActiveReports] = useState(true);
   const [nearbyRadius, setNearbyRadius] = useState("");
+  /** Per-device "wait before reporting again" cooldown — unrelated to how
+   *  long a report stays active (see the expiry-by-category fields below). */
   const [cooldownMinutes, setCooldownMinutes] = useState("");
   const [geofenceMeters, setGeofenceMeters] = useState("");
+  const [expiry30MinMinutes, setExpiry30MinMinutes] = useState("");
+  const [expiry60MinMinutes, setExpiry60MinMinutes] = useState("");
+  const [expiry90PlusMinutes, setExpiry90PlusMinutes] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
 
   // CRUD dialog state
@@ -935,25 +940,46 @@ export default function AdminDashboard() {
       if (cooldown) setCooldownMinutes(cooldown.value);
       const geofence = appSettings.find((s: AppSettingRow) => s.key === "report_geofence_meters");
       if (geofence) setGeofenceMeters(geofence.value);
+      const expiry30 = appSettings.find((s: AppSettingRow) => s.key === "report_expiry_30min_minutes");
+      if (expiry30) setExpiry30MinMinutes(expiry30.value);
+      const expiry60 = appSettings.find((s: AppSettingRow) => s.key === "report_expiry_60min_minutes");
+      if (expiry60) setExpiry60MinMinutes(expiry60.value);
+      const expiry90 = appSettings.find((s: AppSettingRow) => s.key === "report_expiry_90plus_minutes");
+      if (expiry90) setExpiry90PlusMinutes(expiry90.value);
     }
   }, [appSettings]);
 
-  const reportExpiryMinutes = parseInt(cooldownMinutes || "60", 10) || 60;
-  const expiryCutoffTime = new Date(Date.now() - reportExpiryMinutes * 60 * 1000).getTime();
+  // Each wait-time category reverts to On Time on its own schedule — not one
+  // flat window shared with the device cooldown.
+  const reportExpiry: ReportExpiryByCategory = useMemo(
+    () => ({
+      report_expiry_30min_minutes: parseInt(expiry30MinMinutes || "30", 10) || 30,
+      report_expiry_60min_minutes: parseInt(expiry60MinMinutes || "60", 10) || 60,
+      report_expiry_90plus_minutes: parseInt(expiry90PlusMinutes || "90", 10) || 90,
+    }),
+    [expiry30MinMinutes, expiry60MinMinutes, expiry90PlusMinutes]
+  );
+
+  const isReportActive = useCallback(
+    (r: WaitTimeReportRow) => {
+      const ageMinutes = (Date.now() - new Date(r.reported_at).getTime()) / 60000;
+      return ageMinutes <= reportExpiryMinutesFor(r.wait_time as WaitTimeCategory, reportExpiry);
+    },
+    [reportExpiry]
+  );
 
   const filteredReports = useMemo(() => {
     if (!recentReports) return [];
     return recentReports.filter((r: WaitTimeReportRow) => {
-      const reportTime = new Date(r.reported_at).getTime();
-      const isActive = reportTime > expiryCutoffTime;
+      const isActive = isReportActive(r);
       return showActiveReports ? isActive : !isActive;
     });
-  }, [recentReports, showActiveReports, expiryCutoffTime]);
+  }, [recentReports, showActiveReports, isReportActive]);
 
   const activeReportCount = useMemo(() => {
     if (!recentReports) return 0;
-    return recentReports.filter((r: WaitTimeReportRow) => new Date(r.reported_at).getTime() > expiryCutoffTime && !r.is_flagged).length;
-  }, [recentReports, expiryCutoffTime]);
+    return recentReports.filter((r: WaitTimeReportRow) => isReportActive(r) && !r.is_flagged).length;
+  }, [recentReports, isReportActive]);
 
 
   const handleSaveSettings = async () => {
@@ -963,6 +989,9 @@ export default function AdminDashboard() {
         { key: "nearby_radius_miles", value: nearbyRadius },
         { key: "report_cooldown_minutes", value: cooldownMinutes },
         { key: "report_geofence_meters", value: geofenceMeters },
+        { key: "report_expiry_30min_minutes", value: expiry30MinMinutes },
+        { key: "report_expiry_60min_minutes", value: expiry60MinMinutes },
+        { key: "report_expiry_90plus_minutes", value: expiry90PlusMinutes },
       ];
       for (const u of updates) {
         const { error } = await supabase.from("app_settings").update({ value: u.value }).eq("key", u.key);
@@ -1106,7 +1135,13 @@ export default function AdminDashboard() {
 
   const resetClinicWaitTimes = useMutation({
     mutationFn: async (clinicId: string) => {
-      const expiryMinutes = parseInt(cooldownMinutes || "60", 10) || 60;
+      // Delete anything that could still be "active" under any category's
+      // expiry — the longest of the three, so a reset is never partial.
+      const expiryMinutes = Math.max(
+        reportExpiry.report_expiry_30min_minutes,
+        reportExpiry.report_expiry_60min_minutes,
+        reportExpiry.report_expiry_90plus_minutes
+      );
       const cutoffIso = new Date(Date.now() - expiryMinutes * 60 * 1000).toISOString();
       const { error } = await supabase
         .from("wait_time_reports")
@@ -1854,14 +1889,14 @@ export default function AdminDashboard() {
               value={showActiveReports ? "active" : "expired"}
               onValueChange={(v) => setShowActiveReports(v === "active")}
             >
-              <TabsList className="grid w-full grid-cols-2 gap-1 p-1 sm:w-auto sm:inline-grid bg-primary/15">
-                <TabsTrigger value="active" className="gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3">
+              <TabsList className="inline-flex h-auto gap-1 p-1 bg-primary/15">
+                <TabsTrigger value="active" className="min-w-24 gap-1.5 whitespace-nowrap text-xs sm:min-w-28 sm:text-sm px-3">
                   Active
                   {showActiveReports && (
                     <Badge variant="secondary" className="text-[10px]">{filteredReports.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="expired" className="gap-1.5 whitespace-nowrap text-xs sm:text-sm px-3">
+                <TabsTrigger value="expired" className="min-w-24 gap-1.5 whitespace-nowrap text-xs sm:min-w-28 sm:text-sm px-3">
                   Expired
                   {!showActiveReports && (
                     <Badge variant="secondary" className="text-[10px]">{filteredReports.length}</Badge>
@@ -1891,6 +1926,20 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
                           {new Date(r.reported_at).toLocaleString()}
+                          {showActiveReports && (() => {
+                            const expiresInMinutes = Math.max(
+                              0,
+                              Math.round(
+                                reportExpiryMinutesFor(waitCategory, reportExpiry) -
+                                  (Date.now() - new Date(r.reported_at).getTime()) / 60000
+                              )
+                            );
+                            return (
+                              <p className="mt-0.5 text-[10px] text-muted-foreground/80">
+                                Reverts to On Time in {expiresInMinutes}m
+                              </p>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-1">
@@ -1978,7 +2027,7 @@ export default function AdminDashboard() {
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cooldown" className="text-xs">Report Expiry & Cooldown (minutes)</Label>
+                  <Label htmlFor="cooldown" className="text-xs">Report Cooldown (minutes)</Label>
                   <Input
                     id="cooldown"
                     type="number"
@@ -1987,8 +2036,47 @@ export default function AdminDashboard() {
                     placeholder="60"
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    Reports expire after this many minutes, and users must wait this long before reporting again for the same doctor office.
+                    How long a device must wait before it can submit another wait-time report, for any doctor office.
                   </p>
+                </div>
+
+                <div className="space-y-3 border-t border-border/30 pt-4">
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Report Expiry by Wait Time</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Each wait time reverts to On Time on its own schedule — not a single shared window.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="expiry30" className="text-xs">~30 Min reports expire after (minutes)</Label>
+                    <Input
+                      id="expiry30"
+                      type="number"
+                      value={expiry30MinMinutes}
+                      onChange={(e) => setExpiry30MinMinutes(e.target.value)}
+                      placeholder="30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="expiry60" className="text-xs">~1 Hour reports expire after (minutes)</Label>
+                    <Input
+                      id="expiry60"
+                      type="number"
+                      value={expiry60MinMinutes}
+                      onChange={(e) => setExpiry60MinMinutes(e.target.value)}
+                      placeholder="60"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="expiry90" className="text-xs">1.5+ Hours reports expire after (minutes)</Label>
+                    <Input
+                      id="expiry90"
+                      type="number"
+                      value={expiry90PlusMinutes}
+                      onChange={(e) => setExpiry90PlusMinutes(e.target.value)}
+                      placeholder="90"
+                    />
+                  </div>
                 </div>
                 <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5">
                   {savingSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}

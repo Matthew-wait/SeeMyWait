@@ -244,6 +244,11 @@ export const ProximityPrompt = ({
   // matches. No active report => green "On time" (not a neutral "no reports" line).
   const tier = waitTierVisual(clinic.latestWaitMinutes);
 
+  // "On Time" is already the default when nobody has reported — only offer it
+  // as a quick-report option when there's an active non-on-time report to correct.
+  const hasActiveDelay = clinic.latestWaitMinutes != null && clinic.latestWaitMinutes > 0;
+  const visibleBuckets = REPORT_BUCKETS.filter((bucket) => bucket.minutes !== 0 || hasActiveDelay);
+
   const openDirections = () => {
     void Linking.openURL(directionsUrl(clinic.latitude, clinic.longitude)).catch(() => {});
   };
@@ -302,7 +307,7 @@ export const ProximityPrompt = ({
               <Text style={styles.sectionLabel}>Report Wait Time</Text>
               <View style={styles.bucketGrid}>
                 <View style={styles.bucketRowLine}>
-                  {REPORT_BUCKETS.slice(0, 2).map((bucket) => (
+                  {visibleBuckets.slice(0, 2).map((bucket) => (
                     <Pressable
                       key={bucket.key}
                       style={({ pressed }) => [styles.bucketBtn, pressed && styles.bucketBtnPressed]}
@@ -317,22 +322,24 @@ export const ProximityPrompt = ({
                     </Pressable>
                   ))}
                 </View>
-                <View style={styles.bucketRowLine}>
-                  {REPORT_BUCKETS.slice(2, 4).map((bucket) => (
-                    <Pressable
-                      key={bucket.key}
-                      style={({ pressed }) => [styles.bucketBtn, pressed && styles.bucketBtnPressed]}
-                      disabled={submitting}
-                      onPress={() => onQuickReport?.(bucket.minutes)}
-                      accessibilityRole="button"
-                      accessibilityLabel={bucket.label}>
-                      <Swatch kind={bucket.swatch} />
-                      <Text style={styles.bucketLabel} numberOfLines={2}>
-                        {bucket.label}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                {visibleBuckets.length > 2 && (
+                  <View style={styles.bucketRowLine}>
+                    {visibleBuckets.slice(2, 4).map((bucket) => (
+                      <Pressable
+                        key={bucket.key}
+                        style={({ pressed }) => [styles.bucketBtn, pressed && styles.bucketBtnPressed]}
+                        disabled={submitting}
+                        onPress={() => onQuickReport?.(bucket.minutes)}
+                        accessibilityRole="button"
+                        accessibilityLabel={bucket.label}>
+                        <Swatch kind={bucket.swatch} />
+                        <Text style={styles.bucketLabel} numberOfLines={2}>
+                          {bucket.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
               </View>
             </>
           ) : (

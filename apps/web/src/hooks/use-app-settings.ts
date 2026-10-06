@@ -3,14 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AppSettings {
   nearby_radius_miles: number;
+  /** Per-device "wait before reporting again" cooldown — unrelated to how
+   *  long a report stays active (see report_expiry_* below). */
   report_cooldown_minutes: number;
   report_geofence_meters: number;
+  /** Minutes before a "~30 min" report reverts to On Time. */
+  report_expiry_30min_minutes: number;
+  /** Minutes before a "~1 hour" report reverts to On Time. */
+  report_expiry_60min_minutes: number;
+  /** Minutes before a "1.5+ hours" report reverts to On Time. */
+  report_expiry_90plus_minutes: number;
 }
 
 const DEFAULTS: AppSettings = {
   nearby_radius_miles: 5,
   report_cooldown_minutes: 60,
   report_geofence_meters: 1000,
+  report_expiry_30min_minutes: 30,
+  report_expiry_60min_minutes: 60,
+  report_expiry_90plus_minutes: 90,
 };
 
 export function useAppSettings() {
@@ -41,6 +52,15 @@ export function useAppSettings() {
         }
         if (row.key === "report_cooldown_minutes") {
           settings.report_cooldown_minutes = parseSetting(row.value, DEFAULTS.report_cooldown_minutes);
+        }
+        if (row.key === "report_expiry_30min_minutes") {
+          settings.report_expiry_30min_minutes = parseSetting(row.value, DEFAULTS.report_expiry_30min_minutes);
+        }
+        if (row.key === "report_expiry_60min_minutes") {
+          settings.report_expiry_60min_minutes = parseSetting(row.value, DEFAULTS.report_expiry_60min_minutes);
+        }
+        if (row.key === "report_expiry_90plus_minutes") {
+          settings.report_expiry_90plus_minutes = parseSetting(row.value, DEFAULTS.report_expiry_90plus_minutes);
         }
       });
       return settings;

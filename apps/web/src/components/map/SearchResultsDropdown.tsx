@@ -120,9 +120,6 @@ export function SearchResultsDropdown({
           );
         })}
       </ul>
-      <p className="border-t border-border/20 px-4 py-1.5 text-[9px] text-muted-foreground/70">
-        Registry data from the NPPES NPI Registry (CMS)
-      </p>
     </div>
   );
 }

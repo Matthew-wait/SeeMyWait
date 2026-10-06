@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { supabase } from '@/src/lib/supabase';
-import { waitTimeCategoryToMinutes } from '@/src/lib/wait-time-report';
+import { ReportExpirySettings, WaitTimeCategory, expiryMinutesForCategory, waitTimeCategoryToMinutes } from '@/src/lib/wait-time-report';
+
+/** Longest of the per-category expiry windows — used to size the report
+ *  fetch so it's never narrower than whichever category takes longest to expire. */
+function maxExpiryMinutes(settings: ReportExpirySettings): number {
+  return Math.max(
+    settings.reportExpiry30MinMinutes,
+    settings.reportExpiry60MinMinutes,
+    settings.reportExpiry90PlusMinutes
+  );
+}
 
 export type WaitTimeReport = {
   id: string;
@@ -102,9 +112,9 @@ async function loadNearbyBatches(
   return [...byId.values()];
 }
 
-async function fetchReports(reportExpiryMinutes: number): Promise<WaitTimeReport[]> {
-  // Same window as the web app: at least the 3-hour history, or the configured expiry if longer.
-  const windowMinutes = Math.max(reportExpiryMinutes, HISTORY_WINDOW_MINUTES);
+async function fetchReports(reportExpiry: ReportExpirySettings): Promise<WaitTimeReport[]> {
+  // Same window as the web app: at least the 3-hour history, or the longest configured expiry if that's longer.
+  const windowMinutes = Math.max(maxExpiryMinutes(reportExpiry), HISTORY_WINDOW_MINUTES);
   const cutoffIso = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from('wait_time_reports')
@@ -123,7 +133,7 @@ async function fetchReports(reportExpiryMinutes: number): Promise<WaitTimeReport
  * active clinics (no radius filtering possible).
  */
 export const useClinics = (
-  reportExpiryMinutes: number,
+  reportExpiry: ReportExpirySettings,
   userLat?: number,
   userLon?: number,
   radiusMiles: number = 100
@@ -155,7 +165,7 @@ export const useClinics = (
       if (!hasLocation) {
         const { data, error } = await supabase.from('clinics').select('*').eq('is_active', true).limit(500);
         if (error) throw error;
-        const fetchedReports = await fetchReports(reportExpiryMinutes);
+        const fetchedReports = await fetchReports(reportExpiry);
         if (!isCurrent()) return;
         setClinics((data ?? []) as Clinic[]);
         setReports(fetchedReports);
@@ -165,7 +175,7 @@ export const useClinics = (
       }
 
       // Reports and the exact count are cheap, so they run alongside the batches.
-      const reportsPromise = fetchReports(reportExpiryMinutes);
+      const reportsPromise = fetchReports(reportExpiry);
       const countPromise = supabase
         .rpc('nearby_clinic_count', { p_lat: userLat, p_lng: userLon, p_radius_miles: radiusMiles })
         .then(({ data, error }) => {
@@ -197,7 +207,7 @@ export const useClinics = (
       setIsLoadingMore(false);
       throw error;
     }
-  }, [hasLocation, radiusMiles, reportExpiryMinutes, userLat, userLon]);
+  }, [hasLocation, radiusMiles, reportExpiry, userLat, userLon]);
 
   useEffect(() => {
     void load().catch(() => {
@@ -211,14 +221,14 @@ export const useClinics = (
       const expiryMs = report.expiry_time ? new Date(report.expiry_time).getTime() : NaN;
       if (Number.isFinite(expiryMs)) return expiryMs > nowMs;
 
-      // Fallback to client-side TTL if expiry_time is missing.
-      const ttlMinutes = Number.isFinite(reportExpiryMinutes) && reportExpiryMinutes > 0 ? reportExpiryMinutes : 1;
-      const ttlMs = ttlMinutes * 60 * 1000;
+      // Fallback to the category's own configured TTL if expiry_time is missing.
+      const ttlMinutes = expiryMinutesForCategory(report.wait_time as WaitTimeCategory, reportExpiry);
+      const ttlMs = (Number.isFinite(ttlMinutes) && ttlMinutes > 0 ? ttlMinutes : 1) * 60 * 1000;
       const reportedAtMs = new Date(report.reported_at).getTime();
       if (!Number.isFinite(reportedAtMs)) return false;
       return reportedAtMs + ttlMs > nowMs;
     },
-    [nowMs, reportExpiryMinutes]
+    [nowMs, reportExpiry]
   );
 
   const latestReportByClinic = useMemo<Map<string, WaitTimeReport>>(() => {

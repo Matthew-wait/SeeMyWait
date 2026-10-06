@@ -85,6 +85,11 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, onViewOnMap, co
     ? Date.now() - new Date(clinic.waitTime.lastReported).getTime() > 2.5 * 60 * 60 * 1000
     : false;
 
+  // "On Time" is already the default when nobody has reported — only offer it
+  // as a reportable option when there's an active non-on-time report to correct.
+  const hasActiveDelay = Boolean(clinic.waitTime?.lastReported) && clinic.waitTime?.category !== "on_time";
+  const visibleWaitOptions = WAIT_OPTIONS.filter((opt) => opt.value !== "on_time" || hasActiveDelay);
+
   // The user can't submit a report (too far / weak GPS / GPS off) — surface it as danger.
   const cannotReport = eligibility !== "loading" && eligibility !== "ready";
 
@@ -121,10 +126,11 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, onViewOnMap, co
 
       const fingerprint = getDeviceFingerprint();
       const cooldownAgo = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
+      // Global per-device cooldown: one report anywhere locks this device out of
+      // reporting ANY clinic (not just this one) until the cooldown window passes.
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
-        .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
         .gte("reported_at", cooldownAgo)
         .limit(1);
@@ -271,8 +277,8 @@ export function ClinicBottomSheet({ clinic, onClose, onReported, onViewOnMap, co
             )}
 
             {eligibility === "ready" && (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {WAIT_OPTIONS.map((opt) => (
+              <div className={`grid gap-2 ${visibleWaitOptions.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
+                {visibleWaitOptions.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"

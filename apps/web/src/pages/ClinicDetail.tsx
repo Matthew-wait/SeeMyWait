@@ -12,6 +12,7 @@ import { LocationErrorOverlay } from "@/components/LocationErrorOverlay";
 import { MiniMap } from "@/components/map/MiniMap";
 import {
   WaitTimeCategory,
+  ReportExpiryByCategory,
   getAverageWaitTime,
 } from "@/lib/wait-time-utils";
 import {
@@ -21,6 +22,16 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { useAppSettings } from "@/hooks/use-app-settings";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+
+/** How far back the "recent reports" history list looks — independent of
+ *  both the device cooldown and each category's own expiry window. */
+const HISTORY_WINDOW_MINUTES = 180;
+
+const DEFAULT_REPORT_EXPIRY: ReportExpiryByCategory = {
+  report_expiry_30min_minutes: 30,
+  report_expiry_60min_minutes: 60,
+  report_expiry_90plus_minutes: 90,
+};
 
 const WAIT_OPTIONS: { value: WaitTimeCategory; label: string; emoji: string }[] = [
   { value: "on_time", label: "On Time", emoji: "🟢" },
@@ -43,6 +54,9 @@ export default function ClinicDetail() {
   const { data: appSettings } = useAppSettings();
   const geofenceM = appSettings?.report_geofence_meters ?? REPORT_WAIT_GEOFENCE_METERS;
   const reportWindowMinutes = appSettings?.report_cooldown_minutes ?? 60;
+  // Each wait-time category reverts to On Time on its own schedule — not one
+  // flat window shared with the device cooldown above.
+  const reportExpiry: ReportExpiryByCategory = appSettings ?? DEFAULT_REPORT_EXPIRY;
 
   const { data: clinic, isLoading: clinicLoading } = useQuery({
     queryKey: ["clinic", id],
@@ -81,19 +95,19 @@ export default function ClinicDetail() {
     enabled: !!id,
   });
 
-  const waitTime = getAverageWaitTime(reports || [], reportWindowMinutes);
+  const waitTime = getAverageWaitTime(reports || [], reportExpiry);
   const recentReportCount = useMemo(() => {
     if (!reports) return 0;
-    const cutoff = Date.now() - reportWindowMinutes * 60 * 1000;
+    const cutoff = Date.now() - HISTORY_WINDOW_MINUTES * 60 * 1000;
     return reports.filter((r) => new Date(r.reported_at).getTime() >= cutoff).length;
-  }, [reports, reportWindowMinutes]);
+  }, [reports]);
   const recentReports = useMemo(() => {
     if (!reports) return [];
-    const threeHoursAgo = Date.now() - reportWindowMinutes * 60 * 1000;
+    const historyCutoff = Date.now() - HISTORY_WINDOW_MINUTES * 60 * 1000;
     return reports
-      .filter((r) => new Date(r.reported_at).getTime() >= threeHoursAgo)
+      .filter((r) => new Date(r.reported_at).getTime() >= historyCutoff)
       .slice(0, 5);
-  }, [reports, reportWindowMinutes]);
+  }, [reports]);
 
   useEffect(() => {
     if (!clinic) return;
@@ -123,6 +137,11 @@ export default function ClinicDetail() {
   }, [clinic]);
 
   const reportButtonsDisabled = submitting || checkingLocation || locationState !== "ready";
+
+  // "On Time" is already the default when nobody has reported — only offer it
+  // as a reportable option when there's an active non-on-time report to correct.
+  const hasActiveDelay = Boolean(waitTime?.lastReported) && waitTime?.category !== "on_time";
+  const visibleWaitOptions = WAIT_OPTIONS.filter((opt) => opt.value !== "on_time" || hasActiveDelay);
 
   const handleReport = async (category: WaitTimeCategory) => {
     if (!clinic) return;
@@ -166,10 +185,11 @@ export default function ClinicDetail() {
     try {
       const fingerprint = getDeviceFingerprint();
       const oneHourAgo = new Date(Date.now() - reportWindowMinutes * 60 * 1000).toISOString();
+      // Global per-device cooldown: one report anywhere locks this device out of
+      // reporting ANY clinic (not just this one) until the cooldown window passes.
       const { data: existing } = await supabase
         .from("wait_time_reports")
         .select("id")
-        .eq("clinic_id", clinic.id)
         .eq("device_fingerprint", fingerprint)
         .gte("reported_at", oneHourAgo)
         .limit(1);
@@ -345,7 +365,7 @@ export default function ClinicDetail() {
                     </span>
                   )}
                   <span className="block text-[11px] font-medium text-muted-foreground">
-                    {recentReportCount} report{recentReportCount !== 1 ? "s" : ""} in last {reportWindowMinutes} minutes
+                    {recentReportCount} report{recentReportCount !== 1 ? "s" : ""} in last {HISTORY_WINDOW_MINUTES} minutes
                   </span>
                 </div>
               </div>
@@ -362,7 +382,7 @@ export default function ClinicDetail() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-card-foreground">Recent Reports</h2>
-                <p className="text-[11px] text-muted-foreground">Last {reportWindowMinutes} minutes</p>
+                <p className="text-[11px] text-muted-foreground">Last {HISTORY_WINDOW_MINUTES} minutes</p>
               </div>
             </div>
           </div>
@@ -372,7 +392,7 @@ export default function ClinicDetail() {
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             ) : recentReports.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No reports submitted in the last {reportWindowMinutes} minutes.</p>
+              <p className="text-sm text-muted-foreground">No reports submitted in the last {HISTORY_WINDOW_MINUTES} minutes.</p>
             ) : (
               <div className="space-y-2">
                 {recentReports.map((report, idx) => (
@@ -423,7 +443,7 @@ export default function ClinicDetail() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-2.5">
-              {WAIT_OPTIONS.map((opt) => (
+              {visibleWaitOptions.map((opt) => (
                 <button
                   key={opt.value}
                   className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3.5 text-xs font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] sm:text-sm ${

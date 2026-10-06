@@ -5,16 +5,25 @@ import { supabase } from '@/src/lib/supabase';
 export type AppSettings = {
   /** From Supabase `nearby_radius_miles`: map/list “nearby clinics” scope (driving + filters). */
   nearbyRadiusMiles: number;
-  /** Anti-spam: min minutes between reports per device + clinic (server should mirror). */
+  /** Anti-spam: min minutes between reports per device, globally (server should mirror). Unrelated to how long a report stays active — see reportExpiry* below. */
   reportCooldownMinutes: number;
   /** From Supabase `report_geofence_meters`: how close a user must be to report (GPS accuracy uses the same). */
   reportGeofenceMeters: number;
+  /** Minutes before a "~30 min" report reverts to On Time. */
+  reportExpiry30MinMinutes: number;
+  /** Minutes before a "~1 hour" report reverts to On Time. */
+  reportExpiry60MinMinutes: number;
+  /** Minutes before a "1.5+ hours" report reverts to On Time. */
+  reportExpiry90PlusMinutes: number;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
   nearbyRadiusMiles: 100,
   reportCooldownMinutes: 60,
   reportGeofenceMeters: 1000,
+  reportExpiry30MinMinutes: 30,
+  reportExpiry60MinMinutes: 60,
+  reportExpiry90PlusMinutes: 90,
 };
 
 const parseNumber = (value: unknown, fallback: number): number => {
@@ -48,6 +57,9 @@ export const useAppSettings = () => {
           DEFAULT_SETTINGS.reportCooldownMinutes
         ),
         reportGeofenceMeters: parseNumber(row.report_geofence_meters, DEFAULT_SETTINGS.reportGeofenceMeters),
+        reportExpiry30MinMinutes: parseNumber(row.report_expiry_30min_minutes, DEFAULT_SETTINGS.reportExpiry30MinMinutes),
+        reportExpiry60MinMinutes: parseNumber(row.report_expiry_60min_minutes, DEFAULT_SETTINGS.reportExpiry60MinMinutes),
+        reportExpiry90PlusMinutes: parseNumber(row.report_expiry_90plus_minutes, DEFAULT_SETTINGS.reportExpiry90PlusMinutes),
       });
       setLoading(false);
       return;
@@ -59,6 +71,9 @@ export const useAppSettings = () => {
       nearbyRadiusMiles: parseNumber(find('nearby_radius_miles'), DEFAULT_SETTINGS.nearbyRadiusMiles),
       reportCooldownMinutes: parseNumber(find('report_cooldown_minutes'), DEFAULT_SETTINGS.reportCooldownMinutes),
       reportGeofenceMeters: parseNumber(find('report_geofence_meters'), DEFAULT_SETTINGS.reportGeofenceMeters),
+      reportExpiry30MinMinutes: parseNumber(find('report_expiry_30min_minutes'), DEFAULT_SETTINGS.reportExpiry30MinMinutes),
+      reportExpiry60MinMinutes: parseNumber(find('report_expiry_60min_minutes'), DEFAULT_SETTINGS.reportExpiry60MinMinutes),
+      reportExpiry90PlusMinutes: parseNumber(find('report_expiry_90plus_minutes'), DEFAULT_SETTINGS.reportExpiry90PlusMinutes),
     });
     setLoading(false);
   }, []);
