@@ -47,7 +47,10 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 - Renew the distribution certificate before 2027-06-30.
 - Android build and Play Store upload: wait for go-ahead.
 
-## Bug: admin invite link opens the Vercel site, not the password page
+## Fixed 2026-10-06: admin invite link opened the Vercel site, not the password page
+
+- Supabase Auth Site URL changed to https://www.seemywait.com; the redirect list now includes www.seemywait.com and the Vercel preview URLs.
+- A password-set email was sent to seemywait@gmail.com with redirect to https://www.seemywait.com/admin/login. Test this link on the live site.
 
 - Reproduced 2026-10-06: the invitation email for seemywait@gmail.com opens the Vercel site URL instead of a page where the admin sets a password.
 - Likely cause: Supabase Auth URL settings (Site URL and redirect URLs) point at the Vercel domain or are not set for invites.
