@@ -3,7 +3,7 @@ import { Search, Loader2, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { BottomNav } from "@/components/BottomNav";
 import { useNearbyClinicsProgressive } from "@/hooks/use-clinics";
-import { getCurrentPosition } from "@/lib/geolocation";
+import { getCurrentPosition, getDistanceMeters } from "@/lib/geolocation";
 import { MapView } from "@/components/map/MapView";
 import { MapLegend } from "@/components/map/MapLegend";
 import { ClinicBottomSheet } from "@/components/map/ClinicBottomSheet";
@@ -420,6 +420,16 @@ const Index = () => {
 
   const showResultsDropdown = isSearching && dropdownOpen && !candidate && !selectedClinic;
 
+  /** The highlight pin would cover a stack badge when other offices share its spot, so it
+   *  is left off then; the badge (tap it to pick) shows instead. */
+  const focusedForMap = useMemo(() => {
+    if (!focusedPlace) return null;
+    const sharing = displayedClinics.filter(
+      (c) => getDistanceMeters(focusedPlace.latitude, focusedPlace.longitude, c.latitude, c.longitude) <= 15
+    );
+    return sharing.length > 1 ? null : focusedPlace;
+  }, [focusedPlace, displayedClinics]);
+
   // Collapse the dropdown when the user clicks anywhere outside the search box
   // (e.g. on the map). Listener is only attached while the dropdown is open, so
   // it never interferes with the map when the dropdown is closed.
@@ -543,7 +553,7 @@ const Index = () => {
                   }
                 : null
             }
-            focusedPlace={focusedPlace}
+            focusedPlace={focusedForMap}
             focusedColor={focusedColor}
             pendingPoint={pendingPoint}
             nearbyRadiusMiles={nearbyRadiusMiles}

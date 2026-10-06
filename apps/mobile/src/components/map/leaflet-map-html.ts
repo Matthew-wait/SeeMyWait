@@ -130,15 +130,32 @@ export function buildLeafletMapHtml(): string {
     post({ type: 'boundsChanged', bounds: { north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() } });
   }
 
+  var clinicList = [];
+
+  // Offices that sit on the same spot on screen (e.g. one building, a few metres
+  // apart) are merged into one pin with a count, like web's stack badge; tapping it
+  // opens the picker. Grouping is by screen distance (10 px at the current zoom), so
+  // it works however close the coordinates are, and it is rebuilt on each zoom.
   function setClinics(clinics) {
+    clinicList = clinics;
+    buildMarkers();
+    if (!hasFitOnce && clinics.length > 1 && !userDot) {
+      try {
+        map.fitBounds(clusterGroup.getBounds().pad(0.2), { animate: false });
+        hasFitOnce = true;
+      } catch (e) {}
+    }
+  }
+
+  function buildMarkers() {
     clusterGroup.clearLayers();
     clinicMarkers = {};
-    // Offices at the same spot (e.g. one building) never separate by zooming,
-    // so they're merged into one pin with a count; tapping it opens a picker.
+    var zoom = map.getZoom();
     var groups = {};
-    clinics.forEach(function (c) {
+    clinicList.forEach(function (c) {
       if (!isFinite(c.lat) || !isFinite(c.lng)) return;
-      var key = c.lat.toFixed(5) + ':' + c.lng.toFixed(5);
+      var world = map.project([c.lat, c.lng], zoom);
+      var key = Math.floor(world.x / 10) + ':' + Math.floor(world.y / 10);
       (groups[key] = groups[key] || []).push(c);
     });
     Object.keys(groups).forEach(function (key) {
@@ -155,12 +172,6 @@ export function buildLeafletMapHtml(): string {
       group.forEach(function (c) { clinicMarkers[c.id] = marker; });
       clusterGroup.addLayer(marker);
     });
-    if (!hasFitOnce && clinics.length > 1 && !userDot) {
-      try {
-        map.fitBounds(clusterGroup.getBounds().pad(0.2), { animate: false });
-        hasFitOnce = true;
-      } catch (e) {}
-    }
   }
 
   function setUserLocation(loc) {
@@ -216,6 +227,7 @@ export function buildLeafletMapHtml(): string {
     post({ type: 'mapPress', lat: e.latlng.lat, lng: e.latlng.lng });
   });
   map.on('moveend', reportBounds);
+  map.on('zoomend', buildMarkers);
 
   window.addEventListener('message', onMessage);
   document.addEventListener('message', onMessage); // Android WebView dispatches here

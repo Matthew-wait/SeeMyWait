@@ -269,6 +269,20 @@ export const IndexPage = () => {
     return source.filter((c) => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
   }, [clinics, isSearching, routeTo, searchClinics, userLocation]);
 
+  /** The highlight pin would cover a stack badge when other offices share its spot, so it
+   *  is left off then; the badge (tap it to pick) shows instead. */
+  const focusedForMap = useMemo(() => {
+    if (!focusedPlace) return null;
+    const sharing = mapClinics.filter(
+      (c) =>
+        haversineDistanceMeters(
+          { latitude: focusedPlace.latitude, longitude: focusedPlace.longitude },
+          { latitude: c.latitude, longitude: c.longitude }
+        ) <= 15
+    );
+    return sharing.length > 1 ? null : focusedPlace;
+  }, [focusedPlace, mapClinics]);
+
   // Web: the bottom list collapses while the dropdown is open and expands by itself the
   // moment the dropdown closes (a pick, a clear, or a tap elsewhere).
   const listAutoCollapse = (isSearching && dropdownOpen) || stackPick != null;
@@ -619,7 +633,7 @@ export const IndexPage = () => {
                 ? mapTapPoint
                 : null
           }
-          focused={focusedPlace}
+          focused={focusedForMap}
           onMapPress={handleMapPress}
           onPoiPress={handlePoiPress}
           route={routeLine?.geometry ?? null}
