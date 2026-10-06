@@ -94,6 +94,18 @@ const statusMessage = (status: unknown): string => {
   }
 };
 
+const AUTOCOMPLETE_TIMEOUT_MS = 8000;
+
+/** Rejects if the promise has not settled in time, so a stuck request cannot keep the loader on. */
+const withTimeout = <T,>(promise: PromiseLike<T>, ms: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Address search timed out')), ms);
+    Promise.resolve(promise).then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+
 const pickLatLng = (payload: Record<string, unknown>): { latitude: number; longitude: number } | null => {
   if (typeof payload.latitude === 'number' && typeof payload.longitude === 'number') {
     return { latitude: payload.latitude, longitude: payload.longitude };
@@ -199,6 +211,9 @@ export const SuggestClinicPage = () => {
   const [submitFeedback, setSubmitFeedback] = useState('');
   const [locatingAddress, setLocatingAddress] = useState(false);
   const autocompleteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Text of the suggestion the user just picked: the search effect skips it, so picking
+   *  does not re-open the list or leave the loader spinning. */
+  const pickedTextRef = useRef<string | null>(null);
   // Device location used ONLY to bias address suggestions toward the user's area
   // (best-effort; suggestions still work unbiased if this is unavailable).
   const biasLocationRef = useRef<{ latitude: number; longitude: number } | null>(prefillLatLng);
@@ -292,14 +307,18 @@ export const SuggestClinicPage = () => {
     setLoadingSuggestions(true);
     // medical-search forwards a location bias (unlike google-places), so nearby
     // addresses rank first. Always HTTP 200 with { ok, predictions, limited, degraded }.
-    const { data, error } = await supabase.functions.invoke('medical-search', {
-      body: {
-        action: 'autocomplete',
-        query,
-        location: biasLocationRef.current ?? undefined,
-        deviceId: deviceIdRef.current,
-      },
-    });
+    // Time-boxed: a request that never returns must not leave the loader spinning.
+    const { data, error } = await withTimeout(
+      supabase.functions.invoke('medical-search', {
+        body: {
+          action: 'autocomplete',
+          query,
+          location: biasLocationRef.current ?? undefined,
+          deviceId: deviceIdRef.current,
+        },
+      }),
+      AUTOCOMPLETE_TIMEOUT_MS,
+    ).catch((timeoutError: unknown) => ({ data: null, error: timeoutError }));
     setLoadingSuggestions(false);
     if (error || !data) {
       showToast(statusMessage(null));
@@ -332,6 +351,11 @@ export const SuggestClinicPage = () => {
       autocompleteDebounceRef.current = null;
     }
     const query = address.trim();
+    if (query === pickedTextRef.current) {
+      setSuggestions([]);
+      setLoadingSuggestions(false);
+      return;
+    }
     if (query.length < 3) {
       setSuggestions([]);
       setLoadingSuggestions(false);
@@ -348,6 +372,7 @@ export const SuggestClinicPage = () => {
   }, [address]);
 
   const chooseSuggestion = async (suggestion: Suggestion) => {
+    pickedTextRef.current = suggestion.description;
     setAddress(suggestion.description);
     setSelectedPlaceId(suggestion.place_id);
     setSuggestions([]);
@@ -819,10 +844,17 @@ export const SuggestClinicPage = () => {
             <Text style={[styles.addressHelp, { color: isDark ? '#94a3b8' : '#64748b' }]}>
               Choose from suggestions for best accuracy, or enter address manually.
             </Text>
-            {loadingSuggestions ? <ActivityIndicator color="#0284c7" /> : null}
+            {loadingSuggestions ? (
+              <View style={[styles.suggestion, { backgroundColor: isDark ? '#334155' : '#f1f5f9', borderColor: isDark ? '#475569' : '#cbd5e1' }]}>
+                <Text style={[styles.suggestionText, { color: isDark ? '#e2e8f0' : '#334155' }]}>Loading suggestions...</Text>
+              </View>
+            ) : null}
             {suggestions.map((suggestion) => (
-              <Pressable key={suggestion.place_id} style={styles.suggestion} onPress={() => void chooseSuggestion(suggestion)}>
-                <Text style={styles.suggestionText}>{suggestion.description}</Text>
+              <Pressable
+                key={suggestion.place_id}
+                style={[styles.suggestion, { backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderColor: isDark ? '#334155' : '#e2e8f0' }]}
+                onPress={() => void chooseSuggestion(suggestion)}>
+                <Text style={[styles.suggestionText, { color: isDark ? '#e2e8f0' : '#334155' }]}>{suggestion.description}</Text>
               </Pressable>
             ))}
 

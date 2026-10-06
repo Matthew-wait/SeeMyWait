@@ -91,6 +91,8 @@ export default function SuggestClinic() {
   // Set to `true` right before we fill `address` from GPS, so the autocomplete
   // effect skips one tick and doesn't pop suggestions over a captured location.
   const skipNextAutocompleteRef = useRef(false);
+  /** Text of the suggestion just picked; the search effect does not re-run for it. */
+  const pickedAddressRef = useRef<string | null>(null);
 
   const phoneValueToSave = buildE164(phoneCountryIso, phoneDigits);
 
@@ -199,6 +201,14 @@ export default function SuggestClinic() {
     }
 
     const query = address.trim();
+    // The text was just picked from the list: don't search it again (that re-opened the
+    // list and left the loader on).
+    if (query && query === pickedAddressRef.current) {
+      setAddressSuggestions([]);
+      setAddressLoading(false);
+      setAddressSuggestError(null);
+      return;
+    }
     if (query.length < 3) {
       setAddressSuggestions([]);
       setAddressLoading(false);
@@ -213,7 +223,11 @@ export default function SuggestClinic() {
         // Client-side Places, biased to the user's location. The shared edge
         // `autocomplete` action can't bias (backend is frozen), which is what
         // made typed suggestions wander to unrelated areas.
-        const predictions = await autocompletePlaces(query, biasLocation);
+        // Time-boxed: a request that never returns must not leave the loader spinning.
+        const predictions = await Promise.race([
+          autocompletePlaces(query, biasLocation),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+        ]);
         setAddressSuggestions(
           predictions.filter((p) => p.description && p.place_id).slice(0, 8)
         );
@@ -243,6 +257,7 @@ export default function SuggestClinic() {
   };
 
   const selectAddressSuggestion = async (suggestion: AddressSuggestion) => {
+    pickedAddressRef.current = suggestion.description;
     setSelectedAddressPlaceId(suggestion.place_id);
     setAddressSuggestions([]);
     setAddress(suggestion.description);
