@@ -1,4 +1,9 @@
-param([ValidateRange(1,500)][int]$BatchSize = 500, [switch]$ResetBatchSettings)
+param([ValidateRange(300,500)][int]$BatchSize = 300, [switch]$ResetBatchSettings)
+# Adaptive batch levels: step up after fast commits, step down when a batch is slow.
+# Capped at 500 after repeated stops under load.
+$taskBatchLevels = @(300, 500)
+$taskFastMs = 5000
+$taskSlowMs = 12000
 
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path $PSScriptRoot -Parent
@@ -134,7 +139,7 @@ select (select count(*) from updated) as rows_updated,
                 # A confirmed SQL statement timeout rolls back this request, so a smaller retry is safe.
                 # Connection errors or unknown commit outcomes stop the runner instead.
                 if ($taskDetail -match '57014' -and $taskAttempt -lt 2) {
-                    $taskCurrentBatch = [Math]::Max(50,[int][Math]::Floor($taskCurrentBatch / 2))
+                    $taskCurrentBatch = [Math]::Max(300,[int][Math]::Floor($taskCurrentBatch / 2))
                     Write-Event @{ event = 'timeout_retry'; state = $taskLabel; batch_size = $taskCurrentBatch; next_timeout_seconds = [Math]::Min(120,$taskTimeout * 2) }
                     continue
                 }
@@ -154,7 +159,18 @@ select (select count(*) from updated) as rows_updated,
         $taskInitialTimeout = $taskTimeout
         Save-Status
         Write-Event @{ event = 'batch_committed'; state = $taskLabel; rows_updated = $taskRows; state_rows_updated = $taskStateRows; elapsed_ms = $taskTimer.ElapsedMilliseconds; last_id = $taskId }
-        if ($taskRows -lt $taskCurrentBatch) {
+        $taskRunBatch = $taskCurrentBatch
+        $taskElapsed = $taskTimer.ElapsedMilliseconds
+        # Step up one level after a fast full batch; step down when the database is busy.
+        if ($taskElapsed -lt $taskFastMs -and $taskRows -eq $taskRunBatch) {
+            $taskNext = @($taskBatchLevels | Where-Object { $_ -gt $taskCurrentBatch } | Select-Object -First 1)
+            if ($taskNext) { $taskCurrentBatch = [int]$taskNext[0] }
+        } elseif ($taskElapsed -gt $taskSlowMs) {
+            $taskPrev = @($taskBatchLevels | Where-Object { $_ -lt $taskCurrentBatch } | Select-Object -Last 1)
+            if ($taskPrev) { $taskCurrentBatch = [int]$taskPrev[0] }
+        }
+        $taskStatus.batch_size = $taskCurrentBatch
+        if ($taskRows -lt $taskRunBatch) {
             $taskRemaining = Invoke-Database "set local statement_timeout='120s'; select exists(select 1 from public.clinics where $taskEligible) as pending;"
             if ($null -eq $taskRemaining.pending) { throw 'Missing verification response' }
             if (-not $taskRemaining.pending) { break }

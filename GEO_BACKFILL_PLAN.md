@@ -478,3 +478,16 @@ Live database totals at 2026-10-06 16:00Z (21:00 PKT):
 Time to completion: not computable while stopped. At about 48 rows/s, about 10 hours of running time. At the earlier 101 rows/s average, about 4.7 hours.
 
 Completion is not claimed.
+
+## Status update: 2026-10-06 21:23 PKT (UTC+05:00): runner resumed at lower batch size
+
+Change: the runner script's batch cap is lowered to 500 and its starting size to 300 rows (levels 300 and 500 only; minimum 300). Timeout reset to 30 seconds on start, with the existing doubling on timeouts up to 120 seconds.
+
+Runner: PID 24716 started at about 16:22Z (21:22 PKT) from the saved MA cursor, under approval. Committing at 16:22:50Z (21:22 PKT): 300-row batches, MA at 226,950 state rows.
+
+Leftover check before start: no active clinics sessions in pg_stat_activity.
+
+States done: 52 of 56. Remaining: MA (in progress), NC, OH, CA, then the 19 no-state rows, then the final sweep.
+Live totals: last verified at 16:00Z (21:00 PKT): done 6,806,130; remaining 1,713,114 with a state, plus 19 with no state; missing coordinates 0; invalid coordinates 0. These will be refreshed at the next live count.
+
+Completion is not claimed.
