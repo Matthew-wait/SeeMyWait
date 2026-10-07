@@ -57,7 +57,9 @@
           "icon": "./assets/images/android-adaptive-monochrome.png",
           "color": "#0284c7"
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/analytics"
     ],
     "experiments": {
       "typedRoutes": true,
