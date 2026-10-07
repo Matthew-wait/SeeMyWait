@@ -1,4 +1,4 @@
-# Geo backfill plan
+﻿# Geo backfill plan
 
 Project: ziisjgtvqmturpljnvfh. Inventory: October 4, 2026.
 
@@ -11,7 +11,7 @@ Project: ziisjgtvqmturpljnvfh. Inventory: October 4, 2026.
 
 The database global UUID cursor does not describe state completion and will remain unchanged. State progress is saved in geog-state-backfill-status.json; events are in geog-state-backfill-progress.jsonl. Completion describes rows present at verification time; future imports require another pass.
 
-Stopped by explicit user request at 2026-10-06 11:22:41 PKT (UTC+05:00). Confirmed local SeeMyWait runner PID 5176 was stopped; no replacement or global runner was launched. 46/56 jurisdictions are completed and verified; 10 remain, with current checkpoint in CO. Saved CO/Aurora cursor b1a27b88-0c60-412f-9c4b-183fbfb3504b was live-verified to have geog. Preserved checkpoint values: 17,000 recorded CO commits and 3,296,085 cumulative recorded commits. Recorded counters may omit earlier unlogged commits and the final in-flight request; no additional commits are claimed without a confirmed response. Global table below remains the last full-database snapshot at October 6 11:16:42 PKT. No background continuation or overall completion is claimed.
+Current summary (updated 2026-10-07 14:44 PKT; superseded by any later dated "Status update" section below, which is the authoritative latest state): 55 of 56 states are completed and verified. CA is the only state in progress, with the no-state rows (19 at last count) and a final sweep still to follow. The table immediately below this paragraph is a point-in-time snapshot from 2026-10-06 11:16:42 PKT and is kept for history; it is not the current total. The per-state table further down (just above this section) is kept current with each state's status. See the dated "Status update" sections at the end of this file for the latest live row counts, runner state, and throughput.
 
 
 | Live database totals at 2026-10-06 11:16:42 PKT | Rows |
@@ -78,16 +78,16 @@ Islamabad/Rawalpindi update (October 5): all 27 manually added clinics were inde
 | 44 | TN | 141643 | Done (verified) |
 | 45 | AZ | 159051 | Done (verified) |
 | 46 | VA | 175649 | Done (verified) |
-| 47 | CO | 178526 | Stopped (checkpoint preserved) |
-| 48 | MD | 192476 | Pending |
-| 49 | GA | 198914 | Pending |
-| 50 | NJ | 202734 | Pending |
-| 51 | IL | 210934 | Pending |
-| 52 | WA | 226576 | Pending |
-| 53 | MA | 238639 | Pending |
-| 54 | NC | 244214 | Pending |
-| 55 | OH | 369692 | Pending |
-| 56 | CA | 1086319 | Pending |
+| 47 | CO | 178526 | Done (verified) |
+| 48 | MD | 192476 | Done (verified) |
+| 49 | GA | 198914 | Done (verified) |
+| 50 | NJ | 202734 | Done (verified) |
+| 51 | IL | 210934 | Done (verified) |
+| 52 | WA | 226576 | Done (verified) |
+| 53 | MA | 238639 | Done (verified) |
+| 54 | NC | 244214 | Done (verified) |
+| 55 | OH | 369692 | Done (verified) |
+| 56 | CA | 1086319 | In progress (as of 2026-10-07 14:44 PKT, about 624,700 rows done in-state) |
 
 
 
