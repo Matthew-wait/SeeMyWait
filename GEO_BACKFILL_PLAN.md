@@ -925,3 +925,27 @@ Live database totals at 2026-10-07 09:10Z (14:10 PKT):
 Time to completion: 558,538 rows left. At 72.2 rows/s, about 2.2 hours (around 16:20 PKT). Estimate only; excludes the no-state rows and the final sweep, which follow CA.
 
 Completion is not claimed.
+
+## Status update: 2026-10-07 14:27 PKT (UTC+05:00)
+
+Runner: PID 5136 running at 09:27Z (14:27 PKT), on CA (594,300 state rows at last status write). Status file: batch size 500, timeout 60 seconds. No restart was needed. No timeout_retry or stopped events in the last 15 minutes.
+
+States done: 55 of 56. Remaining: CA (in progress), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 15 minutes: 58,900 committed rows across 127 batches, about 65 rows/s over that window.
+Average since the 09:47 PKT restart: 1,094,506 rows over 16,774 s, 65.3 rows/s, about 3,915 rows/min.
+
+Live database totals at 2026-10-07 09:27Z (14:27 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 8,027,225 |
+| Still left: valid eligible rows missing geog, with state | 492,019 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: 492,038 rows left. At 65.4 rows/s, about 2.1 hours (around 16:35 PKT). Estimate only; excludes the no-state rows and the final sweep, which follow CA.
+
+Completion is not claimed.
