@@ -1146,3 +1146,16 @@ Rows done in the last 15 minutes: 15,400 committed rows across 42 batches, no ti
 Average since the 15:59 PKT restart: 56,700 rows over 3,482 s, 16.3 rows/s.
 
 Completion is not claimed.
+
+## Status update: 2026-10-07 17:17 PKT (UTC+05:00): live-count API still unavailable
+
+Runner: PID 49816 running, on CA (754,300 state rows at 12:17Z / 17:17 PKT). Status file: batch size 300, timeout 120 seconds, cumulative rows_updated 6,094,090. No timeout_retry or stopped events in the last 15 minutes.
+
+Live-count query: both attempts timed out again (third check running this way). Derived from the 16:18 PKT baseline (done 8,132,225; remaining 387,019 with a state, 19 no-state) plus 55,000 rows committed since (76,900 since the 15:59 PKT restart, minus 21,900 already counted at 16:18 PKT): done about 8,187,225; remaining about 332,019 with a state, 19 no-state.
+
+States done: 55 of 56. Remaining: CA (in progress), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 15 minutes: 19,900 committed rows across 53 batches, no timeouts this window.
+Average since the 15:59 PKT restart: 76,900 rows over 4,571 s, 16.8 rows/s.
+
+Completion is not claimed.
