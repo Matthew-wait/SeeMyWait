@@ -15,7 +15,7 @@ const corsHeaders: Record<string, string> = {
  *             recipient (ADMIN_EMAIL for admin notes, `to` for user replies) and
  *             builds the HTML, so no inbox address lives in client code.
  *
- * Actions: "clinic_suggestion", "feedback_admin", "feedback_thank_you"
+ * Actions: "clinic_suggestion", "feedback_admin", "feedback_thank_you", "landing_contact"
  *          (aliases accepted: "clinic_suggestion_created", "feedback_admin_notification")
  *
  * Secrets: RESEND_API_KEY, RESEND_FROM, ADMIN_EMAIL
@@ -36,7 +36,11 @@ type Body = {
   longitude?: string | number;
   email?: string | null;
   message?: string;
+  name?: string;
 };
+
+/** Fixed destination for the public landing page's contact form, independent of ADMIN_EMAIL. */
+const LANDING_CONTACT_EMAIL = "seemywait@gmail.com";
 
 function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -103,6 +107,22 @@ function buildEmail(body: Body, adminEmail: string):
       </div>`,
     );
     return { to: adminEmail, subject: "New Support Message • SeeMyWait", html };
+  }
+
+  if (action === "landing_contact") {
+    const html = shell(
+      "New Message from the Website",
+      `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:12px;">
+        ${row("Name", body.name || "Not provided")}
+        ${row("Email", body.email || "Not provided")}
+      </table>
+      <div style="padding:14px;background:#f8fbff;border:1px solid #dbe7f3;border-radius:10px;">
+        <div style="font-size:12px;color:#64748b;margin-bottom:6px;font-weight:600;">Message</div>
+        <div style="font-size:15px;line-height:1.7;">${esc(body.message).replace(/\n/g, "<br/>")}</div>
+      </div>
+      <p style="margin:14px 0 0;font-size:12px;color:#94a3b8;">Sent from the "Let's Connect" form on seemywait.com.</p>`,
+    );
+    return { to: LANDING_CONTACT_EMAIL, subject: "New Website Contact Message • SeeMyWait", html };
   }
 
   if (action === "feedback_thank_you") {

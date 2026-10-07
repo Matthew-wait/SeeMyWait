@@ -31,7 +31,6 @@ import {
   Instagram,
   Linkedin,
   Github,
-  Bell,
   Radio,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -365,6 +364,18 @@ export default function LandingPage() {
       const { error } = await supabase.from("feedback_submissions").insert(payload);
       if (error) throw error;
 
+      // Saved either way; the email is a best-effort admin notification, not blocking.
+      void supabase.functions
+        .invoke("send-email", {
+          body: {
+            action: "landing_contact",
+            name: contactName.trim(),
+            email: contactEmail.trim() || null,
+            message: contactMessage.trim(),
+          },
+        })
+        .catch((emailErr: unknown) => console.error("landing_contact email failed", emailErr));
+
       toast.success("Thanks for reaching out! We'll get back to you soon.");
       setContactName("");
       setContactEmail("");
@@ -398,8 +409,8 @@ export default function LandingPage() {
           <Section className="text-center lg:text-left">
             <p className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium text-cyan-300">
               <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-              <span className="hidden sm:inline">Real-Time Wait Updates • Launching Soon</span>
-              <span className="sm:hidden">Live Wait Updates • Soon</span>
+              <span className="hidden sm:inline">Real-Time Wait Updates • Now Available</span>
+              <span className="sm:hidden">Live Wait Updates • Available Now</span>
             </p>
             <h1 className="mb-3 sm:mb-6 text-2xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
               Stop Waiting.{" "}
@@ -865,7 +876,7 @@ export default function LandingPage() {
           <Section>
             <div className="mb-6 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-medium text-cyan-300 sm:gap-2 sm:px-4 sm:py-1.5 sm:text-sm">
               <Smartphone className="h-3.5 w-3.5" />
-              Coming Soon to Google Play & App Store
+              Available Now on Google Play & App Store
             </div>
             <h2 className="mb-4 sm:mb-6 text-2xl font-extrabold sm:text-4xl md:text-5xl leading-[1.1]">
               Ready to Stop{" "}
@@ -874,14 +885,10 @@ export default function LandingPage() {
               </span>
             </h2>
             <p className="mb-6 sm:mb-10 text-sm sm:text-lg text-white/50 max-w-lg mx-auto">
-              Be among the first to experience smarter healthcare visits. No more guessing. No more waiting blind.
+              Download SeeMyWait today for smarter healthcare visits. No more guessing. No more waiting blind.
             </p>
             <div className="flex flex-col items-center gap-6">
               <StoreButtons />
-              <GlowButton variant="secondary" onClick={() => toast.info("We'll notify you at launch! 🔔")}>
-                <Bell className="h-4 w-4 mr-1" />
-                Notify Me at Launch
-              </GlowButton>
             </div>
           </Section>
         </div>
@@ -930,8 +937,8 @@ export default function LandingPage() {
                     a: "Our system uses GPS geofencing to ensure reporters are physically at the doctor office, plus device-based rate limiting to prevent spam. Anomalous reports are automatically flagged.",
                   },
                   {
-                    q: "When is the app launching?",
-                    a: "We're launching soon on Google Play Store and App Store. Join our notification list to be the first to know!",
+                    q: "Where can I download the app?",
+                    a: "SeeMyWait is available now on Google Play and the App Store.",
                   },
                 ].map((faq, i) => (
                   <AccordionItem
