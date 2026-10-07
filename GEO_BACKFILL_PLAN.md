@@ -1021,3 +1021,27 @@ Live database totals at 2026-10-07 10:04Z (15:04 PKT):
 Time to completion: 450,438 rows left. At the current slow rate (12.1 rows/s), about 10.3 hours, which would be unusually long; this likely reflects the ongoing timeouts rather than a stable rate. At the since-restart average (59.8 rows/s), about 2.1 hours (around 17:10 PKT). CA appears to be hitting repeated database load near the end of its range; watching closely for a stop or recovery.
 
 Completion is not claimed.
+
+## Status update: 2026-10-07 15:22 PKT (UTC+05:00)
+
+Runner: PID 5136 running at 10:22Z (15:22 PKT), on CA (654,900 state rows at last status write). Status file: batch size 300, timeout 120 seconds. No restart was needed. No timeout_retry or stopped events in this window; the earlier string of timeouts (six since 14:33 PKT) did not continue here.
+
+States done: 55 of 56. Remaining: CA (in progress), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 15 minutes: 18,700 committed rows across 49 batches, about 21 rows/s over that window. Still well below the 60 to 80 rows/s seen earlier, though no new timeouts were logged.
+Average since the 09:47 PKT restart: 1,154,806 rows over 20,089 s, 57.5 rows/s, about 3,449 rows/min.
+
+Live database totals at 2026-10-07 10:22Z (15:22 PKT):
+
+| Live database totals | Rows |
+| --- | ---: |
+| All clinic rows | 8,519,263 |
+| Done: rows with geog populated | 8,087,825 |
+| Still left: valid eligible rows missing geog, with state | 431,419 |
+| Still left: valid rows missing geog, no state | 19 |
+| Missing latitude or longitude (reported separately) | 0 |
+| Invalid non-null coordinates (reported separately) | 0 |
+
+Time to completion: 431,438 rows left. At the current 15-minute rate (20.8 rows/s), about 5.8 hours (around 21:10 PKT). At the since-restart average (57.5 rows/s), about 2.1 hours (around 17:25 PKT). CA is running slower than its earlier pace without a clear cause; watching for either recovery or another round of timeouts.
+
+Completion is not claimed.
