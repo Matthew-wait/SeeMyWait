@@ -1,7 +1,9 @@
 User-agent: Googlebot
+Disallow: /admin
 Allow: /
 
 User-agent: Bingbot
+Disallow: /admin
 Allow: /
 
 User-agent: Twitterbot
@@ -11,4 +13,7 @@ User-agent: facebookexternalhit
 Allow: /
 
 User-agent: *
+Disallow: /admin
 Allow: /
+
+Sitemap: https://www.seemywait.com/sitemap.xml
