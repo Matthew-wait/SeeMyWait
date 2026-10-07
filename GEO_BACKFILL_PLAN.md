@@ -1120,3 +1120,16 @@ Live database totals at 2026-10-07 11:18Z (16:18 PKT) (first attempt returned a 
 Time to completion: 387,038 rows left. At 21.2 rows/s, about 5.1 hours (around 21:25 PKT). Estimate only; excludes the no-state rows and the final sweep.
 
 Completion is not claimed.
+
+## Status update: 2026-10-07 16:38 PKT (UTC+05:00): live-count API unavailable this check
+
+Runner: PID 49816 running, confirmed alive and committing as of 11:40Z (16:40 PKT); last commit at state CA, 718,700 state rows. Status file (at 11:38Z): CA, 714,300 state rows, batch size 300, timeout 120 seconds. One timeout_retry this window, at 16:26:23 PKT. No stopped event.
+
+Live-count query: three consecutive attempts to the Supabase management API failed (two HTTP 400s and one client-side timeout) in this check. This looks like a transient API/load issue separate from the runner, which kept committing throughout. No fresh live total is available this round; the last confirmed live count was at 16:18 PKT (done 8,132,225; remaining 387,019 with a state, 19 with no state).
+
+States done: 55 of 56. Remaining: CA (in progress), then the 19 no-state rows, then the final sweep.
+
+Rows done in the last 15 minutes (from the progress log): 12,800 committed rows across 32 batches.
+Average since the 15:59 PKT restart: 36,600 rows over 2,283 s, 16.0 rows/s — slow, consistent with recurring timeouts.
+
+Completion is not claimed.
