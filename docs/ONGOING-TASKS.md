@@ -65,6 +65,8 @@ Git: work is committed locally. Nothing is pushed unless the user asks.
 
 - Data refresh and backup plan for the large database: the DB backup GitHub workflow (.github/workflows/db-backup.yml) is disabled. It timed out after 40 minutes at about 8.5 million rows. To do: rewrite it to run weekly or monthly, fix the timeout, then re-enable it with gh workflow enable "DB backup". Also review the nightly city count refresh (pg_cron, 03:15 UTC) once it has run.
 
+- Not on priority list, not funded by client: Google Analytics for iOS and the website (Android is already wired). Plan and exact steps: docs/GOOGLE-ANALYTICS-PLAN.md.
+
 ## Next (mobile)
 - Port to mobile: 50-per-batch nearby list, count, admin-set report radius and cooldown, map changes.
 - Port the 2026-10-06 session's web changes to mobile where not already done: map pin clustering + same-building picker (mobile has neither yet), realtime push updates (mobile still polls only), the Hide/Show visibility toggle has no mobile-side effect needed since it's an admin-only, web-only action — but mobile's own clinic list query must already respect `is_active` (confirm it does). Per-category report expiry and global cooldown are already ported (see above).
