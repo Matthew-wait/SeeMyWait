@@ -440,20 +440,25 @@ export const SuggestClinicPage = () => {
       let resolvedAddress: string | null = null;
 
       // Prefer the server reverse-geocode (Nominatim) for a full formatted address.
-      const serverReverse = await reverseGeocodeServer(latitude, longitude);
+      // Each fallback is time-boxed: none of these three calls had a timeout before,
+      // so a slow network could stack up GPS + 3 unbounded calls, leaving the button
+      // spinning for a very long time with no way out but to kill the app.
+      const serverReverse = await withTimeout(reverseGeocodeServer(latitude, longitude), 6000).catch(
+        () => null
+      );
       if (serverReverse?.formattedAddress) {
         resolvedAddress = serverReverse.formattedAddress;
       }
 
       if (!resolvedAddress) {
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-            {
+          const response = await withTimeout(
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`, {
               headers: {
                 Accept: 'application/json',
               },
-            }
+            }),
+            6000
           );
           if (response.ok) {
             const json = (await response.json()) as { display_name?: string };
@@ -467,7 +472,9 @@ export const SuggestClinicPage = () => {
       }
 
       if (!resolvedAddress) {
-        resolvedAddress = await reverseGeocodeAddress({ latitude, longitude });
+        resolvedAddress = await withTimeout(reverseGeocodeAddress({ latitude, longitude }), 5000).catch(
+          () => null
+        );
       }
 
       if (!resolvedAddress) {
