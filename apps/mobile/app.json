@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.seeymywait.SeeMyWait",
-      "buildNumber": "12",
+      "buildNumber": "13",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show nearby doctor offices and calculate wait times.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to show nearby doctor offices and calculate wait times.",
@@ -30,7 +30,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.seeymywait.SeeMyWait",
-      "versionCode": 12,
+      "versionCode": 13,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
