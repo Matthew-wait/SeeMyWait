@@ -6,6 +6,8 @@ Last updated 2026-10-06. Local dev server: http://127.0.0.1:8085 (admin at /admi
 Git: work is committed locally. Nothing is pushed unless the user asks.
 
 ## Decided
+- nearby_clinic_count timeout (reported by Rohan, 2026-10-07): fixed at the database, not hidden. Was an exact count over ST_DWithin, which timed out (57014) in dense metros at ANY radius including the 5-mile default, not just 100 miles as first reported (confirmed against the real production endpoint). Now sums a nightly-refreshed grid (clinic_geo_grid), approximate within about 30% near the radius edge, always under 2s. See docs/MAP-AND-LISTING-RULES.md.
+- iOS build 13 requested from current main (build 12 was stale, from 6 Oct 18:14, missing 13+ commits). Started 2026-10-07.
 - Admin city dropdown counts refresh nightly at 03:15 UTC (pg_cron job refresh-clinic-city-summary, migration 20261005140000). A city added today appears after the next run.
 - No city name clean-up. City dropdown shows stored names as separate entries.
 

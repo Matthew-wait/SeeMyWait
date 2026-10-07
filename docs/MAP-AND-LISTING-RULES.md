@@ -30,7 +30,7 @@ A clinic's wait status is always determined by its single most recent report, ch
 
 ## Header count
 
-- "Nearby Doctor Offices (N)" shows the **exact number of offices** inside the nearby radius, from a single server count. No rows are downloaded for it.
+- "Nearby Doctor Offices (N)" shows a **close estimate** of the offices inside the nearby radius, from a single server call. No rows are downloaded for it. Changed 2026-10-07: an exact count was timing out in dense metros even at the default radius (NYC: 57014 at 5 miles), so the count now sums a precomputed grid of office counts (`clinic_geo_grid`, refreshed nightly). It can run a bit high near the radius edge — about 30% in testing — but it never times out. The list itself is still exact; only this header number is an estimate.
 - The count will rise as the geog backfill (which records each office's map position) completes.
 
 ## Listing
