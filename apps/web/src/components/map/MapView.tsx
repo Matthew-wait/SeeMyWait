@@ -162,6 +162,8 @@ function MapViewInner({
   const pendingMarkerRef = useRef<L.Marker | null>(null);
   const onBoundsChangeRef = useRef(onBoundsChange);
   onBoundsChangeRef.current = onBoundsChange;
+  // Set just before a resize-driven invalidateSize() call; see the moveend handler below.
+  const suppressNextMoveEndRef = useRef(false);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [hover, setHover] = useState<{ id: string; extra: number; x: number; y: number } | null>(null);
@@ -238,6 +240,17 @@ function MapViewInner({
       });
       map.on("mouseout", () => { hoverIdRef.current = null; setHover(null); });
       map.on("moveend zoomend", () => {
+        // invalidateSize() (below) re-centers the map with a synchronous pan
+        // when the container's size genuinely changed, which fires this same
+        // moveend. That's housekeeping, not a user-driven bounds change — if we
+        // forwarded it, a resize-caused bounds update can shift which clinics
+        // the list below considers "visible," changing the list's height,
+        // which reflows the flex layout and resizes the map container again:
+        // an infinite resize <-> bounds-change feedback loop.
+        if (suppressNextMoveEndRef.current) {
+          suppressNextMoveEndRef.current = false;
+          return;
+        }
         if (!onBoundsChangeRef.current) return;
         const b = map.getBounds();
         onBoundsChangeRef.current({ north: b.getNorth(), south: b.getSouth(), east: b.getEast(), west: b.getWest() });
@@ -250,13 +263,22 @@ function MapViewInner({
 
       mapRef.current = map;
       resizeObserver = new ResizeObserver(() => {
-        if (mapRef.current === map) map.invalidateSize();
+        if (mapRef.current !== map) return;
+        suppressNextMoveEndRef.current = true;
+        map.invalidateSize();
+        // invalidateSize() fires moveend synchronously when it needs to pan
+        // (see the moveend handler above); if it didn't pan, nothing consumed
+        // the flag, so clear it here to avoid swallowing a later real moveend.
+        suppressNextMoveEndRef.current = false;
       });
       resizeObserver.observe(containerRef.current);
       setStatus("ready");
       // The container may still be settling into its flex height on first paint.
       requestAnimationFrame(() => {
-        if (mapRef.current === map) map.invalidateSize();
+        if (mapRef.current !== map) return;
+        suppressNextMoveEndRef.current = true;
+        map.invalidateSize();
+        suppressNextMoveEndRef.current = false;
       });
     } catch {
       setStatus("error");
