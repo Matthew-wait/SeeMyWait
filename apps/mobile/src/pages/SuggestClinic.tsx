@@ -925,16 +925,16 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#0284c7',
     paddingHorizontal: 14,
-    paddingTop: 42,
-    paddingBottom: 36,
+    paddingTop: 18,
+    paddingBottom: 16,
   },
   headerTitle: {
     color: '#fff',
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
   },
   headerTextWrap: {
-    paddingTop: 14,
+    paddingTop: 4,
   },
   headerSub: {
     color: '#dbeafe',

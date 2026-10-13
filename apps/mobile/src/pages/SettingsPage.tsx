@@ -259,7 +259,7 @@ export const SettingsPage = () => {
               <Text style={[styles.label, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>Send Feedback</Text>
               <Text style={[styles.helpText, { color: isDark ? '#94a3b8' : '#475569' }]}>Help us improve the app</Text>
             </View>
-            <Feather name="chevron-right" size={16} color="#64748b" />
+            <Feather name="chevron-right" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
           </Pressable>
         </View>
         <View style={[styles.section, { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#e2e8f0' }]}>
@@ -284,7 +284,7 @@ export const SettingsPage = () => {
             <View style={styles.settingTextWrap}>
               <Text style={[styles.label, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>Privacy Policy</Text>
             </View>
-            <Feather name="chevron-right" size={16} color="#64748b" />
+            <Feather name="chevron-right" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
           </Pressable>
           <Pressable style={styles.feedbackRow} onPress={() => void Linking.openURL(TERMS_OF_SERVICE_URL)}>
             <View
@@ -297,7 +297,7 @@ export const SettingsPage = () => {
             <View style={styles.settingTextWrap}>
               <Text style={[styles.label, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>Terms of Service</Text>
             </View>
-            <Feather name="chevron-right" size={16} color="#64748b" />
+            <Feather name="chevron-right" size={16} color={isDark ? '#94a3b8' : '#64748b'} />
           </Pressable>
         </View>
         <View style={[styles.aboutCard, { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#e2e8f0' }]}>
@@ -372,9 +372,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: '#0284c7',
-    paddingTop: 42,
+    paddingTop: 18,
     paddingHorizontal: 14,
-    paddingBottom: 34,
+    paddingBottom: 16,
   },
   headerIcon: {
     width: 32,

@@ -29,7 +29,7 @@ export const BottomNav = () => {
         {
           borderColor: isDark ? '#334155' : '#d4d4d8',
           backgroundColor: isDark ? '#172033' : '#fff',
-          paddingBottom: Math.max(14, insets.bottom + 8),
+          paddingBottom: Math.max(8, insets.bottom + 4),
         },
       ]}>
       {NAV_ITEMS.map((item) => {
@@ -61,22 +61,22 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#d4d4d8',
     backgroundColor: '#fff',
-    paddingBottom: 14,
-    paddingTop: 12,
+    paddingBottom: 8,
+    paddingTop: 6,
   },
   item: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 4,
-    gap: 4,
+    paddingTop: 2,
+    gap: 2,
   },
   iconWrap: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 15,
+    borderRadius: 13,
   },
   iconWrapActive: {
     backgroundColor: '#e0f2fe',

@@ -36,10 +36,16 @@ type Props = {
   hasLocation?: boolean;
   locating?: boolean;
   onRetryLocation?: () => void;
+  /** Landscape: a fixed-width side panel next to the map instead of a bottom sheet. */
+  isLandscape?: boolean;
 };
 
 const COLLAPSED_PREVIEW_COUNT = 6;
 const PANEL_HEIGHT = 300;
+const PANEL_EMPTY_HEIGHT = 150;
+/** When the "N more within radius" notice is also in the header, above the empty
+ *  message — one extra text line's worth of room so nothing needs to scroll. */
+const PANEL_EMPTY_WITH_NOTICE_HEIGHT = 200;
 /** Same as the web list: 50 at a time, Load more adds 50 from the rows already loaded. */
 const LIST_BATCH = 50;
 
@@ -64,6 +70,7 @@ export const ClinicListPanel = ({
   hasLocation = true,
   locating = false,
   onRetryLocation,
+  isLandscape = false,
 }: Props) => {
   const { isDark } = useTheme();
   const [listCap, setListCap] = useState<number>(LIST_BATCH);
@@ -73,6 +80,11 @@ export const ClinicListPanel = ({
   const showNearbyNotice = !isSearching && hasLocation;
   const moreInRadius = !isSearching && totalCount != null && totalCount > clinics.length ? totalCount - clinics.length : 0;
   const clinicsToShow = expanded ? clinics.slice(0, listCap) : clinics.slice(0, COLLAPSED_PREVIEW_COUNT);
+  // An empty result doesn't need the full list height — it was locking in 300dp of
+  // blank space above a one-line message. When the "N more within radius" notice is
+  // also showing, the header has an extra line, so it needs a bit more room.
+  const isEmptyState = clinics.length === 0 && !isLoadingMore;
+  const hasMoreNotice = moreInRadius > 0 && !isLoadingMore;
   const [openReportHistoryByClinicId, setOpenReportHistoryByClinicId] = useState<Record<string, boolean>>({});
   const formatReportedTime = (iso: string): string => {
     const d = new Date(iso);
@@ -81,6 +93,21 @@ export const ClinicListPanel = ({
   };
 
   if (collapsed) {
+    if (isLandscape) {
+      return (
+        <Pressable
+          style={[
+            styles.collapsedRail,
+            { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#dbe3ec' },
+          ]}
+          onPress={onToggleCollapsed}
+          accessibilityRole="button"
+          accessibilityLabel="Show nearby doctor offices panel">
+          <Feather name="chevron-left" size={18} color={isDark ? '#e2e8f0' : '#000000'} />
+          <Text style={[styles.collapsedRailLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>{shownCount}</Text>
+        </Pressable>
+      );
+    }
     return (
       <Pressable
         style={[
@@ -90,7 +117,7 @@ export const ClinicListPanel = ({
         onPress={onToggleCollapsed}
         accessibilityRole="button"
         accessibilityLabel="Show nearby doctor offices panel">
-        <Feather name="chevron-up" size={18} color="#000000" />
+        <Feather name="chevron-up" size={18} color={isDark ? '#e2e8f0' : '#000000'} />
         <Text style={[styles.collapsedLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>
           {isSearching ? `Show Results (${shownCount})` : `Show Doctor Offices Nearby (${shownCount})`}
         </Text>
@@ -102,7 +129,7 @@ export const ClinicListPanel = ({
   // an unfiltered list (web's "We couldn't determine your location" state).
   if (!isSearching && !hasLocation) {
     return (
-      <View style={[styles.panel, { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#dbe3ec' }]}>
+      <View style={[styles.panel, isLandscape && styles.panelLandscape, { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#dbe3ec' }]}>
         <View style={styles.locationPrompt}>
           <Text style={[styles.locationPromptText, { color: isDark ? '#94a3b8' : '#475569' }]}>
             We couldn't determine your location, so nearby doctor offices can't be shown reliably. Enable location access, or use search to find a specific one by name.
@@ -123,6 +150,9 @@ export const ClinicListPanel = ({
     <View
       style={[
         styles.panel,
+        isLandscape
+          ? styles.panelLandscape
+          : isEmptyState && (hasMoreNotice ? styles.panelEmptyWithNotice : styles.panelEmpty),
         { backgroundColor: isDark ? '#172033' : 'white', borderColor: isDark ? '#334155' : '#dbe3ec' },
       ]}>
       <View style={[styles.headerWrap, { borderBottomColor: isDark ? '#334155' : '#e2e8f0' }]}>
@@ -138,23 +168,22 @@ export const ClinicListPanel = ({
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel="Hide nearby doctor offices and expand map">
-            <Feather name="chevron-down" size={20} color="#000000" />
+            <Feather name={isLandscape ? 'chevron-right' : 'chevron-down'} size={20} color={isDark ? '#e2e8f0' : '#000000'} />
           </Pressable>
         </View>
         {radiusMiles !== undefined && showNearbyNotice ? (
-          <Text style={[styles.radiusNotice, { color: isDark ? '#94a3b8' : '#64748b' }]}>
-            You're seeing doctor offices within{' '}
+          <Text style={[styles.radiusNotice, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={1}>
+            Within{' '}
             <Text style={{ fontWeight: '600', color: isDark ? '#e2e8f0' : '#0f172a' }}>
-              {radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} meters` : `${radiusMiles} ${radiusMiles === 1 ? 'mile' : 'miles'}`}
-            </Text>{' '}
-            of your location. Use search to find a specific one further away and{' '}
+              {radiusMiles < 1 ? `${Math.round(radiusMiles * 1609.34)} m` : `${radiusMiles} ${radiusMiles === 1 ? 'mile' : 'miles'}`}
+            </Text>
+            {' · '}
             <Text
               style={{ fontWeight: '600', color: isDark ? '#7dd3fc' : '#0369a1' }}
               onPress={onSuggestClinic}
               accessibilityRole="link">
-              suggest it to the admin
-            </Text>{' '}
-            if it isn't listed yet.
+              Can't find yours? Suggest it
+            </Text>
           </Text>
         ) : null}
         {moreInRadius > 0 && !isLoadingMore ? (
@@ -274,7 +303,7 @@ export const ClinicListPanel = ({
             {isSearching
               ? `No results for "${searchQuery.trim()}"`
               : totalCount != null && totalCount > 0
-                ? 'No doctor offices on screen right now — zoom out or pan the map to see nearby offices.'
+                ? 'None in view — zoom out or pan to see them.'
                 : 'No nearby doctor offices found.'}
           </Text>
         ) : null}
@@ -338,6 +367,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#475569',
   },
+  collapsedRail: {
+    width: 44,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#dbe3ec',
+    paddingVertical: 14,
+  },
+  collapsedRailLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -361,6 +410,22 @@ const styles = StyleSheet.create({
     // Fixed height (not content-sized): rows arriving or leaving used to grow and
     // shrink the sheet, and the map above it, on every batch. The list scrolls inside.
     height: PANEL_HEIGHT,
+  },
+  panelEmpty: {
+    height: PANEL_EMPTY_HEIGHT,
+  },
+  panelEmptyWithNotice: {
+    height: PANEL_EMPTY_WITH_NOTICE_HEIGHT,
+  },
+  // Landscape: a fixed-width side panel filling the full height, instead of a
+  // bottom sheet — a 300dp-tall sheet would eat most of a landscape phone's
+  // vertical space, leaving almost nothing for the map.
+  panelLandscape: {
+    width: 320,
+    height: '100%',
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderTopRightRadius: 0,
   },
   scroll: {
     flex: 1,
@@ -467,6 +532,7 @@ const styles = StyleSheet.create({
   empty: {
     color: '#64748b',
     textAlign: 'center',
-    paddingVertical: 20,
+    fontSize: 13,
+    paddingVertical: 12,
   },
 });

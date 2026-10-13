@@ -3,15 +3,16 @@
     "name": "SeeMyWait",
     "slug": "seemywait",
     "owner": "seemywaits-team",
-    "version": "5.6",
-    "orientation": "portrait",
+    "version": "5.7",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "seemywait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.seeymywait.SeeMyWait",
-      "buildNumber": "16",
+      "buildNumber": "17",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show nearby doctor offices and calculate wait times.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to show nearby doctor offices and calculate wait times.",
@@ -30,7 +31,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.seeymywait.SeeMyWait",
-      "versionCode": 16,
+      "versionCode": 17,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -58,8 +59,12 @@
           "color": "#0284c7"
         }
       ],
-      "@react-native-firebase/app",
-      "@react-native-firebase/analytics"
+      [
+        "@react-native-firebase/app",
+        { "ios": { "disableSPM": true } }
+      ],
+      "@react-native-firebase/analytics",
+      "./plugins/withPodfileModularHeaders.js"
     ],
     "experiments": {
       "typedRoutes": true,

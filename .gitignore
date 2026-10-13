@@ -57,4 +57,12 @@ apps/mobile/android/
 *.aab
 
 # NPPES bulk data dissemination file (multi-GB, downloaded locally, never committed)
+
+# ASO Screenshots working directory
+screenshots/
+# Backfill local backup and corrupt files
+*.backup-*
+*.corrupt-*
+
+
 /NPI_Data/

@@ -13,8 +13,11 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     ...config,
     name: 'SeeMyWait',
     slug: 'seemywait',
-    version: config.version ?? '5.6',
-    orientation: 'portrait',
+    version: config.version ?? '5.7',
+    // 'portrait' hard-locks the OS interface orientation — on a rotated device/iPad
+    // it can't rotate the UI at all, so the still-portrait content renders sideways
+    // inside the landscape frame. 'default' lets iOS/Android rotate normally.
+    orientation: 'default',
     icon: './assets/images/icon.png',
     scheme: 'seemywait',
     userInterfaceStyle: 'automatic',
@@ -41,7 +44,8 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.seeymywait.SeeMyWait',
-      buildNumber: config.ios?.buildNumber ?? '2',
+      buildNumber: config.ios?.buildNumber ?? '17',
+      googleServicesFile: config.ios?.googleServicesFile,
       infoPlist: {
         NSLocationWhenInUseUsageDescription: 'This app needs access to your location to show nearby doctor offices and calculate wait times.',
         NSLocationAlwaysAndWhenInUseUsageDescription: 'This app needs access to your location to show nearby doctor offices and calculate wait times.',
@@ -52,7 +56,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     },
     android: {
       package: 'com.seeymywait.SeeMyWait',
-      versionCode: config.android?.versionCode ?? 12,
+      versionCode: config.android?.versionCode ?? 17,
       googleServicesFile: config.android?.googleServicesFile,
       permissions: [
         'ACCESS_COARSE_LOCATION',

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View
 } from 'react-native';
 
@@ -37,9 +38,10 @@ import { waitTierVisual } from '@/src/lib/wait-tier-style';
 type CityFilter = 'all' | 'Miami' | 'Miami Beach' | 'Hialeah' | 'Coral Gables' | 'Doral';
 
 type DistanceSource = 'google' | 'fallback' | 'unavailable';
-const SEARCH_CARD_TOP = 42;
-const LEGEND_TOP_WHEN_PANEL_CLOSED = -590;
-const LEGEND_TOP_WHEN_PANEL_OPEN = -290;
+const SEARCH_CARD_TOP = 58;
+/** Fixed, just under the search bar — independent of list-panel state so it never
+ *  drifts toward the middle of the screen on taller or shorter devices. */
+const LEGEND_TOP = 112;
 
 const fetchOsrmDistanceMeters = async (from: LatLng, to: LatLng): Promise<number | null> => {
   const url = `https://router.project-osrm.org/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}?overview=false`;
@@ -81,6 +83,8 @@ export const IndexPage = () => {
   const router = useRouter();
   const { isDark } = useTheme();
   const { settings } = useAppSettings();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const [search, setSearch] = useState('');
   const [cityFilter] = useState<CityFilter>('all');
@@ -617,6 +621,7 @@ export const IndexPage = () => {
 
   return (
     <View style={[styles.screen, { backgroundColor: isDark ? '#0b1220' : '#f8fafc' }]}>
+      <View style={[styles.body, isLandscape && styles.bodyLandscape]}>
       <View style={styles.mapContainer}>
         <MapView
           clinics={mapClinics}
@@ -739,8 +744,8 @@ export const IndexPage = () => {
         />
 
         <FindMeButton onPress={() => void loadLocation()} loading={locating} disabled={isPopupActive} isDark={isDark} />
-        <View pointerEvents={isPopupActive ? 'none' : 'auto'}>
-          <MapLegend top={listPanelCollapsed ? LEGEND_TOP_WHEN_PANEL_CLOSED : LEGEND_TOP_WHEN_PANEL_OPEN} isDark={isDark} />
+        <View style={StyleSheet.absoluteFill} pointerEvents={isPopupActive ? 'none' : 'box-none'}>
+          <MapLegend top={LEGEND_TOP} isDark={isDark} />
         </View>
 
         {mapTapPoint && !isPopupActive && !selectedClinic ? (
@@ -767,6 +772,7 @@ export const IndexPage = () => {
         userLocation={userLocation}
         routeDistanceByClinicId={routeDistanceByClinicId}
         routeDistanceSourceByClinicId={routeDistanceSourceByClinicId}
+        isLandscape={isLandscape}
         expanded={listExpanded}
         onToggleExpanded={isPopupActive ? () => {} : () => setListExpanded((v) => !v)}
         collapsed={listPanelCollapsed}
@@ -793,6 +799,7 @@ export const IndexPage = () => {
         locating={locating}
         onRetryLocation={() => void loadLocation()}
       />
+      </View>
       <View pointerEvents={isPopupActive ? 'none' : 'auto'}>
         <BottomNav />
       </View>
@@ -860,14 +867,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     position: 'relative',
   },
+  body: {
+    flex: 1,
+  },
+  bodyLandscape: {
+    flexDirection: 'row',
+  },
   mapContainer: {
     flex: 1,
   },
   routeBanner: {
     position: 'absolute',
     top: SEARCH_CARD_TOP,
-    left: 8,
-    right: 8,
+    left: 14,
+    right: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -932,13 +945,13 @@ const styles = StyleSheet.create({
   searchCard: {
     position: 'absolute',
     top: SEARCH_CARD_TOP,
-    left: 8,
-    right: 8,
+    left: 14,
+    right: 14,
     backgroundColor: 'white',
     borderRadius: 14,
     borderWidth: 0.7,
     borderColor: '#dbe1e8',
-    padding: 6,
+    padding: 8,
     gap: 6,
     shadowColor: '#000',
     shadowOpacity: 0.08,

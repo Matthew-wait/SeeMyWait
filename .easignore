@@ -15,3 +15,9 @@ supabase/.temp/
 # archive step doesn't reliably honor .gitignore for it — list explicitly.
 # This alone was blowing the archive past EAS's 2.0GB upload limit.
 NPI_Data/
+
+# Firebase config files are gitignored (not committed) but ARE needed in the
+# build archive for the native Firebase plugin prebuild step — without these,
+# iOS prebuild fails with "Path to GoogleService-Info.plist is not defined."
+!apps/mobile/google-services.json
+!apps/mobile/GoogleService-Info.plist
