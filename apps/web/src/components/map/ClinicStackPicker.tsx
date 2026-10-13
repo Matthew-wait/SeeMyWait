@@ -34,7 +34,7 @@ export function ClinicStackPicker({ clinics, anchor, onSelect, onClose }: Clinic
   // Keep the popup on screen even when the tapped pin is near an edge — and
   // never under the floating search bar, which sits in roughly the top 80px
   // of the map regardless of how close to the top the tapped pin is.
-  const width = 272;
+  const width = Math.min(272, typeof window !== "undefined" ? Math.max(260, window.innerWidth - 24) : 272);
   const SEARCH_BAR_CLEARANCE = 80;
   const left = Math.max(12, Math.min(anchor.x - width / 2, window.innerWidth - width - 12));
   const openUpward = anchor.y > 320;

@@ -38,16 +38,16 @@ export default function AdminReset() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/5 to-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-primary/5 to-background px-3 xs:px-4 py-6">
       <Card className="w-full max-w-sm border-border/50 shadow-xl shadow-primary/5">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
-            <Shield className="h-7 w-7 text-white" />
+        <CardHeader className="text-center p-4 xs:p-5 sm:p-6">
+          <div className="mx-auto mb-2.5 sm:mb-3 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
+            <Shield className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
           </div>
-          <CardTitle className="text-xl">Choose a new password</CardTitle>
-          <CardDescription>For the SeeMyWait admin dashboard</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Choose a new password</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">For the SeeMyWait admin dashboard</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 xs:p-5 sm:p-6 pt-0">
           {!token ? (
             <p className="text-center text-sm text-muted-foreground">
               This link is incomplete. Open the newest reset email, or go back to{" "}

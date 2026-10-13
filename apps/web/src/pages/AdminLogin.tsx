@@ -125,28 +125,28 @@ export default function AdminLogin() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex h-14 w-full items-center gap-3 bg-primary px-4">
+      <header className="flex h-14 w-full items-center gap-2.5 bg-primary px-3 xs:px-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="h-9 w-9 shrink-0 text-primary-foreground hover:bg-primary-foreground/10">
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-foreground/15">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/15">
             <Clock className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-sm font-bold tracking-tight text-primary-foreground">SeeMyWait Admin</span>
+          <span className="text-sm font-bold tracking-tight text-primary-foreground truncate">SeeMyWait Admin</span>
         </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center bg-gradient-to-b from-primary/5 to-background px-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+      <main className="flex flex-1 items-center justify-center bg-gradient-to-b from-primary/5 to-background px-3 xs:px-4 py-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
         <Card className="w-full max-w-sm border-border/50 shadow-xl shadow-primary/5">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
-              <Shield className="h-7 w-7 text-white" />
+          <CardHeader className="text-center p-4 xs:p-5 sm:p-6">
+            <div className="mx-auto mb-2.5 sm:mb-3 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25">
+              <Shield className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
             </div>
-            <CardTitle className="text-xl">{settingPassword ? "Set your password" : "Sign In"}</CardTitle>
-            <CardDescription>{settingPassword ? "Choose a password for the admin account" : "Access the admin dashboard"}</CardDescription>
+            <CardTitle className="text-lg sm:text-xl">{settingPassword ? "Set your password" : "Sign In"}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{settingPassword ? "Choose a password for the admin account" : "Access the admin dashboard"}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 xs:p-5 sm:p-6 pt-0">
             {settingPassword ? (
             <form onSubmit={handleSetPassword} className="space-y-4">
               <div className="space-y-2">

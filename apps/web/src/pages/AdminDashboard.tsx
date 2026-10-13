@@ -126,7 +126,7 @@ function ClinicLocationFields({
   });
   const known = (cities || []).some((c) => c.city === form.city);
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
       <div className="space-y-1.5">
         <Label className="text-xs">State *</Label>
         <select
@@ -313,7 +313,7 @@ function ClinicFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md w-full mx-3">
+      <DialogContent className="max-w-md w-[calc(100vw-1.5rem)] max-h-[90dvh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
             {readOnly ? "Doctor Office" : initialData ? "Edit Doctor Office" : "Add Doctor Office"}
@@ -374,7 +374,7 @@ function ClinicFormDialog({
             <Label htmlFor="phone" className="text-xs">Phone</Label>
             <Input id="phone" value={form.phone} onChange={set("phone")} placeholder="e.g. (305) 555-0100" className="placeholder:text-muted-foreground/50" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="latitude" className="text-xs">Latitude</Label>
               <Input id="latitude" value={form.latitude} onChange={set("latitude")} placeholder="e.g. 25.7617" className="placeholder:text-muted-foreground/50" />
@@ -385,7 +385,7 @@ function ClinicFormDialog({
             </div>
           </div>
           </fieldset>
-          <DialogFooter className="pt-2 gap-2">
+          <DialogFooter className="pt-2 gap-2 flex-col-reverse xs:flex-row">
             <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
               {readOnly ? "Close" : "Cancel"}
             </Button>
@@ -576,7 +576,7 @@ function CsvUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { onClose(); reset(); } }}>
-      <DialogContent className="max-w-lg w-full mx-3">
+      <DialogContent className="max-w-lg w-[calc(100vw-1.5rem)] max-h-[90dvh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-base flex items-center gap-2">
             <FileSpreadsheet className="h-4 w-4 text-primary" />
@@ -665,7 +665,7 @@ function CsvUploadDialog({
           )}
         </div>
 
-        <DialogFooter className="pt-2 gap-2">
+        <DialogFooter className="pt-2 gap-2 flex-col-reverse xs:flex-row">
           <Button type="button" variant="outline" size="sm" onClick={() => { onClose(); reset(); }} disabled={uploading}>
             Cancel
           </Button>
@@ -708,13 +708,13 @@ function SearchableSelect({
         <button
           type="button"
           aria-label={ariaLabel}
-          className={`flex h-9 items-center justify-between gap-2 rounded-md border border-input bg-background px-2 text-left text-sm ${className ?? ""}`}
+          className={`flex h-9 items-center justify-between gap-2 rounded-md border border-input bg-background px-2.5 text-left text-sm ${className ?? ""}`}
         >
           <span className={`truncate ${selected ? "" : "text-muted-foreground"}`}>{selected?.label ?? placeholder}</span>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+      <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[200px] max-w-[calc(100vw-1.5rem)] p-0" align="start">
         <Command>
           <CommandInput placeholder={`Search ${ariaLabel.toLowerCase()}…`} />
           <CommandList>
@@ -1476,56 +1476,59 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Admin Header */}
-      <header className="sticky top-0 z-50 overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-10 pb-3 pt-2">
+      <header className="sticky top-0 z-50 overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-3 sm:px-6 md:px-8 lg:px-10 pb-2.5 pt-2">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary to-secondary/80" />
         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary-foreground/5" />
-        <div className="relative z-10 w-full flex items-center justify-between">
+        <div className="relative z-10 w-full flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
+            <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
               <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
             </div>
-            <h1 className="text-base font-bold text-primary-foreground truncate sm:text-lg">Admin Dashboard</h1>
+            <h1 className="text-sm font-bold text-primary-foreground truncate xs:text-base sm:text-lg">Admin Dashboard</h1>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Button
               variant="ghost"
-              size="icon"
-              onClick={() => setActiveTab("settings")}
-              className="sm:hidden h-8 w-8 shrink-0 text-primary-foreground hover:bg-primary-foreground/10"
-              title="Settings"
+              size="sm"
+              onClick={() => navigate("/app")}
+              className="h-8 px-2 xs:px-2.5 sm:px-3 text-xs text-primary-foreground/90 hover:bg-primary-foreground/10 hover:text-primary-foreground gap-1 shrink-0"
+              title="View Public App"
             >
-              <Settings className="h-4 w-4" />
+              <Eye className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline">App</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              className="h-8 px-2 xs:px-2.5 sm:px-3 text-xs text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground gap-1 shrink-0"
+              title="Logout"
             >
-              <LogOut className="sm:mr-1 h-4 w-4" /> <span className="hidden sm:inline">Logout</span>
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline">Logout</span>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Stats */}
-      <div className={`mx-auto w-full max-w-[1440px] grid gap-2 px-10 py-4 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3 ${({ 3: "grid-cols-3", 4: "grid-cols-4", 5: "grid-cols-5" } as Record<number, string>)[3 + (filterState ? 1 : 0) + (filterCity ? 1 : 0)]}`}>
+      <div className="mx-auto w-full max-w-[1440px] grid grid-cols-2 xs:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 px-3 sm:px-6 md:px-8 lg:px-10 py-3 -mt-1 animate-in fade-in slide-in-from-bottom-2 duration-400 sm:gap-3">
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
-            <Activity className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">{(totalClinics ?? 0).toLocaleString("en-US")}</p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Doctor Offices</p>
+            <Activity className="mx-auto h-3.5 w-3.5 text-primary mb-1 sm:h-4 sm:w-4" />
+            <p className="text-base font-bold text-foreground sm:text-xl md:text-2xl truncate">{(totalClinics ?? 0).toLocaleString("en-US")}</p>
+            <p className="text-[10px] text-muted-foreground sm:text-[11px] truncate">Doctor Offices</p>
           </CardContent>
         </Card>
         {filterState && (
           <Card className="border-border/50">
             <CardContent className="p-2 text-center sm:p-3">
-              <MapPin className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-              <p className="text-xl font-bold text-foreground sm:text-2xl">
+              <MapPin className="mx-auto h-3.5 w-3.5 text-primary mb-1 sm:h-4 sm:w-4" />
+              <p className="text-base font-bold text-foreground sm:text-xl md:text-2xl truncate">
                 {(cityOptions || []).reduce((sum, c) => sum + c.n, 0).toLocaleString("en-US")}
               </p>
-              <p className="text-[9px] text-muted-foreground sm:text-[10px]">
-                {US_JURISDICTIONS.find((j) => j.code === filterState)?.name ?? filterState} offices
+              <p className="text-[10px] text-muted-foreground sm:text-[11px] truncate">
+                {US_JURISDICTIONS.find((j) => j.code === filterState)?.name ?? filterState}
               </p>
             </CardContent>
           </Card>
@@ -1533,46 +1536,45 @@ export default function AdminDashboard() {
         {filterCity && (
           <Card className="border-border/50">
             <CardContent className="p-2 text-center sm:p-3">
-              <MapPin className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-              <p className="text-xl font-bold text-foreground sm:text-2xl">{cityTotal.toLocaleString("en-US")}</p>
-              <p className="text-[9px] text-muted-foreground sm:text-[10px]">{filterCity} offices</p>
+              <MapPin className="mx-auto h-3.5 w-3.5 text-primary mb-1 sm:h-4 sm:w-4" />
+              <p className="text-base font-bold text-foreground sm:text-xl md:text-2xl truncate">{cityTotal.toLocaleString("en-US")}</p>
+              <p className="text-[10px] text-muted-foreground sm:text-[11px] truncate">{filterCity}</p>
             </CardContent>
           </Card>
         )}
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
-            <Users className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">{totalSuggestions}</p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Pending</p>
+            <Users className="mx-auto h-3.5 w-3.5 text-primary mb-1 sm:h-4 sm:w-4" />
+            <p className="text-base font-bold text-foreground sm:text-xl md:text-2xl truncate">{totalSuggestions}</p>
+            <p className="text-[10px] text-muted-foreground sm:text-[11px] truncate">Pending</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardContent className="p-2 text-center sm:p-3">
-            <FileText className="mx-auto h-4 w-4 text-primary mb-1 sm:h-5 sm:w-5" />
-            <p className="text-xl font-bold text-foreground sm:text-2xl">{activeReportCount}</p>
-            <p className="text-[9px] text-muted-foreground sm:text-[10px]">Active Reports</p>
+            <FileText className="mx-auto h-3.5 w-3.5 text-primary mb-1 sm:h-4 sm:w-4" />
+            <p className="text-base font-bold text-foreground sm:text-xl md:text-2xl truncate">{activeReportCount}</p>
+            <p className="text-[10px] text-muted-foreground sm:text-[11px] truncate">Active Reports</p>
           </CardContent>
         </Card>
       </div>
 
-      <main className="mx-auto w-full max-w-[1440px] px-10 pb-8 animate-in fade-in duration-500">
+      <main className="mx-auto w-full max-w-[1440px] px-3 sm:px-6 md:px-8 lg:px-10 pb-8 animate-in fade-in duration-500">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-4">
-            <TabsList className="grid w-full grid-cols-4 gap-1 p-1 bg-primary/15">
-              <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Doctors</TabsTrigger>
-              <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
-              <span className="hidden sm:inline">Suggestions</span>
-              <span className="sm:hidden">Suggest</span>
-              {totalSuggestions > 0 && (
-                <Badge variant="destructive" className="ml-1 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[9px] sm:text-[10px]">
-                  {totalSuggestions}
-                </Badge>
-              )}
+            <TabsList className="grid w-full grid-cols-4 gap-0.5 sm:gap-1 p-1 bg-primary/15 rounded-lg">
+              <TabsTrigger value="clinics" className="w-full whitespace-nowrap text-[11px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-1.5 font-medium">Doctors</TabsTrigger>
+              <TabsTrigger value="suggestions" className="w-full whitespace-nowrap text-[11px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-1.5 font-medium flex items-center justify-center gap-1">
+                <span>Suggestions</span>
+                {totalSuggestions > 0 && (
+                  <Badge variant="destructive" className="h-4 min-w-4 px-1 py-0 flex items-center justify-center text-[9px] font-bold">
+                    {totalSuggestions}
+                  </Badge>
+                )}
               </TabsTrigger>
-              <TabsTrigger value="reports" className="w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">Reports</TabsTrigger>
-              <TabsTrigger value="settings" className="hidden sm:flex w-full whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3">
-              <Settings className="h-3.5 w-3.5 sm:mr-1" />
-              <span className="hidden sm:inline">Settings</span>
+              <TabsTrigger value="reports" className="w-full whitespace-nowrap text-[11px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-1.5 font-medium">Reports</TabsTrigger>
+              <TabsTrigger value="settings" className="w-full whitespace-nowrap text-[11px] xs:text-xs sm:text-sm px-1 xs:px-2 sm:px-3 py-1.5 font-medium flex items-center justify-center gap-1">
+                <Settings className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span>Settings</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1581,104 +1583,135 @@ export default function AdminDashboard() {
 
 
           {/* ── DOCTORS / CLINICS TAB ── */}
-          <TabsContent value="clinics" className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">Choose State <span className="text-destructive">*</span></span>
-              <SearchableSelect
-                ariaLabel="State"
-                placeholder="Choose a state"
-                className="w-56"
-                value={filterState}
-                options={US_JURISDICTIONS.map((j) => ({ value: j.code, label: j.name }))}
-                onChange={(code) => { setFilterState(code); setFilterCity(""); setSpecialtyFilter(""); }}
-              />
+          <TabsContent value="clinics" className="space-y-3">
+            <div className="flex flex-col md:flex-row md:flex-wrap md:items-end gap-2.5">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap items-end gap-2 w-full md:w-auto">
+                <div className="flex flex-col gap-1 w-full md:w-48 lg:w-56">
+                  <span className="text-xs font-medium text-muted-foreground">Choose State <span className="text-destructive">*</span></span>
+                  <SearchableSelect
+                    ariaLabel="State"
+                    placeholder="Choose a state"
+                    className="w-full"
+                    value={filterState}
+                    options={US_JURISDICTIONS.map((j) => ({ value: j.code, label: j.name }))}
+                    onChange={(code) => { setFilterState(code); setFilterCity(""); setSpecialtyFilter(""); }}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 w-full md:w-56 lg:w-64">
+                  <span className="text-xs font-medium text-muted-foreground">Choose City <span className="text-destructive">*</span></span>
+                  <SearchableSelect
+                    ariaLabel="City"
+                    placeholder={filterState ? "Choose a city" : "Choose a state first"}
+                    className="w-full"
+                    value={filterCity}
+                    options={(cityOptions || []).map((c) => ({ value: c.city, label: `${c.city} (${c.n.toLocaleString("en-US")})` }))}
+                    onChange={setFilterCity}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 w-full col-span-1 xs:col-span-2 sm:col-span-1 md:w-48 lg:w-56">
+                  <span className="text-xs font-medium text-muted-foreground">Specialty</span>
+                  <select
+                    aria-label="Specialty"
+                    value={specialtyFilter}
+                    onChange={(e) => setSpecialtyFilter(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value="">All specialties</option>
+                    {(specialtyOptions || []).map((sp) => (
+                      <option key={sp.specialty} value={sp.specialty}>{sp.specialty} ({sp.n.toLocaleString("en-US")})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">Choose City <span className="text-destructive">*</span></span>
-              <SearchableSelect
-                ariaLabel="City"
-                placeholder={filterState ? "Choose a city" : "Choose a state first"}
-                className="w-64"
-                value={filterCity}
-                options={(cityOptions || []).map((c) => ({ value: c.city, label: `${c.city} (${c.n.toLocaleString("en-US")})` }))}
-                onChange={setFilterCity}
-              />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">Specialty</span>
-                <select
-                aria-label="Specialty"
-                value={specialtyFilter}
-                onChange={(e) => setSpecialtyFilter(e.target.value)}
-                className="h-9 w-56 rounded-md border border-input bg-background px-2 text-sm"
-              >
-                <option value="">All specialties</option>
-                {(specialtyOptions || []).map((sp) => (
-                  <option key={sp.specialty} value={sp.specialty}>{sp.specialty} ({sp.n.toLocaleString("en-US")})</option>
-                ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted-foreground">Radius (mi)</span>
-                <input
-                  type="number"
-                  min={0}
-                  step="0.5"
-                  aria-label="Radius in miles"
-                  placeholder="All"
-                  value={radiusMiles}
-                  onChange={(e) => setRadiusMiles(e.target.value)}
-                  title={adminLoc ? "Radius from your location" : "Locate yourself (map locate button) to apply the radius"}
-                  className="h-9 w-24 rounded-md border border-input bg-background px-2 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-transparent select-none" aria-hidden="true">Reset</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetFilters}
-                  disabled={filtersAreDefault}
-                  className="h-9 gap-1.5"
-                  title="Reset all filters back to how this tab loads by default"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Reset
-                </Button>
-              </div>
-              <div className="ml-auto">
-                <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
-                <button type="button" onClick={() => setDoctorsView("list")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>List</button>
-                <button type="button" onClick={() => setDoctorsView("map")} className={`rounded-md px-3 py-1.5 text-xs font-semibold ${doctorsView === "map" ? "bg-card text-primary shadow-sm" : "text-muted-foreground"}`}>Map</button>
-              </div>
+
+              <div className="flex items-end justify-between sm:justify-start gap-2 w-full md:w-auto">
+                <div className="flex items-end gap-2">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-muted-foreground">Radius (mi)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.5"
+                      aria-label="Radius in miles"
+                      placeholder="All"
+                      value={radiusMiles}
+                      onChange={(e) => setRadiusMiles(e.target.value)}
+                      title={adminLoc ? "Radius from your location" : "Locate yourself (map locate button) to apply the radius"}
+                      className="h-9 w-20 xs:w-24 rounded-md border border-input bg-background px-2 text-sm"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    disabled={filtersAreDefault}
+                    className="h-9 gap-1.5 px-2.5 xs:px-3 text-xs"
+                    title="Reset all filters back to how this tab loads by default"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reset
+                  </Button>
+                </div>
+
+                <div className="md:ml-auto">
+                  <div className="inline-flex rounded-lg border border-border/50 bg-muted/40 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setDoctorsView("list")}
+                      className={`rounded-md px-2.5 xs:px-3 py-1.5 text-xs font-semibold transition-colors ${doctorsView === "list" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      List
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDoctorsView("map")}
+                      className={`rounded-md px-2.5 xs:px-3 py-1.5 text-xs font-semibold transition-colors ${doctorsView === "map" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Map
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <div className="relative flex-1">
+            <div className="flex items-center gap-2 w-full">
+              <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Name, address, or NPI..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-9 text-xs sm:text-sm w-full"
                 />
               </div>
 
-              <Button size="sm" onClick={() => { setPrefillData(null); setCreateOpen(true); }} className="shrink-0 gap-1.5">
+              <Button size="sm" onClick={() => { setPrefillData(null); setCreateOpen(true); }} className="shrink-0 h-9 gap-1.5 px-2.5 sm:px-3">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add</span>
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)} className="shrink-0 gap-1.5">
+              <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)} className="shrink-0 h-9 gap-1.5 px-2.5 sm:px-3">
                 <Upload className="h-4 w-4" />
                 <span className="hidden sm:inline">CSV</span>
               </Button>
             </div>
-            <div className="flex flex-wrap items-center gap-1">
-              <button type="button" onClick={() => setLetterFilter("")} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>All</button>
+
+            <div className="flex items-center gap-1 overflow-x-auto pb-1.5 scrollbar-none w-full -mx-0.5 px-0.5 touch-pan-x">
+              <button
+                type="button"
+                onClick={() => setLetterFilter("")}
+                className={`h-7 min-w-7 shrink-0 rounded-md px-2 text-xs font-semibold transition-colors ${letterFilter === "" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}
+              >
+                All
+              </button>
               {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => (
-                <button key={L} type="button" onClick={() => setLetterFilter(L)} className={`h-7 min-w-7 rounded-md px-2 text-xs font-semibold ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}>{L}</button>
+                <button
+                  key={L}
+                  type="button"
+                  onClick={() => setLetterFilter(L)}
+                  className={`h-7 min-w-7 shrink-0 rounded-md px-2 text-xs font-semibold transition-colors ${letterFilter === L ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-primary/10"}`}
+                >
+                  {L}
+                </button>
               ))}
             </div>
             <div ref={splitRef} style={{ height: splitHeight }} className="grid gap-3">
@@ -1691,14 +1724,14 @@ export default function AdminDashboard() {
                 <div className="h-8 w-8 rounded-full border-4 border-muted animate-spin border-t-primary" />
               </div>
             ) : visibleClinics && visibleClinics.length > 0 ? (
-              <div ref={listScrollRef} className="lg:flex-1 lg:min-h-0 min-h-[260px] max-h-[70vh] lg:max-h-none overflow-auto rounded-lg border border-border/50">
+              <div ref={listScrollRef} className="lg:flex-1 lg:min-h-0 min-h-[260px] max-h-[70vh] lg:max-h-none overflow-x-auto overflow-y-auto rounded-lg border border-border/50">
                 <Table>
                   <TableHeader className="sticky top-0 z-10 bg-card">
                     <TableRow>
-                      <TableHead>Name</TableHead>
+                      <TableHead className="min-w-[130px] xs:min-w-[150px]">Name</TableHead>
                       <TableHead className="hidden sm:table-cell">Specialty</TableHead>
                       <TableHead className="hidden md:table-cell">Address</TableHead>
-                      <TableHead className="w-28 text-right">Actions</TableHead>
+                      <TableHead className="w-24 sm:w-28 text-right min-w-[130px] sm:min-w-[160px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1708,8 +1741,8 @@ export default function AdminDashboard() {
                         className={`cursor-pointer transition-colors hover:bg-primary/5 ${c.is_active ? "" : "opacity-50"}`}
                         onClick={() => { if (c.latitude && c.longitude) setMapCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 16 }); }}
                       >
-                        <TableCell>
-                          <p className="font-medium text-foreground text-sm leading-tight">
+                        <TableCell className="py-2 px-2.5 sm:px-4">
+                          <p className="font-medium text-foreground text-xs xs:text-sm leading-tight break-words">
                             {c.name}
                             {!c.is_active && (
                               <span className="ml-1.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1718,31 +1751,32 @@ export default function AdminDashboard() {
                             )}
                           </p>
                           {c.phone && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{c.phone}</p>
+                            <p className="text-[11px] xs:text-xs text-muted-foreground mt-0.5">{c.phone}</p>
                           )}
                           {c.specialty && (
-                            <Badge variant="secondary" className="mt-1 text-[10px] sm:hidden">
+                            <Badge variant="secondary" className="mt-1 text-[9px] xs:text-[10px] sm:hidden">
                               {c.specialty}
                             </Badge>
                           )}
-                          <p className="text-xs text-muted-foreground mt-0.5 md:hidden line-clamp-1">{c.address}</p>
+                          <p className="text-[11px] xs:text-xs text-muted-foreground mt-0.5 md:hidden line-clamp-1">{c.address}</p>
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell">
+                        <TableCell className="hidden sm:table-cell py-2">
                           {c.specialty && (
                             <Badge variant="secondary" className="text-xs">{c.specialty}</Badge>
                           )}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
+                        <TableCell className="hidden md:table-cell py-2">
                           <p className="text-xs text-muted-foreground max-w-[200px] truncate">{c.address}</p>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
+                        <TableCell className="py-2 px-1.5 sm:px-4">
+                          <div className="flex justify-end items-center gap-0.5 sm:gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-primary/10"
+                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-primary/10 shrink-0"
                               disabled={!c.latitude || !c.longitude}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setMapFocus(c);
                                 setMapCenterOn({ lat: c.latitude, lng: c.longitude, zoom: 17 });
                                 setDoctorsView("map");
@@ -1754,8 +1788,11 @@ export default function AdminDashboard() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-primary/10"
-                              onClick={() => setEditClinic(c)}
+                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-primary/10 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditClinic(c);
+                              }}
                               title="Edit"
                             >
                               <Pencil className="h-3.5 w-3.5 text-primary" />
@@ -1763,8 +1800,11 @@ export default function AdminDashboard() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-amber-500/10"
-                              onClick={() => toggleClinicActive.mutate({ id: c.id, isActive: !c.is_active })}
+                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-amber-500/10 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleClinicActive.mutate({ id: c.id, isActive: !c.is_active });
+                              }}
                               title={c.is_active ? "Hide from app (reversible)" : "Unhide — make visible again"}
                             >
                               {c.is_active ? (
@@ -1776,8 +1816,11 @@ export default function AdminDashboard() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-amber-500/10"
-                              onClick={() => resetClinicWaitTimes.mutate(c.id)}
+                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-amber-500/10 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                resetClinicWaitTimes.mutate(c.id);
+                              }}
                               title="Reset current wait reports"
                             >
                               <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
@@ -1785,8 +1828,11 @@ export default function AdminDashboard() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-destructive/10"
-                              onClick={() => setDeleteId(c.id)}
+                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-destructive/10 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteId(c.id);
+                              }}
                               title="Delete"
                             >
                               <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -1873,7 +1919,7 @@ export default function AdminDashboard() {
             </div>
           )}
           {mapFocus && (
-            <div className="absolute left-3 top-3 z-[70] w-72 rounded-xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
+            <div className="absolute left-2 top-2 sm:left-3 sm:top-3 z-[70] w-[calc(100vw-3rem)] sm:w-72 max-w-xs rounded-xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-semibold text-foreground">{mapFocus.name}</p>
                 <button type="button" onClick={() => setMapFocus(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
@@ -1936,29 +1982,33 @@ export default function AdminDashboard() {
 
           {/* "Add here" affordance for a tapped empty point */}
           {pendingPoint && !mapCandidate && (
-            <div className="absolute bottom-3 left-3 right-3 z-[60] mx-auto max-w-md">
-              <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/95 p-3 shadow-xl backdrop-blur-xl">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
-                  <MapPin className="h-4 w-4 text-primary" />
+            <div className="absolute bottom-3 left-2 right-2 sm:left-3 sm:right-3 z-[60] mx-auto max-w-md">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 rounded-2xl border border-border/40 bg-card/95 p-2.5 sm:p-3 shadow-xl backdrop-blur-xl">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-card-foreground">Add doctor office here?</p>
+                    <p className="truncate text-[10px] text-muted-foreground tabular-nums">
+                      {pendingPoint.lat.toFixed(6)}, {pendingPoint.lng.toFixed(6)}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-card-foreground">Add a doctor office here?</p>
-                  <p className="truncate text-[10px] text-muted-foreground tabular-nums">
-                    {pendingPoint.lat.toFixed(6)}, {pendingPoint.lng.toFixed(6)}
-                  </p>
+                <div className="flex items-center justify-end gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setPendingPoint(null)}
+                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmAddHere}
+                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                  >
+                    Add here
+                  </button>
                 </div>
-                <button
-                  onClick={() => setPendingPoint(null)}
-                  className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmAddHere}
-                  className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                >
-                  Add here
-                </button>
               </div>
             </div>
           )}
@@ -1985,21 +2035,21 @@ export default function AdminDashboard() {
             {suggestions && suggestions.length > 0 ? (
               suggestions.map((s: ClinicSuggestionRow, i: number) => (
                 <Card key={s.id} className="border-border/50 animate-in fade-in slide-in-from-bottom-1" style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}>
-                  <CardContent className="flex items-center justify-between gap-2 p-3 sm:p-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-card-foreground truncate text-sm sm:text-base">{s.doctor_name}</p>
-                      <p className="text-xs text-muted-foreground truncate sm:text-sm">{s.address}</p>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {s.specialty && <Badge variant="secondary" className="text-[10px]">{s.specialty}</Badge>}
-                        {s.clinic_type && s.clinic_type !== "doctor" && <Badge variant="outline" className="text-[10px]">{s.clinic_type}</Badge>}
+                  <CardContent className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2.5 p-3 sm:p-4">
+                    <div className="min-w-0 flex-1 w-full xs:w-auto">
+                      <p className="font-medium text-card-foreground text-xs xs:text-sm sm:text-base break-words">{s.doctor_name}</p>
+                      <p className="text-[11px] xs:text-xs text-muted-foreground break-words sm:text-sm mt-0.5">{s.address}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {s.specialty && <Badge variant="secondary" className="text-[9px] xs:text-[10px]">{s.specialty}</Badge>}
+                        {s.clinic_type && s.clinic_type !== "doctor" && <Badge variant="outline" className="text-[9px] xs:text-[10px]">{s.clinic_type}</Badge>}
                         {s.phone && <span className="text-[10px] text-muted-foreground">📞 {s.phone}</span>}
                       </div>
                     </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20 text-primary" variant="ghost" onClick={() => approveSuggestion.mutate(s)}>
+                    <div className="flex shrink-0 gap-1.5 self-end xs:self-center">
+                      <Button size="icon" className="h-8 w-8 bg-primary/10 hover:bg-primary/20 text-primary" variant="ghost" onClick={() => approveSuggestion.mutate(s)} title="Approve">
                         <Check className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" className="h-8 w-8" variant="ghost" onClick={() => rejectSuggestion.mutate(s.id)}>
+                      <Button size="icon" className="h-8 w-8 hover:bg-destructive/10" variant="ghost" onClick={() => rejectSuggestion.mutate(s.id)} title="Reject">
                         <X className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
@@ -2016,23 +2066,23 @@ export default function AdminDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="reports" className="space-y-4">
+          <TabsContent value="reports" className="space-y-3">
             {/* Active / Expired filter tabs */}
             <Tabs
               value={showActiveReports ? "active" : "expired"}
               onValueChange={(v) => setShowActiveReports(v === "active")}
             >
-              <TabsList className="inline-flex h-auto gap-1 p-1 bg-primary/15">
-                <TabsTrigger value="active" className="min-w-24 gap-1.5 whitespace-nowrap text-xs sm:min-w-28 sm:text-sm px-3">
+              <TabsList className="inline-flex h-auto gap-1 p-1 bg-primary/15 rounded-lg">
+                <TabsTrigger value="active" className="min-w-20 xs:min-w-24 gap-1.5 whitespace-nowrap text-xs sm:text-sm px-2.5 xs:px-3">
                   Active
                   {showActiveReports && (
-                    <Badge variant="secondary" className="text-[10px]">{filteredReports.length}</Badge>
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{filteredReports.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="expired" className="min-w-24 gap-1.5 whitespace-nowrap text-xs sm:min-w-28 sm:text-sm px-3">
+                <TabsTrigger value="expired" className="min-w-20 xs:min-w-24 gap-1.5 whitespace-nowrap text-xs sm:text-sm px-2.5 xs:px-3">
                   Expired
                   {!showActiveReports && (
-                    <Badge variant="secondary" className="text-[10px]">{filteredReports.length}</Badge>
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{filteredReports.length}</Badge>
                   )}
                 </TabsTrigger>
               </TabsList>
@@ -2042,10 +2092,10 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Doctor Office</TableHead>
-                    <TableHead>Wait</TableHead>
+                    <TableHead className="min-w-[120px] xs:min-w-[140px]">Doctor Office</TableHead>
+                    <TableHead className="min-w-[85px]">Wait</TableHead>
                     <TableHead className="hidden sm:table-cell">Time</TableHead>
-                    <TableHead className="w-20 text-right">Actions</TableHead>
+                    <TableHead className="w-16 sm:w-20 min-w-[70px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2053,11 +2103,16 @@ export default function AdminDashboard() {
                     const waitCategory = r.wait_time as WaitTimeCategory;
                     return (
                       <TableRow key={r.id} className={r.is_flagged ? "opacity-40" : "transition-colors"}>
-                        <TableCell className="text-sm font-medium">{r.clinics?.name || "Unknown"}</TableCell>
-                        <TableCell>
-                          <WaitTimeBadge category={waitCategory} />
+                        <TableCell className="text-xs xs:text-sm font-medium py-2 px-2.5 sm:px-4 break-words">
+                          {r.clinics?.name || "Unknown"}
+                          <div className="sm:hidden text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(r.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
+                        <TableCell className="py-2 px-1.5 sm:px-4">
+                          <WaitTimeBadge category={waitCategory} className="text-[10px] sm:text-xs" />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-xs text-muted-foreground py-2">
                           {new Date(r.reported_at).toLocaleString()}
                           {showActiveReports && (() => {
                             const expiresInMinutes = Math.max(
@@ -2074,37 +2129,37 @@ export default function AdminDashboard() {
                             );
                           })()}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
+                        <TableCell className="py-2 px-1.5 sm:px-4">
+                          <div className="flex justify-end gap-0.5 sm:gap-1">
                             {r.is_flagged ? (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 hover:bg-primary/10"
+                                className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-primary/10 shrink-0"
                                 onClick={() => unflagReport.mutate(r.id)}
                                 title="Unflag"
                               >
-                                <Check className="h-4 w-4 text-primary" />
+                                <Check className="h-3.5 w-3.5 text-primary" />
                               </Button>
                             ) : (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 hover:bg-destructive/10"
+                                className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-destructive/10 shrink-0"
                                 onClick={() => flagReport.mutate(r)}
                                 title="Flag"
                               >
-                                <X className="h-4 w-4 text-destructive" />
+                                <X className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             )}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 hover:bg-destructive/10"
+                              className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-destructive/10 shrink-0"
                               onClick={() => deleteReport.mutate(r.id)}
                               title="Delete report"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>
@@ -2125,14 +2180,14 @@ export default function AdminDashboard() {
 
           {/* ── SETTINGS TAB ── */}
           <TabsContent value="settings" className="space-y-4">
-            <Card className="border-border/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className="border-border/50 max-w-xl w-full">
+              <CardHeader className="p-4 sm:p-6 pb-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                   <Settings className="h-4 w-4 text-primary" />
                   App Settings
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                 <div className="space-y-1.5">
                   <Label htmlFor="radius" className="text-xs">Nearby Radius (miles)</Label>
                   <Input
@@ -2141,6 +2196,7 @@ export default function AdminDashboard() {
                     value={nearbyRadius}
                     onChange={(e) => setNearbyRadius(e.target.value)}
                     placeholder="100"
+                    className="w-full text-xs sm:text-sm"
                   />
                   <p className="text-[10px] text-muted-foreground">
                     Users will see doctor offices within this radius on the map. A circle will be shown around their location.
@@ -2154,6 +2210,7 @@ export default function AdminDashboard() {
                     value={geofenceMeters}
                     onChange={(e) => setGeofenceMeters(e.target.value)}
                     placeholder="1000"
+                    className="w-full text-xs sm:text-sm"
                   />
                   <p className="text-[10px] text-muted-foreground">
                     How close a user must be to an office to submit a wait report. GPS accuracy must be within the same distance.
@@ -2167,6 +2224,7 @@ export default function AdminDashboard() {
                     value={cooldownMinutes}
                     onChange={(e) => setCooldownMinutes(e.target.value)}
                     placeholder="60"
+                    className="w-full text-xs sm:text-sm"
                   />
                   <p className="text-[10px] text-muted-foreground">
                     How long a device must wait before it can submit another wait-time report, for any doctor office.
@@ -2188,6 +2246,7 @@ export default function AdminDashboard() {
                       value={expiry30MinMinutes}
                       onChange={(e) => setExpiry30MinMinutes(e.target.value)}
                       placeholder="30"
+                      className="w-full text-xs sm:text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2198,6 +2257,7 @@ export default function AdminDashboard() {
                       value={expiry60MinMinutes}
                       onChange={(e) => setExpiry60MinMinutes(e.target.value)}
                       placeholder="60"
+                      className="w-full text-xs sm:text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -2208,10 +2268,11 @@ export default function AdminDashboard() {
                       value={expiry90PlusMinutes}
                       onChange={(e) => setExpiry90PlusMinutes(e.target.value)}
                       placeholder="90"
+                      className="w-full text-xs sm:text-sm"
                     />
                   </div>
                 </div>
-                <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5">
+                <Button onClick={handleSaveSettings} disabled={savingSettings} className="gap-1.5 w-full sm:w-auto">
                   {savingSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Save Settings
                 </Button>
@@ -2242,14 +2303,14 @@ export default function AdminDashboard() {
 
       {/* ── DELETE Confirm Dialog ── */}
       <Dialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
-        <DialogContent className="max-w-sm mx-3">
+        <DialogContent className="max-w-sm w-[calc(100vw-1.5rem)] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-base">Delete Doctor Office?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             This will permanently delete the doctor office and all its wait time reports. This action cannot be undone.
           </p>
-          <DialogFooter className="gap-2 pt-2">
+          <DialogFooter className="gap-2 pt-2 flex-col-reverse xs:flex-row">
             <Button variant="outline" size="sm" onClick={() => setDeleteId(null)} disabled={deleteClinic.isPending}>
               Cancel
             </Button>

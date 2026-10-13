@@ -15,6 +15,7 @@ interface VerifyPlaceCardProps {
   userLocation: { lat: number; lng: number } | null;
   onCancel: () => void;
   onVerified: (clinic: AddedClinic) => void;
+  className?: string;
 }
 
 /**
@@ -27,6 +28,7 @@ export function VerifyPlaceCard({
   userLocation,
   onCancel,
   onVerified,
+  className,
 }: VerifyPlaceCardProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function VerifyPlaceCard({
     <div className="fixed inset-0 z-[70] flex items-end justify-center animate-in fade-in duration-200">
       <div className="absolute inset-0 bg-background/40 backdrop-blur-sm" onClick={onCancel} />
 
-      <div className="relative z-10 w-full max-w-lg mx-2 mb-[calc(110px+env(safe-area-inset-bottom))] animate-in slide-in-from-bottom-8 duration-300 rounded-2xl border border-blue-500/30 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+      <div className={`relative z-10 w-full max-w-lg mx-2 ${className ?? "mb-4 sm:mb-6"} animate-in slide-in-from-bottom-8 duration-300 rounded-2xl border border-blue-500/30 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden`}>
         <button
           type="button"
           onClick={onCancel}

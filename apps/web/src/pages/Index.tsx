@@ -612,6 +612,7 @@ const Index = () => {
               userLocation={userLocation}
               onCancel={() => setCandidate(null)}
               onVerified={handleVerified}
+              className="mb-[calc(110px+env(safe-area-inset-bottom))]"
             />
           )}
 
