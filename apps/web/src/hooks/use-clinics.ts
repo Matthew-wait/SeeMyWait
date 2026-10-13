@@ -215,19 +215,48 @@ export function useNearbyClinicsProgressive(
   // Push-based refresh: another user's report lands within ~1s instead of
   // waiting on the 60s poll above. The poll stays as a fallback (reconnects,
   // missed events) — this just makes the common case fast.
+  //
+  // The subscription has no filter — Realtime's postgres_changes filter syntax
+  // can't scope to "within N miles", so this fires on every report submitted
+  // anywhere in the country, not just nearby ones. At real usage levels that
+  // refetches (and re-renders the map/list) far more often than any single
+  // user's view actually changes, which read as the map/list "fluctuating"
+  // continuously. Throttled below: at most one refetch per 8s, with a trailing
+  // call so a burst still ends in one up-to-date refresh, not zero.
   const reportsRefetchRef = useRef(reports.refetch);
   reportsRefetchRef.current = reports.refetch;
   useEffect(() => {
     if (!hasLocation || !settingsReady) return;
+    const THROTTLE_MS = 8000;
+    let lastRunAt = 0;
+    let trailingTimer: ReturnType<typeof setTimeout> | null = null;
+    const throttledRefetch = () => {
+      const now = Date.now();
+      const elapsed = now - lastRunAt;
+      if (elapsed >= THROTTLE_MS) {
+        lastRunAt = now;
+        void reportsRefetchRef.current();
+        return;
+      }
+      if (trailingTimer) return; // a trailing call is already scheduled
+      trailingTimer = setTimeout(() => {
+        trailingTimer = null;
+        lastRunAt = Date.now();
+        void reportsRefetchRef.current();
+      }, THROTTLE_MS - elapsed);
+    };
     const channel = supabase
       .channel("wait-time-reports-live")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "wait_time_reports" },
-        () => { void reportsRefetchRef.current(); }
+        throttledRefetch
       )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      if (trailingTimer) clearTimeout(trailingTimer);
+      void supabase.removeChannel(channel);
+    };
   }, [hasLocation, settingsReady]);
 
   const count = useQuery({

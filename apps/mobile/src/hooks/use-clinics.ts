@@ -225,6 +225,23 @@ export const useClinics = (
     });
   }, [enabled, load]);
 
+  // Web polls reports every 60s without re-running the full office search —
+  // mirrored here so wait times don't go stale indefinitely on a phone left
+  // open. Deliberately lighter than `load()`: only re-fetches reports, not the
+  // (up to 30-batch) office search, which would be slow and wasteful to repeat
+  // every minute just to pick up newer wait-time reports.
+  useEffect(() => {
+    if (!enabled) return;
+    const id = setInterval(() => {
+      fetchReports(reportExpiry)
+        .then((fetched) => setReports(fetched))
+        .catch(() => {
+          // Keep the existing reports; next tick retries.
+        });
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [enabled, reportExpiry]);
+
   const isLatestReportActive = useCallback(
     (report: WaitTimeReport): boolean => {
       // Prefer DB-provided expiry_time if present (server-side truth).

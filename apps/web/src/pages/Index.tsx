@@ -99,12 +99,16 @@ const Index = () => {
 
   // Load the nearest 1,000; load more only when requested.
   // Keep the existing loading indicator until every geographic page finishes.
+  // Previously gated on settings finishing too (!settingsLoading), which added a
+  // full extra round-trip before the first office could even start loading —
+  // a real contributor to the 10+ second first load. Start as soon as we have a
+  // location, using the 5-mile default; the query key includes nearbyRadiusMiles,
+  // so it refetches on its own once the real admin-configured radius arrives.
   const { data: clinics, isInitialLoading: isLoading, isLoadingMore, hasMore, total: nearbyTotal, loadMore, error: nearbyError, refetch } = useNearbyClinicsProgressive(
     userLocation?.lat,
     userLocation?.lng,
     reportExpiry,
-    nearbyRadiusMiles,
-    !settingsLoading
+    nearbyRadiusMiles
   );
 
   // Single search path: the `medical-search` edge function does DB-first

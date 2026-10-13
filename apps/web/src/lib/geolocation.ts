@@ -1,3 +1,16 @@
+/**
+ * For centering the map and finding nearby offices — not precision-critical
+ * (a multi-mile radius search doesn't need meter-level accuracy), so this
+ * trades accuracy for speed on the first load of a session:
+ *  - enableHighAccuracy: false. On a laptop/desktop with no GPS chip, "high
+ *    accuracy" makes the browser try the slow GPS path before falling back,
+ *    which was the main cause of first loads taking 10+ seconds (the
+ *    timeout below). Network/Wi-Fi positioning resolves in under a second.
+ *  - maximumAge raised from 1 to 10 minutes — a real cache: a repeat call
+ *    within that window (e.g. navigating back to the map) reuses the
+ *    browser's last fix instantly instead of requesting a new one.
+ * Report submission uses the separate getFreshPosition below, unaffected.
+ */
 export function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -5,9 +18,9 @@ export function getCurrentPosition(): Promise<GeolocationPosition> {
       return;
     }
     navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
+      enableHighAccuracy: false,
       timeout: 10000,
-      maximumAge: 60000,
+      maximumAge: 10 * 60_000,
     });
   });
 }
